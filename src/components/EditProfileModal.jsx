@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, Typography, Box, TextField, Select, MenuItem, Avatar, IconButton
+    Dialog, Button, Typography, Box, TextField, Select, MenuItem, IconButton
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SummonerInfo from '../components/SummonerInfo';
@@ -16,13 +15,6 @@ export default function EditProfileModal({ open, handleClose }) {
     const [selectedMbti, setSelectedMbti] = useState(['E', 'S', 'T', 'P']);
     const [memo, setMemo] = useState('');
 
-    const MBTI_GROUPS = [
-        { pair: ['E', 'I'], labels: ['외향', '내향'] },
-        { pair: ['N', 'S'], labels: ['직관', '현실'] },
-        { pair: ['F', 'T'], labels: ['감성', '이성'] },
-        { pair: ['P', 'J'], labels: ['탐색', '계획'] },
-    ];
-
     const toggleMbti = (type) => {
         const groupMap = {
             E: ['E', 'I'],
@@ -34,54 +26,41 @@ export default function EditProfileModal({ open, handleClose }) {
             P: ['P', 'J'],
             J: ['P', 'J'],
         };
-
         const group = groupMap[type];
         const updated = selectedMbti.filter((t) => !group.includes(t));
         setSelectedMbti([...updated, type]);
     };
 
-
     const handleSubmit = () => {
-        // TODO: 등록 로직
         handleClose();
     };
 
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-            <Box sx={{ backgroundColor: '#31313D', p: 3, pt: 3 }}>
-
-                {/* 상단 Header */}
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                    {/* ✅ SummonerInfo 컴포넌트 사용 */}
+        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+            <Box sx={{ backgroundColor: '#31313D', p: 2, }}>
+                {/* 헤더 */}
+                <Box display="flex" justifyContent="space-between" alignItems="center">
                     <SummonerInfo
                         name="롤10년차고인물"
                         tag="1234"
                         avatarUrl="/assets/default.png"
                     />
-
-                    <IconButton onClick={handleClose} sx={{ p: 0.5 }}>
-                        <CloseIcon sx={{ color: '#fff', fontSize: '1.8rem' }} />
+                    <IconButton onClick={handleClose} size="small">
+                        <CloseIcon sx={{ color: '#fff' }} />
                     </IconButton>
                 </Box>
-                <Box
-                    mt={2}
-                    mb={2}
-                    sx={{
-                        height: '1px',
-                        backgroundColor: '#171717',
-                        width: '100%',
-                    }}
-                />
 
-                <Typography mb={1} color="#fff" fontSize="1.3rem">내 정보</Typography>
+                <Box sx={{ my: 2, height: '1px', backgroundColor: '#171717' }} />
 
-                {/* 폼 좌우 */}
-                <Box display="flex" gap={5}>
+                <Typography mb={1} color="#fff" fontSize="1rem">내 정보</Typography>
+
+                <Box display="flex" gap={3}>
                     {/* 왼쪽 영역 */}
                     <Box flex={1}>
-                        {/* 주 포지션 */}
-                        <Typography mb={1} color="#aaa">주 포지션</Typography>
-                        <Box display="flex" gap={2} mb={4}>
+                        <Typography mb={0.5} color="#aaa" sx={{
+                            fontSize: '0.8rem',
+                        }}>주 포지션</Typography>
+                        <Box display="flex" gap={1} mb={2}>
                             {POSITION_LIST.map((pos) => {
                                 const isSelected = position === pos;
                                 return (
@@ -90,14 +69,14 @@ export default function EditProfileModal({ open, handleClose }) {
                                         onClick={() => setPosition(pos)}
                                         sx={{
                                             borderRadius: 1,
-                                            p: 1,
-                                            width: 48,
-                                            height: 48,
+                                            p: 0.8,
+                                            width: 40,
+                                            height: 40,
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             cursor: 'pointer',
-                                            bgcolor: isSelected ? '#42E6B5' : '#31313D', // ✅ 선택 배경 / 비선택 배경
+                                            bgcolor: isSelected ? '#42E6B5' : '#31313D',
                                             transition: 'all 0.2s',
                                         }}
                                     >
@@ -105,45 +84,49 @@ export default function EditProfileModal({ open, handleClose }) {
                                             src={`../src/assets/position/${pos}.png`}
                                             alt={pos}
                                             style={{
-                                                width: 32,
-                                                height: 32,
-                                                filter: isSelected ? 'brightness(0) invert(1)' : 'brightness(1)', // ✅ 아이콘 색 반전
+                                                width: 26,
+                                                height: 26,
+                                                filter: isSelected ? 'brightness(0) invert(1)' : 'brightness(1)',
                                             }}
                                         />
                                     </Box>
                                 );
                             })}
                         </Box>
-                        {/* 학과 */}
-                        <Typography mb={1} color="#aaa">학과</Typography>
+
+                        <Typography mb={0.5} color="#aaa" sx={{
+                            fontSize: '0.8rem',
+                        }}>학과</Typography>
                         <Select
                             value={department}
                             onChange={(e) => setDepartment(e.target.value)}
                             fullWidth
+                            size="small"
                             sx={{
-                                mb: 3,
+                                mb: 2,
                                 backgroundColor: '#2A2B31',
                                 color: '#fff',
+                                fontSize: '0.8rem',
                                 '& .MuiSelect-icon': {
-                                    color: '#7B7B8E', // 👈 드롭다운 화살표 색상
+                                    color: '#7B7B8E',
                                 },
                             }}
                         >
-                            <MenuItem value="컴퓨터공학과">컴퓨터공학과</MenuItem>
-                            <MenuItem value="전자공학과">전자공학과</MenuItem>
-                            <MenuItem value="기계공학과">기계공학과</MenuItem>
+                            <MenuItem value="컴퓨터공학과" sx={{
+                                fontSize: '0.8rem',
+                            }}>컴퓨터공학과</MenuItem>
+                            <MenuItem value="전자공학과" sx={{
+                                fontSize: '0.8rem',
+                            }}>전자공학과</MenuItem>
+                            <MenuItem value="기계공학과" sx={{
+                                fontSize: '0.8rem',
+                            }}>기계공학과</MenuItem>
                         </Select>
 
-                        {/* 성별 */}
-                        <Typography mb={1} color="#aaa">성별</Typography>
-                        <Box
-                            display="flex"
-                            justifyContent="space-between"
-                            mb={3}
-                            p={1}
-                            borderRadius={1}
-                            bgcolor="#424254"
-                        >
+                        <Typography mb={0.5} color="#aaa" sx={{
+                            fontSize: '0.8rem',
+                        }}>성별</Typography>
+                        <Box display="flex" justifyContent="space-between" p={0.5} borderRadius={1} bgcolor="#424254" mb={2}>
                             {['남자', '여자', '비밀'].map((g) => (
                                 <Box
                                     key={g}
@@ -151,10 +134,10 @@ export default function EditProfileModal({ open, handleClose }) {
                                     sx={{
                                         flex: 1,
                                         textAlign: 'center',
-                                        py: 1.2,
+                                        py: 1,
                                         cursor: 'pointer',
                                         borderRadius: 1,
-                                        transition: '0.2s',
+                                        fontSize: '0.85rem',
                                         color: selectedGender === g ? '#fff' : '#888',
                                         fontWeight: selectedGender === g ? 'bold' : 'normal',
                                         backgroundColor: selectedGender === g ? '#42E6B5' : 'transparent',
@@ -169,53 +152,51 @@ export default function EditProfileModal({ open, handleClose }) {
                     {/* 오른쪽 영역 (MBTI) */}
                     <Box flex={1}>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                            <Typography color="#aaa">MBTI</Typography>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                                <Typography color="#aaa">초기화</Typography>
+                            <Typography color="#aaa" fontSize="0.8rem">MBTI</Typography>
+                            <Box display="flex" alignItems="center">
+                                <Typography color="#aaa" fontSize="0.8rem">초기화</Typography>
                                 <IconButton size="small" onClick={() => setSelectedMbti([])}>
-                                    <RestartAltIcon sx={{ color: '#7B7B8E', fontSize: 20 }} />
+                                    <RestartAltIcon sx={{ color: '#7B7B8E', fontSize: 18 }} />
                                 </IconButton>
                             </Box>
                         </Box>
 
-                        {/* 설명 텍스트 (위) */}
+                        {/* MBTI 설명 위 */}
                         <Box
                             display="grid"
                             gridTemplateColumns="repeat(4, 1fr)"
                             gap={0.5}
-                            fontSize="0.75rem"
+                            fontSize="0.7rem"
                             color="#888"
                             textAlign="center"
                             mb={0.5}
-                            mt={2}
                         >
                             {['외향', '직관', '감성', '탐색'].map((label, i) => (
-                                <Typography key={i}>{label}</Typography>
+                                <Typography key={i} sx={{
+                                    fontSize: '0.7rem',
+                                    color: '#888',
+                                    lineHeight: 1.2,
+                                }}>{label}</Typography>
                             ))}
                         </Box>
 
-                        {/* MBTI 버튼 (2줄) */}
-                        <Box
-                            display="grid"
-                            gridTemplateColumns="repeat(4, 1fr)"
-                            rowGap={1}
-                            mb={0.5}
-                        >
+                        {/* MBTI 버튼 */}
+                        <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" rowGap={1} mb={0.5}>
                             {['E', 'N', 'F', 'P', 'I', 'S', 'T', 'J'].map((type) => (
                                 <Button
                                     key={type}
                                     onClick={() => toggleMbti(type)}
                                     sx={{
-                                        width: 70,
-                                        height: 70,
-                                        minWidth: 52,
-                                        minHeight: 52,
+                                        width: 50,
+                                        height: 50,
                                         bgcolor: selectedMbti.includes(type) ? '#42E6B5' : '#2A2B31',
                                         color: selectedMbti.includes(type) ? '#fff' : '#B7B7C9',
-                                        borderRadius: 1,
+                                        borderRadius: 0.5,
                                         fontWeight: 'bold',
-                                        fontSize: "1.5rem",
-                                        mx: 'auto', // 가운데 정렬
+                                        fontSize: '1.2rem',
+                                        mx: 'auto',
+                                        minWidth: 0,
+                                        p: 0,
                                     }}
                                 >
                                     {type}
@@ -223,27 +204,34 @@ export default function EditProfileModal({ open, handleClose }) {
                             ))}
                         </Box>
 
-                        {/* 설명 텍스트 (아래) */}
+                        {/* MBTI 설명 아래 */}
                         <Box
                             display="grid"
                             gridTemplateColumns="repeat(4, 1fr)"
                             gap={0.5}
-                            fontSize="0.75rem"
+                            fontSize="0.7rem"
                             color="#888"
                             textAlign="center"
                         >
                             {['내향', '현실', '이성', '계획'].map((label, i) => (
-                                <Typography key={i}>{label}</Typography>
+                                <Typography key={i}
+                                    sx={{
+                                        fontSize: '0.7rem',
+                                        color: '#888',
+                                        lineHeight: 1.2,
+                                    }}>{label}</Typography>
                             ))}
                         </Box>
                     </Box>
-
-
                 </Box>
+
                 {/* 메모 */}
-                <Typography mb={1} color="#aaa">메모</Typography>
+                <Typography mt={2} mb={0.5} color="#aaa" sx={{
+                    fontSize: '0.8rem',
+                }}>메모</Typography>
                 <TextField
                     fullWidth
+                    size="small"
                     rows={1}
                     value={memo}
                     onChange={(e) => setMemo(e.target.value)}
@@ -252,27 +240,28 @@ export default function EditProfileModal({ open, handleClose }) {
                         color: '#fff',
                         borderRadius: 1,
                         input: { color: '#fff' },
+                        fontSize: '0.8rem',
                     }}
                 />
 
-                {/* 하단 버튼 */}
-                <Box display="flex" gap={2} mt={4}>
-                    <Button fullWidth onClick={handleClose} size="large" sx={{
+                {/* 버튼 */}
+                <Box display="flex" gap={1.5} mt={3}>
+                    <Button fullWidth onClick={handleClose} size="small" sx={{
                         bgcolor: '#2A2B31', color: '#fff', fontWeight: 'bold',
-                        height: 56,
-                        fontSize: '1.2rem',
+                        height: 42,
+                        fontSize: '1rem',
                     }}>
                         취소
                     </Button>
-                    <Button fullWidth onClick={handleSubmit} sx={{
+                    <Button fullWidth onClick={handleSubmit} size="small" sx={{
                         bgcolor: '#42E6B5', color: '#fff', fontWeight: 'bold',
-                        height: 56,
-                        fontSize: '1.2rem',
+                        height: 42,
+                        fontSize: '1rem',
                     }}>
                         등록
                     </Button>
                 </Box>
             </Box>
-        </Dialog>
+        </Dialog >
     );
 }

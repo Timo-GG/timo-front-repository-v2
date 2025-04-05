@@ -43,31 +43,31 @@ export default function RankingDetailModal({ open, handleClose, data }) {
                     {/* 학교 */}
                     <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">학교</Typography>
-                        <Typography fontSize="1rem" color="#fff">{data.university}</Typography>
+                        <Typography fontSize="0.8rem" color="#fff">{data.university}</Typography>
                     </Box>
 
                     {/* 학과 */}
                     <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">학과</Typography>
-                        <Typography fontSize="1rem" color="#fff">{data.department}</Typography>
+                        <Typography fontSize="0.8rem" color="#fff">{data.department}</Typography>
                     </Box>
 
                     {/* MBTI */}
                     <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">MBTI</Typography>
-                        <Typography fontSize="1rem" color="#fff">{data.mbti}</Typography>
+                        <Typography fontSize="0.8rem" color="#fff">{data.mbti}</Typography>
                     </Box>
 
                     {/* 성별 */}
                     <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">성별</Typography>
-                        <Typography fontSize="1rem" color="#fff">{data.gender}</Typography>
+                        <Typography fontSize="0.8rem" color="#fff">{data.gender}</Typography>
                     </Box>
                 </Box>
 
                 {/* 메모 */}
                 <Typography fontSize="0.85rem" color="#888">메모</Typography>
-                <Box sx={{ backgroundColor: '#424254', p: 2, borderRadius: 1, color: '#fff', mt:1, mb: 3 }}>
+                <Box fontSize="0.8rem" sx={{backgroundColor: '#424254', p: 1.3, borderRadius: 1, color: '#fff', mt:1, mb: 2 }}>
                     {data.message}
                 </Box>
 
@@ -80,7 +80,7 @@ export default function RankingDetailModal({ open, handleClose, data }) {
                             display: 'flex',
                             backgroundColor: '#28282F',
                             color: '#999',
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: 500,
                         }}
                     >

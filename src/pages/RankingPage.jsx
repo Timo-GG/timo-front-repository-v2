@@ -63,8 +63,8 @@ export default function RankingPage() {
             TabIndicatorProps={{ style: { backgroundColor: '#ffffff' } }}
 
           >
-            <Tab label="전체 대학교" sx={{ fontSize: "1rem", color: tab === 0 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 0 ? 'bold' : 'normal' }} />
-            <Tab label="우리 학교" sx={{ fontSize: "1rem", color: tab === 1 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 1 ? 'bold' : 'normal' }} />
+            <Tab label="전체 대학교" sx={{ fontSize: "1.1rem", color: tab === 0 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 0 ? 'bold' : 'normal' }} />
+            <Tab label="우리 학교" sx={{ fontSize: "1.1rem", color: tab === 1 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 1 ? 'bold' : 'normal' }} />
           </Tabs>
         </Box>
         <Box sx={{height: '1px', backgroundColor: '#171717', width: '100%', position: 'relative'}} />
@@ -72,16 +72,16 @@ export default function RankingPage() {
           {/* 제목 및 버튼 */}
           <Box sx={{ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box>
-              <Typography variant="h6" color="#42E6B5">
+              <Typography variant="h7" color="#42E6B5">
                 콜로세움 순위표
               </Typography>
-              <Typography variant="h4" fontWeight="bold" color="white">
+              <Typography variant="h5" fontWeight="bold" color="white">
                 {tab === 0 ? '전체 대학교' : '서울과기대'}
               </Typography>
             </Box>
-            <Button sx={{ backgroundColor: '#88849B', color: '#fff', borderRadius: 1, fontWeight: 'bold', px: 2, py: 1.4 }} onClick={() => setOpen(true)}>
-              <Typography variant="h6" fontWeight="bold" color="white">
-                내 정보 수정
+            <Button sx={{ backgroundColor: '#88849B', color: '#fff', borderRadius: 0.5, fontWeight: 'bold', px: 2, py: 1.4 }} onClick={() => setOpen(true)}>
+              <Typography variant="h7" fontWeight="bold" color="white">
+                내 정보 수정하기
               </Typography>
             </Button>
             <RankingDetailModal
@@ -136,7 +136,7 @@ export default function RankingPage() {
                   backgroundColor: theme.palette.background.paper,
                   color: '#fff',
                   fontSize: 14,
-                  borderTop: '1px solid #3c3d4e',
+                  borderBottom: '2px solid #12121a',
                   cursor: 'pointer', // 👈 클릭 가능 표시
                   transition: 'background-color 0.2s',
                   '&:hover': {
