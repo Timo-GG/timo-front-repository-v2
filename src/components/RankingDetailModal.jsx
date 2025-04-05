@@ -16,15 +16,24 @@ export default function RankingDetailModal({ open, handleClose, data }) {
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <Box sx={{ backgroundColor: '#31313D', p: 3 }}>
+            <Box sx={{ backgroundColor: '#2B2C3C' }}>
                 {/* 헤더 */}
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography fontWeight="bold" fontSize="1.2rem" color="#fff">상세정보</Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ p: 2, ml: 1, mr: 1 }}>
+                    <Typography fontSize="1.2rem" color="#fff">상세정보</Typography>
                     <IconButton onClick={handleClose}>
                         <CloseIcon sx={{ color: '#fff' }} />
                     </IconButton>
                 </Box>
-
+            </Box>
+            <Box
+                mb={1}
+                sx={{
+                    height: '1.2px',
+                    backgroundColor: '#171717',
+                    width: '100%',
+                }}
+            />
+            <Box sx={{ p: 2, ml: 1, mr: 1 }}>
                 <Box
                     display="grid"
                     gridTemplateColumns="1fr 1fr"
@@ -32,25 +41,25 @@ export default function RankingDetailModal({ open, handleClose, data }) {
                     mb={3}
                 >
                     {/* 학교 */}
-                    <Box mb={2}>
+                    <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">학교</Typography>
                         <Typography fontSize="1rem" color="#fff">{data.university}</Typography>
                     </Box>
 
                     {/* 학과 */}
-                    <Box mb={2}>
+                    <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">학과</Typography>
                         <Typography fontSize="1rem" color="#fff">{data.department}</Typography>
                     </Box>
 
                     {/* MBTI */}
-                    <Box mb={2}>
+                    <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">MBTI</Typography>
                         <Typography fontSize="1rem" color="#fff">{data.mbti}</Typography>
                     </Box>
 
                     {/* 성별 */}
-                    <Box mb={2}>
+                    <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">성별</Typography>
                         <Typography fontSize="1rem" color="#fff">{data.gender}</Typography>
                     </Box>
@@ -58,7 +67,7 @@ export default function RankingDetailModal({ open, handleClose, data }) {
 
                 {/* 메모 */}
                 <Typography fontSize="0.85rem" color="#888">메모</Typography>
-                <Box sx={{ backgroundColor: '#2A2B31', p: 2, borderRadius: 1, color: '#fff', mb: 3 }}>
+                <Box sx={{ backgroundColor: '#424254', p: 2, borderRadius: 1, color: '#fff', mt:1, mb: 3 }}>
                     {data.message}
                 </Box>
 

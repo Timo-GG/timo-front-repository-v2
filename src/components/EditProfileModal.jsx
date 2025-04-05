@@ -48,7 +48,7 @@ export default function EditProfileModal({ open, handleClose }) {
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-            <Box sx={{ backgroundColor: '#1B1C22', p: 4, pt: 3 }}>
+            <Box sx={{ backgroundColor: '#31313D', p: 3, pt: 3 }}>
 
                 {/* 상단 Header */}
                 <Box display="flex" justifyContent="space-between" alignItems="flex-start">
@@ -68,7 +68,7 @@ export default function EditProfileModal({ open, handleClose }) {
                     mb={2}
                     sx={{
                         height: '1px',
-                        backgroundColor: '#333', // 혹은 #444, #555 원하는 색
+                        backgroundColor: '#171717',
                         width: '100%',
                     }}
                 />
@@ -97,7 +97,7 @@ export default function EditProfileModal({ open, handleClose }) {
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             cursor: 'pointer',
-                                            bgcolor: isSelected ? '#42E6B5' : '#1B1C22', // ✅ 선택 배경 / 비선택 배경
+                                            bgcolor: isSelected ? '#42E6B5' : '#31313D', // ✅ 선택 배경 / 비선택 배경
                                             transition: 'all 0.2s',
                                         }}
                                     >
@@ -142,7 +142,7 @@ export default function EditProfileModal({ open, handleClose }) {
                             mb={3}
                             p={1}
                             borderRadius={1}
-                            bgcolor="#2A2B31"
+                            bgcolor="#424254"
                         >
                             {['남자', '여자', '비밀'].map((g) => (
                                 <Box
@@ -198,7 +198,7 @@ export default function EditProfileModal({ open, handleClose }) {
                         <Box
                             display="grid"
                             gridTemplateColumns="repeat(4, 1fr)"
-                            rowGap={2}
+                            rowGap={1}
                             mb={0.5}
                         >
                             {['E', 'N', 'F', 'P', 'I', 'S', 'T', 'J'].map((type) => (
@@ -206,8 +206,8 @@ export default function EditProfileModal({ open, handleClose }) {
                                     key={type}
                                     onClick={() => toggleMbti(type)}
                                     sx={{
-                                        width: 80,
-                                        height: 80,
+                                        width: 70,
+                                        height: 70,
                                         minWidth: 52,
                                         minHeight: 52,
                                         bgcolor: selectedMbti.includes(type) ? '#42E6B5' : '#2A2B31',
@@ -216,7 +216,6 @@ export default function EditProfileModal({ open, handleClose }) {
                                         fontWeight: 'bold',
                                         fontSize: "1.5rem",
                                         mx: 'auto', // 가운데 정렬
-                                        p: 0,
                                     }}
                                 >
                                     {type}
@@ -249,7 +248,7 @@ export default function EditProfileModal({ open, handleClose }) {
                     value={memo}
                     onChange={(e) => setMemo(e.target.value)}
                     sx={{
-                        bgcolor: '#2A2B31',
+                        bgcolor: '#424254',
                         color: '#fff',
                         borderRadius: 1,
                         input: { color: '#fff' },
