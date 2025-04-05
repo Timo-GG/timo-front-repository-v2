@@ -3,6 +3,9 @@ import rankingDummy from '../data/rankingDummy';
 import TierBadge from '../components/TierBadge';
 import ChampionIconList from '../components/ChampionIconList';
 import PositionIcon from '../components/PositionIcon';
+import EditProfileModal from '../components/EditProfileModal';
+import RankingDetailModal from '../components/RankingDetailModal';
+
 
 import {
   Box,
@@ -33,25 +36,41 @@ export default function RankingPage() {
   const theme = useTheme();
   const [tab, setTab] = React.useState(0);
   const handleTabChange = (event, newValue) => setTab(newValue);
+  const [open, setOpen] = React.useState(false);
+  const [selectedData, setSelectedData] = React.useState(null);
+  const [detailOpen, setDetailOpen] = React.useState(false);
+  const handleRowClick = (row) => {
+    setSelectedData(row);
+    setDetailOpen(true);
+  };
 
   return (
-    <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5, px: 2 }}>
-      <Container maxWidth="lg">
-        <Box sx={{ borderRadius: 0.5, backgroundColor: theme.palette.background.paper, p: 1 }}>
+    <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
+      <Container maxWidth="lg" sx={{ px: 0 }}>
+        <Box sx={{
+          backgroundColor: theme.palette.background.paper,
+          p: 1,
+          borderTopLeftRadius: 10,  // 상단만 둥글게
+          borderTopRightRadius: 10,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+        }}>
           {/* 상단 탭 */}
           <Tabs
             value={tab}
             onChange={handleTabChange}
             textColor="inherit"
             TabIndicatorProps={{ style: { backgroundColor: '#ffffff' } }}
+
           >
             <Tab label="전체 대학교" sx={{ fontSize: "1rem", color: tab === 0 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 0 ? 'bold' : 'normal' }} />
             <Tab label="우리 학교" sx={{ fontSize: "1rem", color: tab === 1 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 1 ? 'bold' : 'normal' }} />
           </Tabs>
-          <Box sx={{ height: '1px', backgroundColor: '#171717' }} />
-
+        </Box>
+        <Box sx={{height: '1px', backgroundColor: '#171717', width: '100%', position: 'relative'}} />
+        <Box sx={{p: 2, backgroundColor: theme.palette.background.paper}}>
           {/* 제목 및 버튼 */}
-          <Box sx={{ ml: 1, mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box>
               <Typography variant="h6" color="#42E6B5">
                 콜로세움 순위표
@@ -60,18 +79,29 @@ export default function RankingPage() {
                 {tab === 0 ? '전체 대학교' : '서울과기대'}
               </Typography>
             </Box>
-            <Button sx={{ backgroundColor: '#88849B', color: '#fff', borderRadius: 1, fontWeight: 'bold', px: 2, py: 1.4 }}>
+            <Button sx={{ backgroundColor: '#88849B', color: '#fff', borderRadius: 1, fontWeight: 'bold', px: 2, py: 1.4 }} onClick={() => setOpen(true)}>
               <Typography variant="h6" fontWeight="bold" color="white">
                 내 정보 수정
               </Typography>
             </Button>
-          </Box>
+            <RankingDetailModal
+              open={detailOpen}
+              handleClose={() => setDetailOpen(false)}
+              data={selectedData}
+            />
 
+            <EditProfileModal
+              open={open}
+              handleClose={() => setOpen(false)}
+            />
+          </Box>
+        </Box>
+        <Box>
           {/* 테이블 */}
-          <Box sx={{ mt: 2, borderRadius: 1, overflow: 'hidden' }}>
+          <Box sx={{ overflow: 'hidden' }}>
             <Box
               sx={{
-                px: 2,
+                px: 0,
                 py: 1.5,
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -85,7 +115,9 @@ export default function RankingPage() {
               <Box width="15%" textAlign="center">소환사</Box>
               <Box width="10%" textAlign="center">주 포지션</Box>
               <Box width="10%" textAlign="center">티어</Box>
-              <Box width="15%" textAlign="center">대학교</Box>
+              <Box width="15%" textAlign="center">
+                {tab === 0 ? '대학교' : '학과'}
+              </Box>
               <Box width="20%" textAlign="center">모스트 챔피언</Box>
               <Box width="20%" textAlign="center">한 줄 소개</Box>
               <Box width="10%" textAlign="center">등록 일시</Box>
@@ -94,8 +126,9 @@ export default function RankingPage() {
             {rankingDummy.map((row) => (
               <Box
                 key={row.rank}
+                onClick={() => handleRowClick(row)} // 모달 열기 등
                 sx={{
-                  px: 2,
+                  px: 0,
                   py: 2,
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -104,6 +137,11 @@ export default function RankingPage() {
                   color: '#fff',
                   fontSize: 14,
                   borderTop: '1px solid #3c3d4e',
+                  cursor: 'pointer', // 👈 클릭 가능 표시
+                  transition: 'background-color 0.2s',
+                  '&:hover': {
+                    backgroundColor: '#2E2E38', // 💡 원하는 hover 색상
+                  },
                 }}
               >
                 <Box width="5%" textAlign="center">{row.rank}</Box>
@@ -116,7 +154,9 @@ export default function RankingPage() {
                 <Box width="10%" textAlign="center">
                   <TierBadge tier={row.tier} score={row.score} />
                 </Box>
-                <Box width="15%" textAlign="center">{row.university}</Box>
+                <Box width="15%" textAlign="center">
+                  {tab === 0 ? row.university : row.department}
+                </Box>
                 <Box width="20%" textAlign="center">
                   <ChampionIconList championNames={row.champions} />
                 </Box>
