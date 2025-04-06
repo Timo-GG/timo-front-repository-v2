@@ -7,6 +7,7 @@ import MySettingPage from './pages/MySettingPage';
 import RankingPage from './pages/RankingPage';
 import MyPage from './pages/MyPage';
 import ScrimPage from './pages/ScrimPage';
+import DuoPage from './pages/DuoPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/mysetting" element={<MySettingPage />} />
         <Route path="/ranking" element={<RankingPage />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/duo" element={<DuoPage />} />
         <Route path="/scrim" element={<ScrimPage />} />
       </Routes>
     </Router>
