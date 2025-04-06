@@ -1,0 +1,211 @@
+// src/pages/MyPage.jsx
+import React, { useState } from 'react';
+import {
+    Box,
+    Container,
+    Typography,
+    Tabs,
+    Tab,
+    Button,
+    Avatar,
+    useTheme,
+    TextField,
+    IconButton
+} from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import TierImage from '../assets/tier.png';
+
+const sampleUser = {
+    name: '롤10년차고인물',
+    tag: '#1234',
+    school: '서울과기대',
+    tier: 'E1',
+    mostChamps: ['src/assets/champ1.png', 'src/assets/champ2.png', 'src/assets/champ3.png'],
+    message: '현 멀티 2층 최소 다이아 상위듀오 구합니다.',
+    createdAt: '38초 전',
+    type: '듀오'
+};
+
+function TabPanel({ children, value, index }) {
+    return (
+        <div hidden={value !== index}>
+            {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+        </div>
+    );
+}
+
+export default function MyPage() {
+    const theme = useTheme();
+    const [tab, setTab] = useState(0);
+    const [chatInput, setChatInput] = useState('');
+
+    const handleTabChange = (_, newValue) => setTab(newValue);
+
+    return (
+        <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
+            <Container maxWidth="lg">
+                <Tabs value={tab} onChange={handleTabChange}>
+                    <Tab label="받은 요청" />
+                    <Tab label="보낸 요청" />
+                    <Tab label="채팅" />
+                </Tabs>
+
+                <TabPanel value={tab} index={0}>
+                    <Box>
+                        <RequestHeader />
+                        {[1, 2, 3, 4].map((_, idx) => (
+                            <RequestItem key={idx} received user={sampleUser} />
+                        ))}
+                    </Box>
+                </TabPanel>
+
+                <TabPanel value={tab} index={1}>
+                    <Box>
+                        <RequestHeader />
+                        {[1, 2, 3, 4].map((_, idx) => (
+                            <RequestItem key={idx} user={sampleUser} sentStatus={idx === 3 ? '완료' : idx === 2 ? '평가' : '취소'} />
+                        ))}
+                    </Box>
+                </TabPanel>
+
+                <TabPanel value={tab} index={2}>
+                    <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', height: 500, backgroundColor: '#1e1f2d' }}>
+                        <Box sx={{ width: 300, backgroundColor: '#2c2c3a', p: 2 }}>
+                            {[1, 2, 3].map((_, i) => (
+                                <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                    <Avatar src="/src/assets/icon.png" />
+                                    <Box sx={{ flex: 1 }}>
+                                        <Typography fontWeight="bold" color="#fff">{sampleUser.name}</Typography>
+                                        <Typography fontSize={12} color="#aaa">안녕하세요.</Typography>
+                                    </Box>
+                                    <Typography fontSize={10} color="#666">35분 전</Typography>
+                                </Box>
+                            ))}
+                        </Box>
+
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#292933' }}>
+                            <Box sx={{ p: 2, borderBottom: '1px solid #3b3c4f', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar src="/src/assets/icon.png" sx={{ width: 32, height: 32 }} />
+                                <Box>
+                                    <Typography color="#fff" fontWeight="bold">{sampleUser.name}</Typography>
+                                    <Typography fontSize={12} color="#888">{sampleUser.tag} | {sampleUser.school}</Typography>
+                                </Box>
+                                <Button size="small" sx={{ ml: 'auto', color: '#aaa', backgroundColor: '#3b3c4f', px: 2 }}>나가기</Button>
+                            </Box>
+                            <Box sx={{ flex: 1, p: 2, overflowY: 'auto' }}>
+                                <Typography align="center" fontSize={12} color="#888" mb={1}>2025년 4월 3일</Typography>
+                                <Typography align="center" fontSize={12} color="#666" mb={2}>채팅방이 생성되었습니다.</Typography>
+
+                                <Box display="flex" justifyContent="flex-start" mb={1}>
+                                    <Box sx={{ backgroundColor: '#3b3c4f', color: '#fff', px: 2, py: 1, borderRadius: 2, maxWidth: '70%' }}>
+                                        저 유미장인
+                                    </Box>
+                                </Box>
+
+                                <Box display="flex" justifyContent="flex-end" mb={1}>
+                                    <Box sx={{ backgroundColor: '#fff', color: '#000', px: 2, py: 1, borderRadius: 2, maxWidth: '70%' }}>
+                                        듀오 ㄱㄱㄱㄱ
+                                    </Box>
+                                </Box>
+
+                                <Typography align="center" fontSize={12} color="#666" mt={2}>듀오가 당신의 평점을 등록하였습니다.</Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', p: 2, borderTop: '1px solid #3b3c4f', backgroundColor: '#1e1f2d' }}>
+                                <TextField
+                                    fullWidth
+                                    placeholder="내용을 입력해주세요.."
+                                    variant="standard"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    InputProps={{ disableUnderline: true, sx: { color: '#fff', pl: 2 } }}
+                                    sx={{ backgroundColor: '#2c2c3a', borderRadius: 2 }}
+                                />
+                                <IconButton sx={{ color: '#42E6B5', ml: 1 }}>
+                                    <SendIcon />
+                                </IconButton>
+                            </Box>
+                        </Box>
+                    </Box>
+                </TabPanel>
+            </Container>
+        </Box>
+    );
+}
+
+function RequestHeader() {
+    const columns = [1.5, 1, 2, 3, 1, 1, 1.5];
+    const headers = ['소환사', '티어', '모스트 챔피언', '한 줄 소개', '분류', '등록 일시', '듀오 신청'];
+    return (
+        <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            px: 2,
+            py: 1.5,
+            fontSize: 14,
+            fontWeight: 500,
+            color: '#999',
+            backgroundColor: '#2c2c3a',
+            borderRadius: 2,
+            mb: 1
+        }}>
+            {headers.map((text, i) => (
+                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>{text}</Box>
+            ))}
+        </Box>
+    );
+}
+
+function RequestItem({ received, user, sentStatus }) {
+    const columns = [1.5, 1, 2, 3, 1, 1, 1.5];
+    return (
+        <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: '#2c2c3a',
+            borderRadius: 2,
+            px: 2,
+            py: 2,
+            mt: 1
+        }}>
+            <Box sx={{ flex: columns[0], display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                <Avatar alt="소환사" src="/src/assets/icon.png" sx={{ width: 40, height: 40 }} />
+                <Box textAlign="left">
+                    <Typography color="#fff" fontWeight="bold" noWrap>{user.name}</Typography>
+                    <Typography color="#888" fontSize={12} noWrap>{user.tag} | {user.school}</Typography>
+                </Box>
+            </Box>
+            <Box sx={{ flex: columns[1], display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                <Avatar src={TierImage} sx={{ width: 24, height: 24 }} />
+                <Typography color="#42E6B5" fontWeight="bold">{user.tier}</Typography>
+            </Box>
+            <Box sx={{ flex: columns[2], display: 'flex', justifyContent: 'center', gap: 1 }}>
+                {user.mostChamps.map((src, i) => (
+                    <Avatar key={i} src={src} sx={{ width: 32, height: 32 }} />
+                ))}
+            </Box>
+            <Box sx={{ flex: columns[3], textAlign: 'center' }}>
+                <Typography sx={{ backgroundColor: '#3b3c4f', borderRadius: 1, px: 2, py: 1, color: '#fff', fontSize: 14 }}>{user.message}</Typography>
+            </Box>
+            <Box sx={{ flex: columns[4], textAlign: 'center' }}>
+                <Typography color="#aaa">{user.type}</Typography>
+            </Box>
+            <Box sx={{ flex: columns[5], textAlign: 'center' }}>
+                <Typography color="#aaa">{user.createdAt}</Typography>
+            </Box>
+            <Box sx={{ flex: columns[6], display: 'flex', gap: 1, justifyContent: 'center' }}>
+                {received ? (
+                    <>
+                        <Button variant="contained" sx={{ fontWeight: 'bold', backgroundColor: '#424254', color: '#FFFFFF' }}>수락</Button>
+                        <Button variant="contained" sx={{ fontWeight: 'bold', backgroundColor: '#F96568', color: '#FFFFFF' }}>거절</Button>
+                    </>
+                ) : sentStatus === '평가' ? (
+                    <Button variant="text" sx={{ color: '#42E6B5' }}>평가하기</Button>
+                ) : sentStatus === '완료' ? (
+                    <Typography color="#666">듀오 완료</Typography>
+                ) : (
+                    <Button variant="outlined">취소하기</Button>
+                )}
+            </Box>
+        </Box>
+    );
+}

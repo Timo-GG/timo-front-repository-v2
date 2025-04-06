@@ -5,6 +5,7 @@ import MainPage from './pages/MainPage';
 import SearchPage from './pages/SearchPage';
 import MySettingPage from './pages/MySettingPage';
 import RankingPage from './pages/RankingPage';
+import MyPage from './pages/MyPage';
 import ScrimPage from './pages/ScrimPage';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/mysetting" element={<MySettingPage />} />
         <Route path="/ranking" element={<RankingPage />} />
+        <Route path="/mypage" element={<MyPage />} />
         <Route path="/scrim" element={<ScrimPage />} />
       </Routes>
     </Router>
