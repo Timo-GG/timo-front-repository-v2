@@ -13,6 +13,7 @@ import {
     FormControl
 } from '@mui/material';
 import TierImage from '../assets/tier.png';
+import CreateDuoModal from '../components/CreateDuoModal';
 
 const getPositionImage = (position) => {
     return `/src/assets/position/${position}.png`;
@@ -66,15 +67,17 @@ export default function DuoPage() {
     const [positionFilter, setPositionFilter] = useState('all');
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleRegisterDuo = () => {
-        alert('듀오 등록 페이지로 이동 혹은 모달 오픈');
+        setIsModalOpen(true);
     };
 
     const handlePositionClick = (pos) => {
         setPositionFilter(pos);
     };
 
+    // 필터 조건에 따른 데이터 필터링 (예시)
     const filteredUsers = sampleUsers.filter((user) => {
         if (positionFilter !== 'all' && user.mainPosition !== positionFilter) {
             return false;
@@ -100,6 +103,8 @@ export default function DuoPage() {
                     <DuoItem key={idx} user={user} />
                 ))}
             </Container>
+            {/* CreateDuoModal 모달 컴포넌트 */}
+            <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </Box>
     );
 }
@@ -227,18 +232,17 @@ function FilterBar({
                 </FormControl>
             </Box>
 
-            {/* 듀오 등록하기 버튼 (오른쪽, 크기만 늘림) */}
+            {/* 듀오 등록하기 버튼 */}
             <Button
                 variant="contained"
                 sx={{
                     ml: 'auto',
                     fontWeight: 'bold',
-                    // height를 Select(48)보다 크게, 예: 56으로 설정
                     height: 56,
-                    px: 3, // 가로 여백도 좀 더 주어 크게 보이도록
+                    px: 3,
                     background: 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
                     color: '#fff',
-                    fontSize: 16, // 글자도 조금 키움
+                    fontSize: 16,
                     '&:hover': {
                         background: 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)'
                     }
@@ -251,6 +255,7 @@ function FilterBar({
     );
 }
 
+/** 테이블 헤더 */
 function DuoHeader() {
     const columns = [1.5, 1, 1, 1, 3, 1, 1.5];
     const headers = [
@@ -287,6 +292,7 @@ function DuoHeader() {
     );
 }
 
+/** 테이블 아이템 */
 function DuoItem({ user }) {
     const columns = [1.5, 1, 1, 1, 3, 1, 1.5];
 
