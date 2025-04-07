@@ -114,7 +114,7 @@ export default function ScrimPage() {
                                     key={row.id}
                                     sx={{
                                         px: 3,
-                                        py: 1.5,
+                                        py: 1,
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
