@@ -19,8 +19,7 @@ import CreateDuoModal from '../components/CreateDuoModal';
 import SummonerInfo from '../components/SummonerInfo';
 import TierBadge from '../components/TierBadge';
 import PositionIcon from '../components/PositionIcon';
-
-const getPositionImage = (position) => `/src/assets/position/${position}.png`;
+import PositionFilterBar from '../components/PositionFilterBar';
 
 // 더미 데이터에 queueType 추가 (예: "랭크", "일반")
 const sampleUsers = [
@@ -130,56 +129,15 @@ function FilterBar({
     setSchoolFilter,
     onRegisterDuo
 }) {
-    const positions = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
-
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             {/* 포지션 아이콘 그룹 */}
-            <Box sx={{ display: 'flex', height: 48 }}>
-                {positions.map((pos, index) => {
-                    const isSelected = positionFilter === pos;
-                    return (
-                        <Box
-                            key={pos}
-                            onClick={() => onPositionClick(pos)}
-                            sx={{
-                                width: 48,
-                                height: 48,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                backgroundColor: isSelected ? '#424254' : '#2c2c3a',
-                                border: '1px solid #424254',
-                                borderLeft: index > 0 ? '1px solid #424254' : 'none',
-                                ...(index === 0 && {
-                                    borderTopLeftRadius: 10,
-                                    borderBottomLeftRadius: 10
-                                }),
-                                ...(index === positions.length - 1 && {
-                                    borderTopRightRadius: 10,
-                                    borderBottomRightRadius: 10
-                                }),
-                                transition: 'background-color 0.2s',
-                                '&:hover': {
-                                    backgroundColor: '#424254'
-                                }
-                            }}
-                        >
-                            <Avatar
-                                src={getPositionImage(pos)}
-                                variant="square"
-                                sx={{
-                                    width: 26,
-                                    height: 26,
-                                    backgroundColor: 'transparent'
-                                }}
-                            />
-                        </Box>
-                    );
-                })}
-            </Box>
-
+            
+            <PositionFilterBar
+                positionFilter={positionFilter}
+                onPositionClick={onPositionClick}
+            />
+            {/* 포지션 아이콘 그룹 끝 */}
 
             {/* 랭크 타입 & 소속 Select */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
