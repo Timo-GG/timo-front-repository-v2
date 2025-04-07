@@ -24,6 +24,8 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SystemMessage from '../components/SystemMessage';
 import chatDummy from '../data/chatDummy';
+import ChatMessage from '../components/ChatMessage';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const sampleUser = {
     name: '롤10년차고인물',
@@ -52,16 +54,13 @@ export default function MyPage() {
     const theme = useTheme();
     const [tab, setTab] = useState(0);
     const [chatInput, setChatInput] = useState('');
-    const [messages, setMessages] = useState([
-        { type: 'received', text: '저 유미장인' },
-        { type: 'sent', text: '듀오 ㄱㄱㄱㄱ' },
-    ]);
     const [isComposing, setIsComposing] = useState(false);
     const isSendingRef = useRef(false); // 즉시 업데이트되는 ref 사용
     const [chatList, setChatList] = useState(chatDummy);
     const [selectedChatId, setSelectedChatId] = useState(null);
     const [anchorEls, setAnchorEls] = useState({});
-    const [selectedIndex, setSelectedIndex] = useState(null);
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [targetChatId, setTargetChatId] = useState(null);
 
     const handleMenuOpen = (event, id) => {
         setAnchorEls((prev) => ({ ...prev, [id]: event.currentTarget }));
@@ -72,7 +71,13 @@ export default function MyPage() {
     };
 
     const handleDelete = (id) => {
-        console.log(`${id}번 항목 삭제`);
+        setChatList((prev) => prev.filter((chat) => chat.id !== id));
+
+        // 현재 선택된 채팅방이 삭제된 경우, 선택 해제
+        if (selectedChatId === id) {
+            setSelectedChatId(null);
+        }
+
         handleMenuClose(id);
     };
 
@@ -172,7 +177,10 @@ export default function MyPage() {
                                         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                     >
-                                        <MenuItem onClick={() => handleDelete(chat.id)}>나가기</MenuItem>
+                                        <MenuItem onClick={() => {
+                                            setTargetChatId(chat.id);
+                                            setOpenConfirm(true);
+                                        }}>나가기</MenuItem>
                                     </Menu>
                                     {/* 아랫줄: 메시지 + 시간 */}
                                     <Box
@@ -187,7 +195,7 @@ export default function MyPage() {
                                             {chat.lastMessage}
                                         </Typography>
                                         <Typography fontSize={14} color="#666">
-                                            {chat.lastTime} 
+                                            {chat.lastTime}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -206,33 +214,34 @@ export default function MyPage() {
                                             copyable
                                             sx={{ flex: 1 }}
                                         />
-                                        <Button size="small" sx={{ border: '1px solid #71717D', borderRadius: 0.8, ml: 'auto', color: '#fff', backgroundColor: '#3b3c4f', px: 2 }}>나가기</Button>
+                                        <Button size="small" onClick={() => {
+                                            setTargetChatId(selectedChat.id);
+                                            setOpenConfirm(true);
+                                        }} sx={{ border: '1px solid #71717D', borderRadius: 0.8, ml: 'auto', color: '#fff', backgroundColor: '#3b3c4f', px: 2 }}>나가기</Button>
                                     </Box>
 
                                     <Box sx={{ flex: 1, p: 2, overflowY: 'auto' }}>
                                         <SystemMessage message="2025년 4월 3일" />
                                         <SystemMessage message="채팅방이 생성되었습니다." />
 
-                                        {selectedChat.messages.map((msg, idx) => (
-                                            msg.type === 'system' ? (
+                                        {selectedChat.messages.map((msg, idx, arr) => {
+                                            const prev = arr[idx - 1];
+                                            const showTime =
+                                                !prev ||
+                                                new Date(msg.timestamp).getMinutes() !== new Date(prev.timestamp).getMinutes();
+
+                                            return msg.type === 'system' ? (
                                                 <SystemMessage key={idx} message={msg.text} />
                                             ) : (
-                                                <Box key={idx} display="flex" justifyContent={msg.type === 'sent' ? 'flex-end' : 'flex-start'} mb={1}>
-                                                    <Box
-                                                        sx={{
-                                                            backgroundColor: msg.type === 'sent' ? '#fff' : '#3b3c4f',
-                                                            color: msg.type === 'sent' ? '#000' : '#fff',
-                                                            px: 2,
-                                                            py: 1,
-                                                            borderRadius: 1,
-                                                            maxWidth: '70%',
-                                                        }}
-                                                    >
-                                                        {msg.text}
-                                                    </Box>
-                                                </Box>
-                                            )
-                                        ))}
+                                                <ChatMessage
+                                                    key={idx}
+                                                    type={msg.type}
+                                                    text={msg.text}
+                                                    timestamp={msg.timestamp}
+                                                    showTime={showTime}
+                                                />
+                                            );
+                                        })}
                                     </Box>
 
                                     <Box sx={{ display: 'flex', p: 2, borderTop: '1px solid #3b3c4f', backgroundColor: '#1e1f2d' }}>
@@ -280,6 +289,21 @@ export default function MyPage() {
                         </Box>
                     </Box>
                 </TabPanel>
+                <ConfirmDialog
+                    open={openConfirm}
+                    onClose={() => setOpenConfirm(false)}
+                    onConfirm={() => {
+                        if (targetChatId !== null) {
+                            handleDelete(targetChatId);
+                        }
+                        setOpenConfirm(false);
+                    }}
+                    title="정말 나가시겠습니까?"
+                    message="채팅방에서 나가면 대화 내용이 사라집니다."
+                    confirmText="나가기"
+                    cancelText="취소"
+                    danger
+                />
             </Container>
         </Box>
     );

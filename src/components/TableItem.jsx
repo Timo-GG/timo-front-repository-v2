@@ -103,7 +103,7 @@ export default function TableItem({ received, user, sentStatus }) {
                 ) : sentStatus === '평가' ? (
                     <Button variant="text" sx={{ color: '#42E6B5' }}>평가하기</Button>
                 ) : sentStatus === '완료' ? (
-                    <Typography color="#666">듀오 완료</Typography>
+                    <Typography color="#666" sx={{fontSize: 13}}>듀오 완료</Typography>
                 ) : (
                     <Button variant="outlined">취소하기</Button>
                 )}
