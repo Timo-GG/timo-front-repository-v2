@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   MenuItem,
@@ -6,12 +6,24 @@ import {
   Divider,
   InputBase,
   Select,
+  IconButton,
+  Dialog,
+  DialogContent
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import title from '../assets/title.png';
 import character from '../assets/character.png';
+import MatchHistoryModal from '../components/MatchHistoryModal';
 
 export default function MainPage() {
-  const [region, setRegion] = React.useState('KR');
+  const [region, setRegion] = useState('KR');
+  const [searchText, setSearchText] = useState('');
+  const [openModal, setOpenModal] = useState(false);
+
+  const handleSearch = () => {
+    if (!searchText.trim()) return;
+    setOpenModal(true);
+  };
 
   return (
     <Box
@@ -24,7 +36,6 @@ export default function MainPage() {
         alignItems: 'center'
       }}
     >
-      {/* 타이틀 이미지 */}
       <img
         src={title}
         alt="TIMO.GG title"
@@ -36,7 +47,6 @@ export default function MainPage() {
         }}
       />
 
-      {/* 검색창 컨테이너 */}
       <Box
         sx={{
           backgroundColor: '#fff',
@@ -51,7 +61,6 @@ export default function MainPage() {
           pr: 2
         }}
       >
-        {/* 왼쪽 Select */}
         <Select
           value={region}
           onChange={(e) => setRegion(e.target.value)}
@@ -59,9 +68,9 @@ export default function MainPage() {
           disableUnderline
           sx={{
             fontWeight: 'bold',
-            color: "black",
-            alignItems: 'center', // ⬅️ 수직 가운데 정렬
-            height: '100%',       // ⬅️ 부모 Box의 높이에 맞추기
+            color: 'black',
+            alignItems: 'center',
+            height: '100%',
             minWidth: 40,
             '& .MuiSelect-icon': { color: '#000000' },
           }}
@@ -71,17 +80,23 @@ export default function MainPage() {
           <MenuItem value="EU">EU</MenuItem>
         </Select>
 
-        {/* 구분선 */}
         <Divider orientation="vertical" flexItem sx={{ mx: 2, borderColor: '#ddd' }} />
 
-        {/* 오른쪽 입력창 */}
         <InputBase
           placeholder="플레이어 이름 + #KR1로 검색"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSearch();
+          }}
           sx={{ flex: 1, color: '#333' }}
         />
+
+        <IconButton onClick={handleSearch}>
+          <SearchIcon sx={{ color: '#000' }} />
+        </IconButton>
       </Box>
 
-      {/* 캐릭터 이미지 */}
       <img
         src={character}
         alt="Timo Character"
@@ -91,6 +106,8 @@ export default function MainPage() {
           width: 'auto'
         }}
       />
+
+      <MatchHistoryModal open={openModal} onClose={() => setOpenModal(false)} />
     </Box>
   );
 }
