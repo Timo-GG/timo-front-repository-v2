@@ -5,7 +5,7 @@ import ChampionIconList from '../components/ChampionIconList';
 import PositionIcon from '../components/PositionIcon';
 import EditProfileModal from '../components/EditProfileModal';
 import RankingDetailModal from '../components/RankingDetailModal';
-
+import WinRateBar from '../components/WinRateBar';
 
 import {
   Box,
@@ -67,10 +67,10 @@ export default function RankingPage() {
             <Tab label="우리 학교" sx={{ fontSize: "1.1rem", color: tab === 1 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 1 ? 'bold' : 'normal' }} />
           </Tabs>
         </Box>
-        <Box sx={{height: '1px', backgroundColor: '#171717', width: '100%', position: 'relative'}} />
-        <Box sx={{p: 2, backgroundColor: theme.palette.background.paper}}>
+        <Box sx={{ height: '1px', backgroundColor: '#171717', width: '100%', position: 'relative' }} />
+        <Box sx={{ p: 2, backgroundColor: theme.palette.background.paper }}>
           {/* 제목 및 버튼 */}
-          <Box sx={{ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box>
               <Typography variant="h7" color="#42E6B5">
                 콜로세움 순위표
@@ -114,13 +114,13 @@ export default function RankingPage() {
               <Box width="5%" textAlign="center">순위</Box>
               <Box width="15%" textAlign="center">소환사</Box>
               <Box width="10%" textAlign="center">주 포지션</Box>
-              <Box width="10%" textAlign="center">티어</Box>
-              <Box width="15%" textAlign="center">
+              <Box width="5%" textAlign="center">티어</Box>
+              <Box width="10%" textAlign="center">
                 {tab === 0 ? '대학교' : '학과'}
               </Box>
-              <Box width="20%" textAlign="center">모스트 챔피언</Box>
+              <Box width="10%" textAlign="center">모스트 챔피언</Box>
+              <Box width="15%" textAlign="center">승률(최근 10게임)</Box>
               <Box width="20%" textAlign="center">한 줄 소개</Box>
-              <Box width="10%" textAlign="center">등록 일시</Box>
             </Box>
 
             {rankingDummy.map((row) => (
@@ -151,21 +151,23 @@ export default function RankingPage() {
                 <Box width="10%" textAlign="center">
                   <PositionIcon position={row.position} />
                 </Box>
-                <Box width="10%" textAlign="center">
+                <Box width="5%" textAlign="center">
                   <TierBadge tier={row.tier} score={row.score} />
                 </Box>
-                <Box width="15%" textAlign="center">
+                <Box width="10%" textAlign="center">
                   {tab === 0 ? row.university : row.department}
                 </Box>
-                <Box width="20%" textAlign="center">
+                <Box width="10%" textAlign="center">
                   <ChampionIconList championNames={row.champions} />
                 </Box>
+                <Box width="15%" textAlign="center">
+                  <WinRateBar wins={row.wins} losses={row.losses} />
+                </Box>
                 <Box width="20%" textAlign="center">
-                  <Box sx={{ backgroundColor: '#424254', p: 1, borderRadius: 1, color: '#fff', fontSize: '0.85rem', display: 'inline-block' }}>
+                  <Box sx={{ backgroundColor: '#424254', p: 1, mr: 3, borderRadius: 1, color: '#fff', fontSize: '0.85rem', display: 'inline-block' }}>
                     {row.message}
                   </Box>
                 </Box>
-                <Box width="10%" textAlign="center">{row.time}</Box>
               </Box>
             ))}
           </Box>

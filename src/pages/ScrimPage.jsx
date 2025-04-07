@@ -84,7 +84,7 @@ export default function ScrimPage() {
                         <Box
                             sx={{
                                 px: 3,
-                                py: 1.5,
+                                py: 1,
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 backgroundColor: '#28282F',

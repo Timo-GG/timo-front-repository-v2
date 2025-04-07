@@ -12,7 +12,9 @@ const rankingDummy = [
     "champions": ["LeeSin", "Akali", "Yasuo"],
     "message": "실력 상관 없이 구해요",
     "time": "31초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 2,
@@ -26,7 +28,9 @@ const rankingDummy = [
     "champions": ["LeeSin", "Yasuo", "Akali"],
     "message": "장기적 듀오 원해요",
     "time": "49초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 3,
@@ -40,7 +44,9 @@ const rankingDummy = [
     "champions": ["Ahri", "Ezreal", "Jinx"],
     "message": "장기적 듀오 원해요",
     "time": "28초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 4,
@@ -54,7 +60,9 @@ const rankingDummy = [
     "champions": ["LeeSin", "Ahri", "Aatrox"],
     "message": "랭크할 사람",
     "time": "13초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 5,
@@ -68,7 +76,9 @@ const rankingDummy = [
     "champions": ["Ezreal", "Akali", "Yasuo"],
     "message": "장기적 듀오 원해요",
     "time": "45초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 6,
@@ -82,7 +92,9 @@ const rankingDummy = [
     "champions": ["Thresh", "Aatrox", "Lux"],
     "message": "현 마티 2층 최소 다이아 상위듀오 구합니다",
     "time": "51초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 7,
@@ -96,7 +108,9 @@ const rankingDummy = [
     "champions": ["Jinx", "Aatrox", "Yasuo"],
     "message": "한 판만 해요",
     "time": "3초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 8,
@@ -110,7 +124,9 @@ const rankingDummy = [
     "champions": ["Akali", "Thresh", "Yasuo"],
     "message": "상위권 듀오 구함",
     "time": "19초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 9,
@@ -124,7 +140,9 @@ const rankingDummy = [
     "champions": ["LeeSin", "Ahri", "Aatrox"],
     "message": "한 판만 해요",
     "time": "40초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 10,
@@ -138,7 +156,9 @@ const rankingDummy = [
     "champions": ["LeeSin", "Akali", "Yasuo"],
     "message": "마이크 가능하신 분",
     "time": "21초 전",
-    "avatarUrl": "../src/assets/default.png"
+    "avatarUrl": "../src/assets/default.png",
+    "wins": 5,
+    "losses": 5,
   },
   {
     "rank": 11,
@@ -158,7 +178,9 @@ const rankingDummy = [
     "time": "31초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "INFJ",
-    "gender": "여자"
+    "gender": "여자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 12,
@@ -178,7 +200,9 @@ const rankingDummy = [
     "time": "49초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ISTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 13,
@@ -198,7 +222,9 @@ const rankingDummy = [
     "time": "28초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ENTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 14,
@@ -218,7 +244,9 @@ const rankingDummy = [
     "time": "13초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESFJ",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 15,
@@ -238,7 +266,9 @@ const rankingDummy = [
     "time": "45초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESFP",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 16,
@@ -258,7 +288,9 @@ const rankingDummy = [
     "time": "51초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 17,
@@ -278,7 +310,9 @@ const rankingDummy = [
     "time": "3초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "INFP",
-    "gender": "여자"
+    "gender": "여자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 18,
@@ -298,7 +332,9 @@ const rankingDummy = [
     "time": "19초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "INTJ",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 19,
@@ -318,7 +354,9 @@ const rankingDummy = [
     "time": "40초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 20,
@@ -338,7 +376,9 @@ const rankingDummy = [
     "time": "21초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ISTP",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 11,
@@ -358,7 +398,9 @@ const rankingDummy = [
     "time": "31초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "INFJ",
-    "gender": "여자"
+    "gender": "여자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 12,
@@ -378,7 +420,9 @@ const rankingDummy = [
     "time": "49초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ISTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 13,
@@ -398,7 +442,9 @@ const rankingDummy = [
     "time": "28초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ENTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 14,
@@ -418,7 +464,9 @@ const rankingDummy = [
     "time": "13초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESFJ",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 15,
@@ -438,7 +486,9 @@ const rankingDummy = [
     "time": "45초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESFP",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 16,
@@ -458,7 +508,9 @@ const rankingDummy = [
     "time": "51초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 17,
@@ -478,7 +530,9 @@ const rankingDummy = [
     "time": "3초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "INFP",
-    "gender": "여자"
+    "gender": "여자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 18,
@@ -498,7 +552,9 @@ const rankingDummy = [
     "time": "19초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "INTJ",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 19,
@@ -518,7 +574,9 @@ const rankingDummy = [
     "time": "40초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ESTP",
-    "gender": "남자"
+    "gender": "남자",
+    "wins" : 5,
+    "losses" : 5, 
   },
   {
     "rank": 20,
@@ -538,7 +596,9 @@ const rankingDummy = [
     "time": "21초 전",
     "avatarUrl": "../src/assets/default.png",
     "mbti": "ISTP",
-    "gender": "비밀"
+    "gender": "비밀",
+    "wins" : 5,
+    "losses" : 5, 
   }]
 
 export default rankingDummy;

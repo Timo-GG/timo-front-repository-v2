@@ -10,7 +10,6 @@ export default function PositionFilterBar({
     onPositionClick,
     selectedColor = '#424254',
     unselectedColor = '#2c2c3a',
-    hoverColor = '#3a3a4a',
     iconSize = 26,
     iconInvert = true
 }) {
@@ -41,9 +40,6 @@ export default function PositionFilterBar({
                                 borderBottomRightRadius: 10
                             }),
                             transition: 'background-color 0.2s',
-                            '&:hover': {
-                                backgroundColor: hoverColor
-                            }
                         }}
                     >
                         <Avatar
