@@ -10,21 +10,26 @@ import {
     useTheme,
     Select,
     MenuItem,
-    FormControl
+    FormControl,
+    Menu
 } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import TierImage from '../assets/tier.png';
 import CreateDuoModal from '../components/CreateDuoModal';
+import SummonerInfo from '../components/SummonerInfo';
+import TierBadge from '../components/TierBadge';
+import PositionIcon from '../components/PositionIcon';
 
-const getPositionImage = (position) => {
-    return `/src/assets/position/${position}.png`;
-};
+const getPositionImage = (position) => `/src/assets/position/${position}.png`;
 
+// 더미 데이터에 queueType 추가 (예: "랭크", "일반")
 const sampleUsers = [
     {
         name: '롤10년차고인물',
         tag: '#1234',
         school: '서울과기대',
         tier: 'E1',
+        queueType: '랭크',
         mainPosition: 'jungle',
         lookingForPosition: 'support',
         message: '한 멀티 최소 다이아 상위듀오 구합니다.',
@@ -35,6 +40,7 @@ const sampleUsers = [
         tag: '#9999',
         school: '고려대',
         tier: 'E2',
+        queueType: '일반',
         mainPosition: 'top',
         lookingForPosition: 'bottom',
         message: '상체/봇 듀오 구합니다!',
@@ -45,6 +51,7 @@ const sampleUsers = [
         tag: '#4567',
         school: '홍익대',
         tier: 'E3',
+        queueType: '랭크',
         mainPosition: 'support',
         lookingForPosition: 'mid',
         message: '유미/쓰레쉬 장인, 미드 듀오 찾습니다.',
@@ -55,6 +62,7 @@ const sampleUsers = [
         tag: '#1111',
         school: '성균관대',
         tier: 'E4',
+        queueType: '일반',
         mainPosition: 'nothing',
         lookingForPosition: 'top',
         message: '팀운이 너무 없어요... 탑 듀오 구합니다.',
@@ -64,10 +72,13 @@ const sampleUsers = [
 
 export default function DuoPage() {
     const theme = useTheme();
-    const [positionFilter, setPositionFilter] = useState('all');
+    const [positionFilter, setPositionFilter] = useState('nothing');
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // 현재 사용자 정보 (내 게시물일 경우 점점점 메뉴 표시)
+    const currentUser = { name: '롤10년차고인물', tag: '#1234' };
 
     const handleRegisterDuo = () => {
         setIsModalOpen(true);
@@ -79,9 +90,7 @@ export default function DuoPage() {
 
     // 필터 조건에 따른 데이터 필터링 (예시)
     const filteredUsers = sampleUsers.filter((user) => {
-        if (positionFilter !== 'all' && user.mainPosition !== positionFilter) {
-            return false;
-        }
+        if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter) return false;
         return true;
     });
 
@@ -98,18 +107,20 @@ export default function DuoPage() {
                     onRegisterDuo={handleRegisterDuo}
                 />
 
+                {/* DuoHeader: 마지막 칼럼은 메뉴용 */}
                 <DuoHeader />
+
+                {/* DuoItem: 각 행에 큐타입 추가 및 메뉴 위치 오른쪽 배치 */}
                 {filteredUsers.map((user, idx) => (
-                    <DuoItem key={idx} user={user} />
+                    <DuoItem key={idx} user={user} currentUser={currentUser} />
                 ))}
             </Container>
-            {/* CreateDuoModal 모달 컴포넌트 */}
             <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </Box>
     );
 }
 
-/** 필터 영역 */
+/** 필터 영역 – 기존 DuoPage 코드 유지 */
 function FilterBar({
     positionFilter,
     onPositionClick,
@@ -124,37 +135,32 @@ function FilterBar({
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             {/* 포지션 아이콘 그룹 */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    backgroundColor: '#2c2c3a',
-                    borderRadius: 2,
-                    px: 1,
-                    py: 0.5
-                }}
-            >
-                {positions.map((pos, index) => (
-                    <Box
-                        key={pos}
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            ...(index > 0 && {
-                                borderLeft: '1px solid #424254',
-                                ml: 1,
-                                pl: 1
-                            })
-                        }}
-                    >
-                        <IconButton
+            <Box sx={{ display: 'flex', height: 48 }}>
+                {positions.map((pos, index) => {
+                    const isSelected = positionFilter === pos;
+                    return (
+                        <Box
+                            key={pos}
                             onClick={() => onPositionClick(pos)}
                             sx={{
                                 width: 48,
                                 height: 48,
-                                backgroundColor: positionFilter === pos ? '#424254' : 'transparent',
-                                borderRadius: 1,
-                                p: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                backgroundColor: isSelected ? '#424254' : '#2c2c3a',
+                                border: '1px solid #424254',
+                                borderLeft: index > 0 ? '1px solid #424254' : 'none',
+                                ...(index === 0 && {
+                                    borderTopLeftRadius: 10,
+                                    borderBottomLeftRadius: 10
+                                }),
+                                ...(index === positions.length - 1 && {
+                                    borderTopRightRadius: 10,
+                                    borderBottomRightRadius: 10
+                                }),
+                                transition: 'background-color 0.2s',
                                 '&:hover': {
                                     backgroundColor: '#424254'
                                 }
@@ -162,13 +168,18 @@ function FilterBar({
                         >
                             <Avatar
                                 src={getPositionImage(pos)}
-                                sx={{ width: 32, height: 32, backgroundColor: 'transparent' }}
                                 variant="square"
+                                sx={{
+                                    width: 26,
+                                    height: 26,
+                                    backgroundColor: 'transparent'
+                                }}
                             />
-                        </IconButton>
-                    </Box>
-                ))}
+                        </Box>
+                    );
+                })}
             </Box>
+
 
             {/* 랭크 타입 & 소속 Select */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -177,7 +188,7 @@ function FilterBar({
                         sx={{
                             backgroundColor: '#2c2c3a',
                             color: '#fff',
-                            borderRadius: 2,
+                            borderRadius: 0.8,
                             height: 48,
                             '.MuiOutlinedInput-notchedOutline': {
                                 borderColor: '#424254'
@@ -190,13 +201,17 @@ function FilterBar({
                                 alignItems: 'center',
                                 padding: '0 32px 0 14px',
                                 height: '100%'
-                            }
+                            },
+                            '& .MuiSelect-icon': {
+                                color: '#7B7B8E',
+                            },
                         }}
                         value={rankType}
                         onChange={(e) => setRankType(e.target.value)}
                     >
                         <MenuItem value="solo">솔로랭크</MenuItem>
-                        <MenuItem value="flex">자유랭크</MenuItem>
+                        <MenuItem value="flex">일반</MenuItem>
+                        <MenuItem value="flex">칼바람</MenuItem>
                     </Select>
                 </FormControl>
 
@@ -205,7 +220,7 @@ function FilterBar({
                         sx={{
                             backgroundColor: '#2c2c3a',
                             color: '#fff',
-                            borderRadius: 2,
+                            borderRadius: 0.8,
                             height: 48,
                             '.MuiOutlinedInput-notchedOutline': {
                                 borderColor: '#424254'
@@ -218,16 +233,25 @@ function FilterBar({
                                 alignItems: 'center',
                                 padding: '0 32px 0 14px',
                                 height: '100%'
-                            }
+                            },
+                            '& .MuiSelect-icon': {
+                                color: '#7B7B8E',
+                            },
                         }}
                         value={schoolFilter}
                         onChange={(e) => setSchoolFilter(e.target.value)}
                     >
-                        <MenuItem value="all">소속 전체</MenuItem>
-                        <MenuItem value="서울과기대">서울과기대</MenuItem>
-                        <MenuItem value="고려대">고려대</MenuItem>
-                        <MenuItem value="홍익대">홍익대</MenuItem>
-                        <MenuItem value="성균관대">성균관대</MenuItem>
+                        <MenuItem value="all">모든 티어</MenuItem>
+                        <MenuItem value="서울과기대">아이언</MenuItem>
+                        <MenuItem value="고려대">브론즈</MenuItem>
+                        <MenuItem value="홍익대">실버</MenuItem>
+                        <MenuItem value="성균관대">골드</MenuItem>
+                        <MenuItem value="성균관대">플레티넘</MenuItem>
+                        <MenuItem value="성균관대">에메랄드</MenuItem>
+                        <MenuItem value="성균관대">다이아</MenuItem>
+                        <MenuItem value="성균관대">마스터</MenuItem>
+                        <MenuItem value="성균관대">그랜드마스터</MenuItem>
+                        <MenuItem value="성균관대">챌린저</MenuItem>
                     </Select>
                 </FormControl>
             </Box>
@@ -243,6 +267,7 @@ function FilterBar({
                     background: 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
                     color: '#fff',
                     fontSize: 16,
+                    borderRadius: 0.8,
                     '&:hover': {
                         background: 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)'
                     }
@@ -255,19 +280,21 @@ function FilterBar({
     );
 }
 
-/** 테이블 헤더 */
+/** 테이블 헤더 – 마지막 메뉴 칼럼 포함 (큐타입 추가) */
 function DuoHeader() {
-    const columns = [1.5, 1, 1, 1, 3, 1, 1.5];
+    // columns: [소환사, 큐타입, 주 포지션, 티어, 찾는 포지션, 한 줄 소개, 등록 일시, 듀오 신청, 메뉴]
+    const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
     const headers = [
         '소환사',
+        '큐 타입',
         '주 포지션',
         '티어',
         '찾는 포지션',
         '한 줄 소개',
         '등록 일시',
-        '듀오 신청'
+        '듀오 신청',
+        ''
     ];
-
     return (
         <Box
             sx={{
@@ -278,9 +305,9 @@ function DuoHeader() {
                 fontSize: 14,
                 fontWeight: 500,
                 color: '#999',
-                backgroundColor: '#2c2c3a',
-                borderRadius: 2,
-                mb: 1
+                backgroundColor: '#28282F',
+                borderTopLeftRadius: 10,
+                borderTopRightRadius: 10,
             }}
         >
             {headers.map((text, i) => (
@@ -292,24 +319,48 @@ function DuoHeader() {
     );
 }
 
-/** 테이블 아이템 */
-function DuoItem({ user }) {
-    const columns = [1.5, 1, 1, 1, 3, 1, 1.5];
+/** 테이블 아이템 – 큐타입, 한 줄 소개, 신청 버튼, 내 게시물일 경우 메뉴 포함 */
+function DuoItem({ user, currentUser }) {
+    // columns: [소환사, 큐타입, 주 포지션, 티어, 찾는 포지션, 한 줄 소개, 등록 일시, 듀오 신청, 메뉴]
+    const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
 
-    const handleApplyDuo = () => {
+    const handleApplyDuo = (e) => {
+        e.stopPropagation();
         alert(`${user.name} 님께 듀오를 신청했습니다!`);
     };
+
+    // 각 아이템별 메뉴 상태
+    const [anchorEl, setAnchorEl] = useState(null);
+    const handleMenuClick = (e) => {
+        e.stopPropagation();
+        setAnchorEl(e.currentTarget);
+    };
+    const handleMenuClose = () => setAnchorEl(null);
+    const handleEdit = () => {
+        handleMenuClose();
+        alert('수정 로직 실행');
+    };
+    const handleDelete = () => {
+        handleMenuClose();
+        alert('삭제 로직 실행');
+    };
+
+    // 내 게시물 여부 체크 (이름과 태그가 일치하면)
+    const isMine = user.name === currentUser.name && user.tag === currentUser.tag;
 
     return (
         <Box
             sx={{
                 display: 'flex',
                 alignItems: 'center',
-                backgroundColor: '#2c2c3a',
-                borderRadius: 2,
+                backgroundColor: '#2B2C3C',
                 px: 2,
-                py: 2,
-                mt: 1
+                py: 1,
+                borderBottom: '2px solid #12121a',
+                transition: 'background-color 0.2s',
+                '&:hover': {
+                    backgroundColor: '#2E2E38',
+                },
             }}
         >
             {/* 소환사 */}
@@ -319,83 +370,108 @@ function DuoItem({ user }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'flex-start',
-                    gap: 1
+                    gap: 1,
                 }}
             >
-                <Avatar alt="소환사" src="/src/assets/icon.png" sx={{ width: 40, height: 40 }} />
-                <Box textAlign="left">
-                    <Typography color="#fff" fontWeight="bold" noWrap>
-                        {user.name}
-                    </Typography>
-                    <Typography color="#888" fontSize={12} noWrap>
-                        {user.tag} | {user.school}
-                    </Typography>
-                </Box>
+                <SummonerInfo name="롤10년차고인물" tag="1234 | 서울과기대" avatarUrl="avatar" />
+            </Box>
+
+            {/* 큐 타입 */}
+            <Box
+                sx={{
+                    flex: columns[1],
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
+            >
+                <Typography color="#fff" fontSize={14}>
+                    {user.queueType}
+                </Typography>
             </Box>
 
             {/* 주 포지션 */}
-            <Box sx={{ flex: columns[1], display: 'flex', justifyContent: 'center' }}>
-                <Avatar src={getPositionImage(user.mainPosition)} sx={{ width: 36, height: 36 }} />
+            <Box sx={{ flex: columns[2], display: 'flex', justifyContent: 'center' }}>
+                <PositionIcon position='top' />
             </Box>
 
             {/* 티어 */}
             <Box
                 sx={{
-                    flex: columns[2],
+                    flex: columns[3],
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: 0.5
+                    gap: 0.5,
                 }}
             >
-                <Avatar src={TierImage} sx={{ width: 28, height: 28 }} />
-                <Typography color="#42E6B5" fontWeight="bold">
-                    {user.tier}
-                </Typography>
+                <TierBadge tier="emerald" score="1" />
             </Box>
 
             {/* 찾는 포지션 */}
-            <Box sx={{ flex: columns[3], display: 'flex', justifyContent: 'center' }}>
-                <Avatar src={getPositionImage(user.lookingForPosition)} sx={{ width: 36, height: 36 }} />
+            <Box sx={{ flex: columns[4], display: 'flex', justifyContent: 'center' }}>
+                <PositionIcon position='jungle' />
             </Box>
 
-            {/* 한줄소개 */}
-            <Box sx={{ flex: columns[4], textAlign: 'center' }}>
-                <Typography
+            {/* 한 줄 소개 – 스크림페이지 스타일 적용 */}
+            <Box sx={{ flex: columns[5], textAlign: 'center' }}>
+                <Box
                     sx={{
-                        backgroundColor: '#3b3c4f',
+                        backgroundColor: '#424254',
+                        p: 1,
                         borderRadius: 1,
-                        px: 2,
-                        py: 1,
-                        color: '#fff',
-                        fontSize: 14
+                        fontSize: '0.85rem',
+                        display: 'inline-block',
                     }}
                 >
                     {user.message}
-                </Typography>
+                </Box>
             </Box>
 
             {/* 등록 일시 */}
-            <Box sx={{ flex: columns[5], textAlign: 'center' }}>
-                <Typography color="#aaa">{user.createdAt}</Typography>
+            <Box sx={{ flex: columns[6], textAlign: 'center' }}>
+                <Typography color="#aaa" sx={{ fontSize: 14 }}>{user.createdAt}</Typography>
             </Box>
 
-            {/* 듀오 신청 버튼 */}
-            <Box sx={{ flex: columns[6], display: 'flex', gap: 1, justifyContent: 'center' }}>
+            {/* 듀오 신청 버튼 – 스크림페이지 스타일 적용 */}
+            <Box sx={{ flex: columns[7], display: 'flex', justifyContent: 'center' }}>
                 <Button
                     variant="contained"
                     sx={{
-                        fontWeight: 'bold',
                         backgroundColor: '#424254',
-                        color: '#FFFFFF',
-                        '&:hover': {
-                            backgroundColor: '#56566c'
-                        }
+                        color: '#fff',
+                        borderRadius: 0.8,
+                        fontWeight: 'bold',
+                        px: 2,
+                        py: 1,
+                        border: '1px solid #71717D',
                     }}
                     onClick={handleApplyDuo}
                 >
                     신청
                 </Button>
+            </Box>
+
+            {/* 내 게시물인 경우 오른쪽에 점점점 메뉴 추가 */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end', // 오른쪽 정렬
+                    flex: columns[8],
+                    minWidth: 40, // 최소 너비 확보
+                }}
+            >
+                {isMine && (
+                    <>
+                        <IconButton onClick={handleMenuClick}>
+                            <MoreVertIcon sx={{ color: '#aaa' }} />
+                        </IconButton>
+                        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                            <MenuItem onClick={handleEdit}>수정</MenuItem>
+                            <MenuItem onClick={handleDelete}>삭제</MenuItem>
+                        </Menu>
+                    </>
+                )}
             </Box>
         </Box>
     );

@@ -129,7 +129,7 @@ export default function RankingPage() {
                 onClick={() => handleRowClick(row)} // 모달 열기 등
                 sx={{
                   px: 0,
-                  py: 2,
+                  py: 1,
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
