@@ -5,6 +5,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import SummonerInfo from '../components/SummonerInfo';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import PositionFilterBar from '../components/PositionFilterBar';
+import PositionIcon from '../components/PositionIcon';
 
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 
@@ -61,37 +63,15 @@ export default function EditProfileModal({ open, handleClose }) {
                             fontSize: '0.8rem',
                         }}>주 포지션</Typography>
                         <Box display="flex" gap={1} mb={2}>
-                            {POSITION_LIST.map((pos) => {
-                                const isSelected = position === pos;
-                                return (
-                                    <Box
-                                        key={pos}
-                                        onClick={() => setPosition(pos)}
-                                        sx={{
-                                            borderRadius: 1,
-                                            p: 0.8,
-                                            width: 40,
-                                            height: 40,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            bgcolor: isSelected ? '#42E6B5' : '#31313D',
-                                            transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        <img
-                                            src={`../src/assets/position/${pos}.png`}
-                                            alt={pos}
-                                            style={{
-                                                width: 26,
-                                                height: 26,
-                                                filter: isSelected ? 'brightness(0) invert(1)' : 'brightness(1)',
-                                            }}
-                                        />
-                                    </Box>
-                                );
-                            })}
+                            <PositionFilterBar
+                                positionFilter={position}
+                                onPositionClick={setPosition}
+                                selectedColor="#42E6B5"
+                                unselectedColor="#31313D"
+                                hoverColor="#42E6B5"
+                                iconSize={26}
+                                iconInvert={true}
+                            />
                         </Box>
 
                         <Typography mb={0.5} color="#aaa" sx={{
