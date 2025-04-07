@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Tabs, Tab, Typography, Button } from '@mui/material';
+import { Box, Tabs, Tab } from '@mui/material';
 
 export default function TabHeader({
     tab,
@@ -8,7 +8,6 @@ export default function TabHeader({
     secondLabel = '받은 요청',
     thirdLabel = '채팅',
 }) {
-
     return (
         <>
             <Box
@@ -17,8 +16,8 @@ export default function TabHeader({
                     borderTopLeftRadius: 10,
                     borderTopRightRadius: 10,
                     borderBottomLeftRadius: 0,
-                    borderBottomRightRadius: 0, 
-                    p:1
+                    borderBottomRightRadius: 0,
+                    p: 1
                 }}
             >
                 <Tabs
@@ -31,7 +30,7 @@ export default function TabHeader({
                         label={firstLabel}
                         sx={{
                             fontSize: "1.1rem",
-                            color: tab === 0 ? '#ffffff' : '#B7B7C9',
+                            color: tab === 0 ? '#ffffff' : '#7F7F91',
                             fontWeight: tab === 0 ? 'bold' : 'normal',
                         }}
                     />
@@ -39,7 +38,7 @@ export default function TabHeader({
                         label={secondLabel}
                         sx={{
                             fontSize: "1.1rem",
-                            color: tab === 1 ? '#ffffff' : '#B7B7C9',
+                            color: tab === 1 ? '#ffffff' : '#7F7F91',
                             fontWeight: tab === 1 ? 'bold' : 'normal',
                         }}
                     />
@@ -47,8 +46,8 @@ export default function TabHeader({
                         label={thirdLabel}
                         sx={{
                             fontSize: "1.1rem",
-                            color: tab === 1 ? '#ffffff' : '#B7B7C9',
-                            fontWeight: tab === 1 ? 'bold' : 'normal',
+                            color: tab === 2 ? '#ffffff' : '#7F7F91',
+                            fontWeight: tab === 2 ? 'bold' : 'normal',
                         }}
                     />
                 </Tabs>
