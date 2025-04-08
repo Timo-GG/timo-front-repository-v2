@@ -5,6 +5,7 @@ import WinRateBar from './WinRateBar';
 import SummonerInfo from './SummonerInfo';
 import TierBadge from './TierBadge';
 import ChampionIconList from './ChampionIconList';
+import TruncatedMessageBox from './TruncatedMessageBox';
 export default function TableItem({ received, user, sentStatus }) {
     const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];
 
@@ -36,30 +37,9 @@ export default function TableItem({ received, user, sentStatus }) {
             <Box sx={{
                 flex: columns[4],
             }}>
-                <Box
-                    sx={{
-                        backgroundColor: '#424254',
-                        p: 1,
-                        borderRadius: 1,
-                        color: '#fff',
-                        fontSize: '0.85rem',
-                        maxWidth: 180,
-                        lineHeight: 1.4,
-                        textAlign: 'left',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        wordWrap: 'break-word',
-                        wordBreak: 'break-all',
-                        whiteSpace: 'normal',
-                        maxHeight: '3.6em',
-                    }}
-                >
-                    {user.message}
-                </Box>
-
+                <TruncatedMessageBox
+                    message={user.message}
+                />
             </Box>
             <Box sx={{ flex: columns[5], textAlign: 'center' }}>
                 <Typography color="#aaa" sx={{ fontSize: 12 }}>{user.type}</Typography>
@@ -103,7 +83,7 @@ export default function TableItem({ received, user, sentStatus }) {
                 ) : sentStatus === '평가' ? (
                     <Button variant="text" sx={{ color: '#42E6B5' }}>평가하기</Button>
                 ) : sentStatus === '완료' ? (
-                    <Typography color="#666" sx={{fontSize: 13}}>듀오 완료</Typography>
+                    <Typography color="#666" sx={{ fontSize: 13 }}>듀오 완료</Typography>
                 ) : (
                     <Button variant="outlined">취소하기</Button>
                 )}

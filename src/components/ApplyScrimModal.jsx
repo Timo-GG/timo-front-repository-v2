@@ -41,7 +41,7 @@ const dummyPartyMembers = [
     {}
 ];
 
-export default function CreateScrimModal({ open, handleClose }) {
+export default function ApplyScrimModal({ open, handleClose }) {
     const [memo, setMemo] = useState('');
     const [map, setMap] = useState('소환사 협곡');
     const [people, setPeople] = useState('5:5');
@@ -84,7 +84,7 @@ export default function CreateScrimModal({ open, handleClose }) {
             <Box sx={{ backgroundColor: '#31313E', pl: 3, pr: 3, pt: 2, pb: 1 }}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography fontSize="1.1rem" fontWeight="bold" color="#fff">파티 생성하기</Typography>
+                    <Typography fontSize="1.1rem" fontWeight="bold" color="#fff">내전 신청하기</Typography>
                     <IconButton onClick={handleClose}><CloseIcon sx={{ color: '#aaa' }} /></IconButton>
                 </Box>
             </Box>
@@ -134,57 +134,6 @@ export default function CreateScrimModal({ open, handleClose }) {
 
                         />
                     </Box>
-
-                    <Select value={map} onChange={e => setMap(e.target.value)} sx={{
-                        minWidth: 120,
-                        bgcolor: '#31313D', color: '#fff',
-                        '.MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#424254'
-                        },
-                        '& .MuiSelect-icon': {
-                            color: '#7B7B8E',
-                        },
-                    }}>
-                        <MenuItem value="소환사 협곡">소환사 협곡</MenuItem>
-                        <MenuItem value="칼바람 나락">칼바람 나락</MenuItem>
-                    </Select>
-                    <Select value={people} onChange={e => setPeople(e.target.value)} sx={{
-                        minWidth: 80,
-                        bgcolor: '#31313D',
-                        color: '#fff',
-                        '.MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#424254'
-                        },
-                        '& .MuiSelect-icon': {
-                            color: '#7B7B8E',
-                        },
-                    }}>
-                        <MenuItem value="5:5">5:5</MenuItem>
-                        <MenuItem value="3:3">3:3</MenuItem>
-                    </Select>
-                    <Select
-                        value={department}
-                        onChange={e => setDepartment(e.target.value)}
-                        displayEmpty
-                        renderValue={
-                            department !== '' ? undefined : () => <span style={{ color: '#7B7B8E' }}>학과를 선택해주세요</span>
-                        }
-                        sx={{
-                            minWidth: 150,
-                            bgcolor: '#31313D',
-                            color: '#fff',
-                            '.MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#424254'
-                            },
-                            '& .MuiSelect-icon': {
-                                color: '#7B7B8E',
-                            },
-                        }}
-                    >
-                        <MenuItem value="컴퓨터공학과">컴퓨터공학과</MenuItem>
-                        <MenuItem value="전자공학과">전자공학과</MenuItem>
-                        <MenuItem value="기계공학과">기계공학과</MenuItem>
-                    </Select>
 
 
                 </Box>
@@ -262,7 +211,7 @@ export default function CreateScrimModal({ open, handleClose }) {
 
                         {/* 티어 */}
                         <Box width="10%" textAlign="center">
-                            {member.tier ? <TierBadge tier={member.tier} score={member.score} /> : <TierBadge tier='unrank'/>}
+                            {member.tier ? <TierBadge tier={member.tier} score={member.score} /> : <TierBadge tier='unrank' />}
                         </Box>
 
                         {/* 모스트 챔피언 */}

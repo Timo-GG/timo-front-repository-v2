@@ -18,7 +18,10 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SummonerInfo from '../components/SummonerInfo';
 import TierBadge from '../components/TierBadge';
 import CreateScrimModal from '../components/CreateScrimModal';
+import ApplyScrimModal from '../components/ApplyScrimModal';
+import ScrimDetailModal from '../components/ScrimDetailModal';
 import scrimDummy from '../data/scrimDummy';
+import scrimMembersDummy from '../data/scrimMembersDummy';
 import { useTheme } from '@mui/material/styles';
 const ChampionIconList = ({ championNames }) => (
     <Box display="flex" gap={0.5}>
@@ -60,12 +63,15 @@ export default function ScrimPage() {
     const theme = useTheme();
     const [tab, setTab] = useState(0);
     const [open, setOpen] = useState(false);
+    const [applyOpen, setApplyOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const handleTabChange = (e, newValue) => setTab(newValue);
     const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
     const handleClose = () => setAnchorEl(null);
     const handleEdit = () => { handleClose(); };
     const handleDelete = () => { handleClose(); };
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [selectedPartyId, setSelectedPartyId] = useState(null);
 
     const currentUser = { name: '롤10년차고인물', tag: '1234' };
     const [members, setMembers] = useState(Array(5).fill(defaultMember));
@@ -157,7 +163,12 @@ export default function ScrimPage() {
                         {scrimDummy.map((row) => {
                             const isMine = row.name === currentUser.name && row.tag === currentUser.tag;
                             return (
-                                <Box key={row.id} sx={{ px: 3, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.palette.background.paper, color: '#fff', fontSize: 14, borderBottom: '2px solid #12121a', cursor: 'pointer', transition: 'background-color 0.2s', '&:hover': { backgroundColor: '#2E2E38' } }}>
+                                <Box key={row.id}
+                                    onClick={() => {
+                                        setSelectedPartyId(row.id);
+                                        setDetailOpen(true);
+                                    }}
+                                    sx={{ px: 3, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.palette.background.paper, color: '#fff', fontSize: 14, borderBottom: '2px solid #12121a', cursor: 'pointer', transition: 'background-color 0.2s', '&:hover': { backgroundColor: '#2E2E38' } }}>
                                     <Box width="15%" display="flex">
                                         <SummonerInfo name={row.name} tag={row.tag} avatarUrl={row.avatarUrl} />
                                     </Box>
@@ -165,10 +176,29 @@ export default function ScrimPage() {
                                     <Box width="10%" textAlign="center">{row.peopleCount}</Box>
                                     <Box width="10%" textAlign="center"><TierBadge tier={row.avgTier} score={row.avgScore} /></Box>
                                     <Box width="10%" textAlign="center">{tab === 0 ? row.university : row.department}</Box>
-                                    <Box width="20%" textAlign="center"><Box sx={{ backgroundColor: '#424254', p: 1, borderRadius: 1, fontSize: '0.85rem', display: 'inline-block' }}>{row.message}</Box></Box>
-                                    <Box width="10%" textAlign="center">{row.time}</Box>
+                                    <Box width="20%" textAlign="center"><Box sx={{
+                                        backgroundColor: '#424254',
+                                        p: 1,
+                                        borderRadius: 1,
+                                        color: '#fff',
+                                        fontSize: '0.85rem',
+                                        lineHeight: 1.4,
+                                        textAlign: 'left',
+                                        display: '-webkit-inline-box',
+                                        WebkitBoxOrient: 'vertical',
+                                        WebkitLineClamp: 2,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'normal',
+                                        maxHeight: '3.6em',
+                                    }}>
+                                        {row.message}</Box></Box>
+                                    < Box width="10%" textAlign="center">{row.time}</Box>
                                     <Box width="10%" textAlign="center">
-                                        <Button sx={{ backgroundColor: '#424254', color: '#fff', borderRadius: 0.8, fontWeight: 'bold', px: 2, py: 1, border: '1px solid #71717D' }} onClick={() => setOpen(true)}>신청</Button>
+                                        <Button sx={{ backgroundColor: '#424254', color: '#fff', borderRadius: 0.8, fontWeight: 'bold', px: 2, py: 1, border: '1px solid #71717D' }} onClick={(e) => {
+                                            e.stopPropagation(); 
+                                            setApplyOpen(true);  
+                                        }}>신청</Button>
                                     </Box>
                                     <Box width="2%" textAlign="center">
                                         {isMine && (
@@ -188,6 +218,12 @@ export default function ScrimPage() {
                 </Box>
             </Container>
             <CreateScrimModal open={open} handleClose={() => setOpen(false)} />
+            <ApplyScrimModal open={applyOpen} handleClose={() => setApplyOpen(false)} />
+            <ScrimDetailModal
+                open={detailOpen}
+                handleClose={() => setDetailOpen(false)}
+                partyId={selectedPartyId}
+            />
         </Box>
     );
 }
