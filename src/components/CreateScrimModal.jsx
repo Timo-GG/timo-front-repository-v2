@@ -191,7 +191,8 @@ export default function CreateScrimModal({ open, handleClose }) {
 
                 {/* 테이블 헤더 */}
                 {/* 헤더 */}
-                <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem">
+                <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem"
+                sx={{backgroundColor: "#28282F"}}>
                     <Box width="25%">소환사 이름</Box>
                     <Box width="10%" textAlign="center">티어</Box>
                     <Box width="20%" textAlign="center">모스트 챔피언</Box>

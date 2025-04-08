@@ -11,7 +11,6 @@ import PositionIcon from './PositionIcon';
 import scrimMembersDummy from '../data/scrimMembersDummy';
 import SummonerInfo from './SummonerInfo';
 import scrimDummy from '../data/scrimDummy'; // 이미 import 했다면 생략
-
 export default function ScrimDetailModal({ open, handleClose, partyId }) {
     const members = scrimMembersDummy[partyId] || [];
     const handleSubmit = () => {
@@ -73,7 +72,10 @@ export default function ScrimDetailModal({ open, handleClose, partyId }) {
                         {scrimDummy.find(item => item.id === partyId)?.message || ''}
                     </Box>
                 </Box>
-                <Box display="flex" alignItems="center" px={1.5} py={0.5} color="#888" fontSize="0.85rem">
+                <Box display="flex" alignItems="center" px={1.5} py={0.5} color="#888" fontSize="0.85rem"
+                    sx={{
+                        backgroundColor: "#282830",
+                    }}>
                     <Box width="30%">소환사 이름</Box>
                     <Box width="15%" textAlign="center">티어</Box>
                     <Box width="40%" textAlign="center">모스트 챔피언</Box>
