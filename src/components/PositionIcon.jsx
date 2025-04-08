@@ -9,13 +9,13 @@ import support from '../assets/position/support.png';
 import nothing from '../assets/position/nothing.png';
 
 const positionIcons = {
-    top,
-    jungle,
-    mid,
-    bottom,
-    support,
-    none: nothing,
-  };
+  top,
+  jungle,
+  mid,
+  bottom,
+  support,
+  none: nothing,
+};
 
 export default function PositionIcon({ position = 'none' }) {
   const iconSrc = positionIcons[position] || positionIcons['none'];
@@ -25,7 +25,7 @@ export default function PositionIcon({ position = 'none' }) {
       <img
         src={iconSrc}
         alt={position}
-        style={{ width: 36, height: 36 }}
+        style={{ width: 26, height: 26 }}
       />
     </Box>
   );
