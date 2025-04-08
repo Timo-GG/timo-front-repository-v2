@@ -18,7 +18,50 @@ export default function MySettingPage() {
   const [showVerificationInput, setShowVerificationInput] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
 
+  // 추가된 상태
+  const [emailError, setEmailError] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+
   const isSchoolRegistered = school !== "" && schoolEmail !== "";
+
+  // 단순히 이메일 입력값 업데이트 + 에러, 성공 메시지 초기화
+  const handleSchoolEmailChange = (e) => {
+    setSchoolEmail(e.target.value);
+    setEmailError("");
+    setEmailSent(false);
+  };
+
+  // 등록 버튼 클릭 시 이메일 유효성 검사 후 처리
+  const handleEmailRegister = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(schoolEmail)) {
+      setEmailError("올바르지 않은 이메일 입니다.");
+      return;
+    }
+    // 이메일이 올바르다면
+    setEmailError("");
+    setEmailSent(true);
+    setShowVerificationInput(true);
+  };
+
+  // 인증 코드 확인 버튼 클릭 시 유효성 검사
+  const handleVerificationConfirm = () => {
+    // 예시로 올바른 인증 코드를 "123456"으로 가정합니다.
+    if (verificationCode !== "123456") {
+      setVerificationError("일치하지 않은 인증코드입니다.");
+      return;
+    }
+    // 인증 성공 시 기존 상태 복구
+    setSchool("서울과기대");
+    setSchoolEmail("menten4859@seoultech.ac.kr");
+    setVerificationCode("");
+    setVerificationError("");
+    setShowVerificationInput(false);
+    setShowVerificationBtn(false);
+    setIsSchoolEmailDisabled(true);
+    setEmailSent(false);
+  };
 
   return (
     <Box
@@ -163,11 +206,13 @@ export default function MySettingPage() {
               {isSchoolRegistered && (
                 <Button
                   onClick={() => {
+                    // 학교, 이메일 초기화 및 입력 가능하도록 변경
                     setSchool("");
                     setSchoolEmail("");
                     setIsSchoolEmailDisabled(false);
                     setShowVerificationBtn(true);
                     setShowVerificationInput(false);
+                    setEmailSent(false);
                   }}
                   sx={{
                     height: '100%',
@@ -178,7 +223,6 @@ export default function MySettingPage() {
                     borderLeft: 'none',
                     px: 3,
                     minWidth: '80px',
-                    
                   }}
                 >
                   해제
@@ -187,61 +231,75 @@ export default function MySettingPage() {
             </Box>
           </Box>
 
-          {/* 학교 이메일 + 인증 버튼 */}
+          {/* 학교 이메일 + 등록 버튼 */}
           <Box>
             <Typography color="text.secondary" sx={{ mb: 1 }}>학교 이메일</Typography>
-            <Box sx={{ display: 'flex', height: '56px' }}>
-              <TextField
-                fullWidth
-                disabled={isSchoolEmailDisabled}
-                value={schoolEmail}
-                onChange={(e) => setSchoolEmail(e.target.value)}
-                variant="outlined"
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: theme.palette.text.disabled,
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    height: '100%',
-                    border: `1px solid ${theme.palette.border.main}`,
-                    borderRadius: showVerificationBtn ? '12px 0 0 12px' : '12px',
-                    backgroundColor: isSchoolEmailDisabled
-                      ? theme.palette.background.inputDisabled
-                      : theme.palette.background.input,
-                  },
-                }}
-              />
-              {showVerificationBtn && (
-                <Button
-                  onClick={() => setShowVerificationInput(true)}
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', height: '56px' }}>
+                <TextField
+                  fullWidth
+                  disabled={isSchoolEmailDisabled}
+                  value={schoolEmail}
+                  onChange={handleSchoolEmailChange}
+                  variant="outlined"
+                  error={!isSchoolEmailDisabled && Boolean(emailError)}
+                  helperText={!isSchoolEmailDisabled ? emailError : ""}
                   sx={{
-                    height: '100%',
-                    borderRadius: '0 12px 12px 0',
-                    backgroundColor: theme.palette.background.input,
-                    color: theme.palette.text.secondary,
-                    border: `1px solid ${theme.palette.border.main}`,
-                    borderLeft: 'none',
-                    px: 3,
-                    minWidth: '80px'
+                    "& .MuiInputBase-input.Mui-disabled": {
+                      WebkitTextFillColor: theme.palette.text.disabled,
+                    },
+                    '& .MuiOutlinedInput-root': {
+                      height: '100%',
+                      border: `1px solid ${theme.palette.border.main}`,
+                      borderRadius: showVerificationBtn ? '12px 0 0 12px' : '12px',
+                      backgroundColor: isSchoolEmailDisabled
+                        ? theme.palette.background.inputDisabled
+                        : theme.palette.background.input,
+                    },
                   }}
-                >
-                  인증
-                </Button>
+                />
+                {showVerificationBtn && (
+                  <Button
+                    onClick={handleEmailRegister}
+                    sx={{
+                      height: '100%',
+                      borderRadius: '0 12px 12px 0',
+                      backgroundColor: theme.palette.background.input,
+                      color: theme.palette.text.secondary,
+                      border: `1px solid ${theme.palette.border.main}`,
+                      borderLeft: 'none',
+                      px: 3,
+                      minWidth: '80px'
+                    }}
+                  >
+                    등록
+                  </Button>
+                )}
+              </Box>
+              {emailSent && (
+                <Typography variant="caption" sx={{ color: theme.palette.info.main, mt: 1 }}>
+                  인증코드를 전송하였습니다.
+                </Typography>
               )}
             </Box>
           </Box>
 
           {/* 인증 코드 입력 + 확인 버튼 */}
           {showVerificationInput && (
-            <Box sx={{ mt: 2 }}>
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column' }}>
               <Typography color="text.secondary" sx={{ mb: 1 }}>인증 코드</Typography>
               <Box sx={{ display: 'flex', height: '56px' }}>
                 <TextField
                   fullWidth
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
+                  onChange={(e) => {
+                    setVerificationCode(e.target.value);
+                    setVerificationError("");
+                  }}
                   variant="outlined"
                   placeholder="인증 코드를 입력하세요"
+                  error={Boolean(verificationError)}
+                  helperText={verificationError}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       height: '100%',
@@ -254,15 +312,7 @@ export default function MySettingPage() {
                   }}
                 />
                 <Button
-                  onClick={() => {
-                    // TODO: 실제 인증 처리
-                    setSchool("서울과기대");
-                    setSchoolEmail("menten4859@seoultech.ac.kr");
-                    setVerificationCode("");
-                    setShowVerificationInput(false);
-                    setShowVerificationBtn(false);
-                    setIsSchoolEmailDisabled(true);
-                  }}
+                  onClick={handleVerificationConfirm}
                   sx={{
                     height: '100%',
                     borderRadius: '0 12px 12px 0',

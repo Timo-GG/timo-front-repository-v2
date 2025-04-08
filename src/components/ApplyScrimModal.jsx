@@ -140,7 +140,8 @@ export default function ApplyScrimModal({ open, handleClose }) {
 
                 {/* 테이블 헤더 */}
                 {/* 헤더 */}
-                <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem">
+                <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem"
+                    sx={{ backgroundColor: "#28282F" }}>
                     <Box width="25%">소환사 이름</Box>
                     <Box width="10%" textAlign="center">티어</Box>
                     <Box width="20%" textAlign="center">모스트 챔피언</Box>
@@ -258,7 +259,7 @@ export default function ApplyScrimModal({ open, handleClose }) {
                         취소
                     </Button>
                     <Button fullWidth sx={{ bgcolor: '#42E6B5', color: '#000', height: 48, fontWeight: 'bold' }}>
-                        <Typography fontWeight="bold" color="white">등록</Typography>
+                        <Typography fontWeight="bold" color="white">신청</Typography>
                     </Button>
                 </Box>
             </Box>
