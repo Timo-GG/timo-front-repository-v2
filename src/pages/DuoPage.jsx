@@ -31,7 +31,7 @@ const sampleUsers = [
         queueType: '랭크',
         mainPosition: 'jungle',
         lookingForPosition: 'support',
-        message: '한 멀티 최소 다이아 상위듀오 구합니다.',
+        message: '정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!',
         createdAt: '38초 전'
     },
     {
@@ -132,7 +132,7 @@ function FilterBar({
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             {/* 포지션 아이콘 그룹 */}
-            
+
             <PositionFilterBar
                 positionFilter={positionFilter}
                 onPositionClick={onPositionClick}
@@ -378,9 +378,20 @@ function DuoItem({ user, currentUser }) {
                         backgroundColor: '#424254',
                         p: 1,
                         borderRadius: 1,
+                        color: '#fff',
                         fontSize: '0.85rem',
-                        display: 'inline-block',
+                        lineHeight: 1.4,
+                        textAlign: 'left',
+                        display: '-webkit-inline-box',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: 2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'normal',
+                        // ✨ maxHeight 명시적으로 지정 (줄 수 * lineHeight)
+                        maxHeight: '3.6em', // 1.4 * 2줄
                     }}
+
                 >
                     {user.message}
                 </Box>

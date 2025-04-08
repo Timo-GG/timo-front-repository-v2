@@ -130,6 +130,7 @@ export default function RankingPage() {
                 sx={{
                   px: 0,
                   py: 1,
+                  pr: 1,
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -164,7 +165,22 @@ export default function RankingPage() {
                   <WinRateBar wins={row.wins} losses={row.losses} />
                 </Box>
                 <Box width="20%" textAlign="center">
-                  <Box sx={{ backgroundColor: '#424254', p: 1, mr: 3, borderRadius: 1, color: '#fff', fontSize: '0.85rem', display: 'inline-block' }}>
+                  <Box sx={{
+                    backgroundColor: '#424254',
+                    p: 1,
+                    borderRadius: 1,
+                    color: '#fff',
+                    fontSize: '0.85rem',
+                    lineHeight: 1.4,
+                    textAlign: 'left',
+                    display: '-webkit-inline-box',
+                    WebkitBoxOrient: 'vertical',
+                    WebkitLineClamp: 2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'normal',
+                    maxHeight: '3.6em',
+                  }}>
                     {row.message}
                   </Box>
                 </Box>

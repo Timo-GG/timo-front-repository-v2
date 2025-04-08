@@ -18,6 +18,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SummonerInfo from '../components/SummonerInfo';
 import TierBadge from '../components/TierBadge';
 import CreateScrimModal from '../components/CreateScrimModal';
+import ApplyScrimModal from '../components/ApplyScrimModal';
 import scrimDummy from '../data/scrimDummy';
 import { useTheme } from '@mui/material/styles';
 const ChampionIconList = ({ championNames }) => (
@@ -60,6 +61,7 @@ export default function ScrimPage() {
     const theme = useTheme();
     const [tab, setTab] = useState(0);
     const [open, setOpen] = useState(false);
+    const [applyOpen, setApplyOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const handleTabChange = (e, newValue) => setTab(newValue);
     const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
@@ -165,10 +167,26 @@ export default function ScrimPage() {
                                     <Box width="10%" textAlign="center">{row.peopleCount}</Box>
                                     <Box width="10%" textAlign="center"><TierBadge tier={row.avgTier} score={row.avgScore} /></Box>
                                     <Box width="10%" textAlign="center">{tab === 0 ? row.university : row.department}</Box>
-                                    <Box width="20%" textAlign="center"><Box sx={{ backgroundColor: '#424254', p: 1, borderRadius: 1, fontSize: '0.85rem', display: 'inline-block' }}>{row.message}</Box></Box>
-                                    <Box width="10%" textAlign="center">{row.time}</Box>
+                                    <Box width="20%" textAlign="center"><Box sx={{
+                                        backgroundColor: '#424254',
+                                        p: 1,
+                                        borderRadius: 1,
+                                        color: '#fff',
+                                        fontSize: '0.85rem',
+                                        lineHeight: 1.4,
+                                        textAlign: 'left',
+                                        display: '-webkit-inline-box',
+                                        WebkitBoxOrient: 'vertical',
+                                        WebkitLineClamp: 2,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'normal',
+                                        maxHeight: '3.6em',
+                                    }}>
+                                        {row.message}</Box></Box>
+                                    < Box width="10%" textAlign="center">{row.time}</Box>
                                     <Box width="10%" textAlign="center">
-                                        <Button sx={{ backgroundColor: '#424254', color: '#fff', borderRadius: 0.8, fontWeight: 'bold', px: 2, py: 1, border: '1px solid #71717D' }} onClick={() => setOpen(true)}>신청</Button>
+                                        <Button sx={{ backgroundColor: '#424254', color: '#fff', borderRadius: 0.8, fontWeight: 'bold', px: 2, py: 1, border: '1px solid #71717D' }} onClick={() => setApplyOpen(true)}>신청</Button>
                                     </Box>
                                     <Box width="2%" textAlign="center">
                                         {isMine && (
@@ -188,6 +206,7 @@ export default function ScrimPage() {
                 </Box>
             </Container>
             <CreateScrimModal open={open} handleClose={() => setOpen(false)} />
+            <ApplyScrimModal open={applyOpen} handleClose={() => setApplyOpen(false)} />
         </Box>
     );
 }
