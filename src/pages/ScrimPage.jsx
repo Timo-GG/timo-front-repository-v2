@@ -19,7 +19,9 @@ import SummonerInfo from '../components/SummonerInfo';
 import TierBadge from '../components/TierBadge';
 import CreateScrimModal from '../components/CreateScrimModal';
 import ApplyScrimModal from '../components/ApplyScrimModal';
+import ScrimDetailModal from '../components/ScrimDetailModal';
 import scrimDummy from '../data/scrimDummy';
+import scrimMembersDummy from '../data/scrimMembersDummy';
 import { useTheme } from '@mui/material/styles';
 const ChampionIconList = ({ championNames }) => (
     <Box display="flex" gap={0.5}>
@@ -68,6 +70,8 @@ export default function ScrimPage() {
     const handleClose = () => setAnchorEl(null);
     const handleEdit = () => { handleClose(); };
     const handleDelete = () => { handleClose(); };
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [selectedPartyId, setSelectedPartyId] = useState(null);
 
     const currentUser = { name: '롤10년차고인물', tag: '1234' };
     const [members, setMembers] = useState(Array(5).fill(defaultMember));
@@ -159,7 +163,12 @@ export default function ScrimPage() {
                         {scrimDummy.map((row) => {
                             const isMine = row.name === currentUser.name && row.tag === currentUser.tag;
                             return (
-                                <Box key={row.id} sx={{ px: 3, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.palette.background.paper, color: '#fff', fontSize: 14, borderBottom: '2px solid #12121a', cursor: 'pointer', transition: 'background-color 0.2s', '&:hover': { backgroundColor: '#2E2E38' } }}>
+                                <Box key={row.id}
+                                    onClick={() => {
+                                        setSelectedPartyId(row.id);
+                                        setDetailOpen(true);
+                                    }}
+                                    sx={{ px: 3, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.palette.background.paper, color: '#fff', fontSize: 14, borderBottom: '2px solid #12121a', cursor: 'pointer', transition: 'background-color 0.2s', '&:hover': { backgroundColor: '#2E2E38' } }}>
                                     <Box width="15%" display="flex">
                                         <SummonerInfo name={row.name} tag={row.tag} avatarUrl={row.avatarUrl} />
                                     </Box>
@@ -186,7 +195,10 @@ export default function ScrimPage() {
                                         {row.message}</Box></Box>
                                     < Box width="10%" textAlign="center">{row.time}</Box>
                                     <Box width="10%" textAlign="center">
-                                        <Button sx={{ backgroundColor: '#424254', color: '#fff', borderRadius: 0.8, fontWeight: 'bold', px: 2, py: 1, border: '1px solid #71717D' }} onClick={() => setApplyOpen(true)}>신청</Button>
+                                        <Button sx={{ backgroundColor: '#424254', color: '#fff', borderRadius: 0.8, fontWeight: 'bold', px: 2, py: 1, border: '1px solid #71717D' }} onClick={(e) => {
+                                            e.stopPropagation(); 
+                                            setApplyOpen(true);  
+                                        }}>신청</Button>
                                     </Box>
                                     <Box width="2%" textAlign="center">
                                         {isMine && (
@@ -207,6 +219,11 @@ export default function ScrimPage() {
             </Container>
             <CreateScrimModal open={open} handleClose={() => setOpen(false)} />
             <ApplyScrimModal open={applyOpen} handleClose={() => setApplyOpen(false)} />
+            <ScrimDetailModal
+                open={detailOpen}
+                handleClose={() => setDetailOpen(false)}
+                partyId={selectedPartyId}
+            />
         </Box>
     );
 }
