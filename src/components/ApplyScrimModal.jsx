@@ -259,7 +259,7 @@ export default function ApplyScrimModal({ open, handleClose }) {
                         취소
                     </Button>
                     <Button fullWidth sx={{ bgcolor: '#42E6B5', color: '#000', height: 48, fontWeight: 'bold' }}>
-                        <Typography fontWeight="bold" color="white">등록</Typography>
+                        <Typography fontWeight="bold" color="white">신청</Typography>
                     </Button>
                 </Box>
             </Box>
