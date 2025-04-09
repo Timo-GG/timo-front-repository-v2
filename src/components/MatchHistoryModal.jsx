@@ -1,4 +1,4 @@
-/** 전적 검색 모달창 */
+/** 전적 기록 모달창 */
 
 import React from 'react';
 import {

@@ -1,3 +1,5 @@
+/** 승률 표시 막대 그래프 */
+
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 

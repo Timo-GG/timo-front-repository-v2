@@ -5,7 +5,6 @@ import {
     Container,
     Typography,
     Button,
-    Avatar,
     IconButton,
     useTheme,
     Select,
@@ -16,12 +15,12 @@ import {
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import TierImage from '../assets/tier.png';
 import CreateDuoModal from '/src/components/duo/CreateDuoModal';
+import DuoDetailModal from '/src/components/duo/DuoDetailModal';
 import SummonerInfo from '/src/components/SummonerInfo';
 import TierBadge from '/src/components/TierBadge';
 import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 
-// 더미 데이터에 queueType 추가 (예: "랭크", "일반")
 const sampleUsers = [
     {
         name: '롤10년차고인물',
@@ -32,7 +31,7 @@ const sampleUsers = [
         mainPosition: 'jungle',
         lookingForPosition: 'support',
         message: '정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!',
-        createdAt: '38초 전'
+        createdAt: '38초 전',
     },
     {
         name: '화이팅하자고인물',
@@ -75,8 +74,10 @@ export default function DuoPage() {
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    // 각 소환사 행 클릭 시 전달받은 데이터를 담는 상태 (모달에 전달됨)
+    const [selectedUser, setSelectedUser] = useState(null);
 
-    // 현재 사용자 정보 (내 게시물일 경우 점점점 메뉴 표시)
+    // 현재 사용자 정보 (내 게시물일 경우 메뉴 표시 등에 사용)
     const currentUser = { name: '롤10년차고인물', tag: '#1234' };
 
     const handleRegisterDuo = () => {
@@ -85,6 +86,11 @@ export default function DuoPage() {
 
     const handlePositionClick = (pos) => {
         setPositionFilter(pos);
+    };
+
+    // 소환사 행 클릭 시 호출되어 선택한 사용자의 데이터를 상태에 저장
+    const handleUserClick = (userData) => {
+        setSelectedUser(userData);
     };
 
     // 필터 조건에 따른 데이터 필터링 (예시)
@@ -106,20 +112,36 @@ export default function DuoPage() {
                     onRegisterDuo={handleRegisterDuo}
                 />
 
-                {/* DuoHeader: 마지막 칼럼은 메뉴용 */}
+                {/* 테이블 헤더 */}
                 <DuoHeader />
 
-                {/* DuoItem: 각 행에 큐타입 추가 및 메뉴 위치 오른쪽 배치 */}
+                {/* 각 소환사 행. onUserClick prop을 전달하여 행 클릭 시 모달 오픈 */}
                 {filteredUsers.map((user, idx) => (
-                    <DuoItem key={idx} user={user} currentUser={currentUser} />
+                    <DuoItem
+                        key={idx}
+                        user={user}
+                        currentUser={currentUser}
+                        onUserClick={handleUserClick}
+                    />
                 ))}
             </Container>
+
             <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+            {/* selectedUser가 있을 때 상세정보 모달 열기 */}
+            <DuoDetailModal
+                open={Boolean(selectedUser)}
+                handleClose={() => setSelectedUser(null)}
+                // 여기서는 sampleUsers의 데이터를 그대로 partyData로 전달.
+                // 실제로는 필요한 데이터 매핑(userMapper 등) 로직을 추가할 수 있습니다.
+                partyData={selectedUser || {}}
+            // 필요하다면 props로 전달하세요.
+            />
         </Box>
     );
 }
 
-/** 필터 영역 – 기존 DuoPage 코드 유지 */
+/** 필터 영역 – 기존 코드 그대로 */
 function FilterBar({
     positionFilter,
     onPositionClick,
@@ -127,19 +149,14 @@ function FilterBar({
     setRankType,
     schoolFilter,
     setSchoolFilter,
-    onRegisterDuo
+    onRegisterDuo,
 }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            {/* 포지션 아이콘 그룹 */}
-
             <PositionFilterBar
                 positionFilter={positionFilter}
                 onPositionClick={onPositionClick}
             />
-            {/* 포지션 아이콘 그룹 끝 */}
-
-            {/* 랭크 타입 & 소속 Select */}
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                 <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
                     <Select
@@ -149,30 +166,27 @@ function FilterBar({
                             borderRadius: 0.8,
                             height: 48,
                             '.MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#424254'
+                                borderColor: '#424254',
                             },
                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#42E6B5'
+                                borderColor: '#42E6B5',
                             },
                             '.MuiSelect-select': {
                                 display: 'flex',
                                 alignItems: 'center',
                                 padding: '0 32px 0 14px',
-                                height: '100%'
+                                height: '100%',
                             },
-                            '& .MuiSelect-icon': {
-                                color: '#7B7B8E',
-                            },
+                            '& .MuiSelect-icon': { color: '#7B7B8E' },
                         }}
                         value={rankType}
                         onChange={(e) => setRankType(e.target.value)}
                     >
                         <MenuItem value="solo">솔로랭크</MenuItem>
                         <MenuItem value="flex">일반</MenuItem>
-                        <MenuItem value="flex">칼바람</MenuItem>
+                        <MenuItem value="aram">칼바람</MenuItem>
                     </Select>
                 </FormControl>
-
                 <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
                     <Select
                         sx={{
@@ -180,21 +194,15 @@ function FilterBar({
                             color: '#fff',
                             borderRadius: 0.8,
                             height: 48,
-                            '.MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#424254'
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#42E6B5'
-                            },
+                            '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#42E6B5' },
                             '.MuiSelect-select': {
                                 display: 'flex',
                                 alignItems: 'center',
                                 padding: '0 32px 0 14px',
-                                height: '100%'
+                                height: '100%',
                             },
-                            '& .MuiSelect-icon': {
-                                color: '#7B7B8E',
-                            },
+                            '& .MuiSelect-icon': { color: '#7B7B8E' },
                         }}
                         value={schoolFilter}
                         onChange={(e) => setSchoolFilter(e.target.value)}
@@ -213,8 +221,6 @@ function FilterBar({
                     </Select>
                 </FormControl>
             </Box>
-
-            {/* 듀오 등록하기 버튼 */}
             <Button
                 variant="contained"
                 sx={{
@@ -227,8 +233,8 @@ function FilterBar({
                     fontSize: 16,
                     borderRadius: 0.8,
                     '&:hover': {
-                        background: 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)'
-                    }
+                        background: 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
+                    },
                 }}
                 onClick={onRegisterDuo}
             >
@@ -240,7 +246,6 @@ function FilterBar({
 
 /** 테이블 헤더 – 마지막 메뉴 칼럼 포함 (큐타입 추가) */
 function DuoHeader() {
-    // columns: [소환사, 큐타입, 주 포지션, 티어, 찾는 포지션, 한 줄 소개, 등록 일시, 듀오 신청, 메뉴]
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
     const headers = [
         '소환사',
@@ -277,9 +282,8 @@ function DuoHeader() {
     );
 }
 
-/** 테이블 아이템 – 큐타입, 한 줄 소개, 신청 버튼, 내 게시물일 경우 메뉴 포함 */
-function DuoItem({ user, currentUser }) {
-    // columns: [소환사, 큐타입, 주 포지션, 티어, 찾는 포지션, 한 줄 소개, 등록 일시, 듀오 신청, 메뉴]
+/** 테이블 아이템 – onUserClick 콜백을 받아 행 클릭 시 상세정보 모달을 열도록 처리 */
+function DuoItem({ user, currentUser, onUserClick }) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
 
     const handleApplyDuo = (e) => {
@@ -287,7 +291,7 @@ function DuoItem({ user, currentUser }) {
         alert(`${user.name} 님께 듀오를 신청했습니다!`);
     };
 
-    // 각 아이템별 메뉴 상태
+    // 점점점 메뉴 상태
     const [anchorEl, setAnchorEl] = useState(null);
     const handleMenuClick = (e) => {
         e.stopPropagation();
@@ -303,11 +307,13 @@ function DuoItem({ user, currentUser }) {
         alert('삭제 로직 실행');
     };
 
-    // 내 게시물 여부 체크 (이름과 태그가 일치하면)
+    // 내 게시물 여부 (이름, 태그가 일치하면)
     const isMine = user.name === currentUser.name && user.tag === currentUser.tag;
 
     return (
+        // 행 전체를 클릭하면 onUserClick(user)를 호출하여 상세모달에 해당 사용자 정보를 전달
         <Box
+            onClick={() => onUserClick(user)}
             sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -316,12 +322,13 @@ function DuoItem({ user, currentUser }) {
                 py: 1,
                 borderBottom: '2px solid #12121a',
                 transition: 'background-color 0.2s',
+                cursor: 'pointer',
                 '&:hover': {
                     backgroundColor: '#2E2E38',
                 },
             }}
         >
-            {/* 소환사 */}
+            {/* 소환사 영역 */}
             <Box
                 sx={{
                     flex: columns[0],
@@ -331,18 +338,11 @@ function DuoItem({ user, currentUser }) {
                     gap: 1,
                 }}
             >
-                <SummonerInfo name="롤10년차고인물" tag="1234 | 서울과기대" avatarUrl="avatar" />
+                <SummonerInfo name={`${user.name} | ${user.school}`} tag={user.tag} avatarUrl="avatar" />
             </Box>
 
             {/* 큐 타입 */}
-            <Box
-                sx={{
-                    flex: columns[1],
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}
-            >
+            <Box sx={{ flex: columns[1], display: 'flex', justifyContent: 'center' }}>
                 <Typography color="#fff" fontSize={14}>
                     {user.queueType}
                 </Typography>
@@ -350,28 +350,20 @@ function DuoItem({ user, currentUser }) {
 
             {/* 주 포지션 */}
             <Box sx={{ flex: columns[2], display: 'flex', justifyContent: 'center' }}>
-                <PositionIcon position='top' />
+                <PositionIcon position="top" />
             </Box>
 
             {/* 티어 */}
-            <Box
-                sx={{
-                    flex: columns[3],
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 0.5,
-                }}
-            >
+            <Box sx={{ flex: columns[3], display: 'flex', justifyContent: 'center' }}>
                 <TierBadge tier="emerald" score="1" />
             </Box>
 
             {/* 찾는 포지션 */}
             <Box sx={{ flex: columns[4], display: 'flex', justifyContent: 'center' }}>
-                <PositionIcon position='jungle' />
+                <PositionIcon position="jungle" />
             </Box>
 
-            {/* 한 줄 소개 – 스크림페이지 스타일 적용 */}
+            {/* 한 줄 소개 */}
             <Box sx={{ flex: columns[5], textAlign: 'center' }}>
                 <Box
                     sx={{
@@ -388,10 +380,8 @@ function DuoItem({ user, currentUser }) {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'normal',
-                        // ✨ maxHeight 명시적으로 지정 (줄 수 * lineHeight)
-                        maxHeight: '3.6em', // 1.4 * 2줄
+                        maxHeight: '3.6em',
                     }}
-
                 >
                     {user.message}
                 </Box>
@@ -399,10 +389,12 @@ function DuoItem({ user, currentUser }) {
 
             {/* 등록 일시 */}
             <Box sx={{ flex: columns[6], textAlign: 'center' }}>
-                <Typography color="#aaa" sx={{ fontSize: 14 }}>{user.createdAt}</Typography>
+                <Typography color="#aaa" sx={{ fontSize: 14 }}>
+                    {user.createdAt}
+                </Typography>
             </Box>
 
-            {/* 듀오 신청 버튼 – 스크림페이지 스타일 적용 */}
+            {/* 듀오 신청 버튼 */}
             <Box sx={{ flex: columns[7], display: 'flex', justifyContent: 'center' }}>
                 <Button
                     variant="contained"
@@ -421,15 +413,8 @@ function DuoItem({ user, currentUser }) {
                 </Button>
             </Box>
 
-            {/* 내 게시물인 경우 오른쪽에 점점점 메뉴 추가 */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-end', // 오른쪽 정렬
-                    flex: columns[8],
-                    minWidth: 40, // 최소 너비 확보
-                }}
-            >
+            {/* 내 게시물인 경우 점점점 메뉴 */}
+            <Box sx={{ flex: columns[8], display: 'flex', justifyContent: 'flex-end', minWidth: 40 }}>
                 {isMine && (
                     <>
                         <IconButton onClick={handleMenuClick}>
