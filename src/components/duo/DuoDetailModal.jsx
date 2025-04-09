@@ -33,7 +33,7 @@ export default function DuoDetailModal({
 
     const {
         map,
-        university = 'XX대학교',
+        school = 'XX대학교',
         department = 'XX학과',
         message,
         playStyle,
@@ -106,7 +106,7 @@ export default function DuoDetailModal({
                         }}
                     >
                         <Typography fontSize="1rem" color="#A5A5A5">
-                            {`${university} ${department}`}
+                            {`${school} ${department}`}
                         </Typography>
                     </Box>
 
