@@ -10,9 +10,12 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import Timo from '/src/assets/character.png';
 import SocialButton from './SocialButton';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function LoginModal({ open, onClose, onSocialLogin }) {
   const theme = useTheme();
+  const navigate = useNavigate(); // 페이지 이동 훅
 
   // 소셜 로그인 버튼 클릭 시 호출되는 핸들러
   const handleSocialClick = (provider) => {
@@ -96,6 +99,20 @@ export default function LoginModal({ open, onClose, onSocialLogin }) {
             onClick={() => handleSocialClick('discord')}
           />
         </Box>
+        <Typography variant="body2" color="text.secondary" mt={4}>
+          아직 TIMO.GG Member가 아니신가요?{' '}
+          <Typography
+            component="span"
+            color="primary"
+            sx={{ cursor: 'pointer', fontSize : '0.9rem' }}
+            onClick={() => {
+              navigate('/signup');
+              onClose(); // 모달도 닫기
+            }}
+          >
+            회원가입
+          </Typography>
+        </Typography>
       </Box>
     </Modal>
   );
