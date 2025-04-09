@@ -30,7 +30,7 @@ export default function MainPage() {
       sx={{
         backgroundColor: '#12121a',
         minHeight: '100vh',
-        pt: 10,
+        pt: 5,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center'
@@ -106,7 +106,6 @@ export default function MainPage() {
           width: 'auto'
         }}
       />
-
       <MatchHistoryModal open={openModal} onClose={() => setOpenModal(false)} />
     </Box>
   );
