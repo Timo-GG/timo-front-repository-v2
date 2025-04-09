@@ -8,6 +8,8 @@ import RankingPage from './pages/RankingPage';
 import MyPage from './pages/MyPage';
 import ScrimPage from './pages/ScrimPage';
 import DuoPage from './pages/DuoPage';
+import SignupPage from './pages/SignupPage';
+import ProfileSetup from './pages/ProfileSetup';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/duo" element={<DuoPage />} />
         <Route path="/scrim" element={<ScrimPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
       </Routes>
     </Router>
   );
