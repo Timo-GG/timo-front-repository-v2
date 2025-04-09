@@ -10,7 +10,7 @@ import {
     Select,
     MenuItem,
     FormControl,
-    Menu
+    Menu,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import TierImage from '../assets/tier.png';
@@ -21,51 +21,136 @@ import TierBadge from '/src/components/TierBadge';
 import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 
+// sampleUsers 배열 – 각 듀오는 1명의 소환사(멤버) 데이터를 포함하도록 구성
 const sampleUsers = [
     {
         name: '롤10년차고인물',
-        tag: '#1234',
+        tag: '1234',
         school: '서울과기대',
-        tier: 'E1',
+        department: '컴퓨터공학과',
+        map: '솔로 큐',
+        message:
+            '정글과 서폿 듀오 구합니다! 적극적인 소통을 통해 승리를 이끌고 싶습니다.',
+        playStyle: '공격적',
+        status: '듀오 가능',
+        mic: '사용함',
+        gender: '남성',
+        mbti: 'ENTJ',
+        tier: 'platinum',
+        score: 2,
         queueType: '랭크',
         mainPosition: 'jungle',
         lookingForPosition: 'support',
-        message: '정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!정글/서폿 듀오 구합니다!',
         createdAt: '38초 전',
+        members: [
+            {
+                name: '롤10년차고인물',
+                tag: '1234',
+                avatarUrl:
+                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1234.png',
+                tier: 'platinum',
+                score: 2,
+                champions: ['Amumu', 'LeeSin', 'Graves'],
+                position: 'jungle',
+            },
+        ],
     },
     {
         name: '화이팅하자고인물',
-        tag: '#9999',
+        tag: '9999',
         school: '고려대',
-        tier: 'E2',
+        department: '경영학과',
+        map: '자유 큐',
+        message:
+            '상체/봇 듀오 구합니다! 팀워크를 중요하게 생각하며, 전략적 플레이로 승리를 도모합니다.',
+        playStyle: '전략적',
+        status: '바쁨',
+        mic: '사용 안 함',
+        gender: '여성',
+        mbti: 'INTJ',
+        tier: 'emerald',
+        score: 3,
         queueType: '일반',
         mainPosition: 'top',
         lookingForPosition: 'bottom',
-        message: '상체/봇 듀오 구합니다!',
-        createdAt: '1분 전'
+        createdAt: '1분 전',
+        members: [
+            {
+                name: '화이팅하자고인물',
+                tag: '9999',
+                avatarUrl:
+                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/9999.png',
+                tier: 'emerald',
+                score: 3,
+                champions: ['Garen', 'Darius', 'Riven'],
+                position: 'top',
+            },
+        ],
     },
     {
         name: '서포터만한다',
-        tag: '#4567',
+        tag: '4567',
         school: '홍익대',
-        tier: 'E3',
+        department: '디자인학과',
+        map: '랭크 큐',
+        message:
+            '유미와 쓰레쉬 듀오 찾습니다! 창의적이고 유연한 플레이로 승리를 이끌어 나가겠습니다.',
+        playStyle: '유연함',
+        status: '듀오 가능',
+        mic: '사용함',
+        gender: '남성',
+        mbti: 'ISFP',
+        tier: 'gold',
+        score: 4,
         queueType: '랭크',
         mainPosition: 'support',
         lookingForPosition: 'mid',
-        message: '유미/쓰레쉬 장인, 미드 듀오 찾습니다.',
-        createdAt: '2분 전'
+        createdAt: '2분 전',
+        members: [
+            {
+                name: '서포터만한다',
+                tag: '4567',
+                avatarUrl:
+                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
+                tier: 'gold',
+                score: 4,
+                champions: ['Thresh', 'Braum', 'Leona'],
+                position: 'support',
+            },
+        ],
     },
     {
         name: '솔랭장인',
-        tag: '#1111',
+        tag: '1111',
         school: '성균관대',
-        tier: 'E4',
+        department: '경제학과',
+        map: '솔로 큐',
+        message:
+            '팀운이 부족해 탑 듀오 구합니다. 꾸준한 플레이로 팀에 기여할 자신이 있습니다.',
+        playStyle: '신중함',
+        status: '듀오 가능',
+        mic: '사용 안 함',
+        gender: '남성',
+        mbti: 'ISTJ',
+        tier: 'diamond',
+        score: 1,
         queueType: '일반',
         mainPosition: 'nothing',
         lookingForPosition: 'top',
-        message: '팀운이 너무 없어요... 탑 듀오 구합니다.',
-        createdAt: '10분 전'
-    }
+        createdAt: '10분 전',
+        members: [
+            {
+                name: '솔랭장인',
+                tag: '1111',
+                avatarUrl:
+                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
+                tier: 'diamond',
+                score: 1,
+                champions: ['Gnar', 'Shen', 'Malphite'],
+                position: 'top',
+            },
+        ],
+    },
 ];
 
 export default function DuoPage() {
@@ -77,8 +162,8 @@ export default function DuoPage() {
     // 각 소환사 행 클릭 시 전달받은 데이터를 담는 상태 (모달에 전달됨)
     const [selectedUser, setSelectedUser] = useState(null);
 
-    // 현재 사용자 정보 (내 게시물일 경우 메뉴 표시 등에 사용)
-    const currentUser = { name: '롤10년차고인물', tag: '#1234' };
+    // 현재 사용자 정보 (내 게시물 등 비교에 사용)
+    const currentUser = { name: '롤10년차고인물', tag: '1234' };
 
     const handleRegisterDuo = () => {
         setIsModalOpen(true);
@@ -88,14 +173,15 @@ export default function DuoPage() {
         setPositionFilter(pos);
     };
 
-    // 소환사 행 클릭 시 호출되어 선택한 사용자의 데이터를 상태에 저장
+    // 소환사 행 클릭 시 해당 사용자 데이터를 selectedUser에 저장
     const handleUserClick = (userData) => {
         setSelectedUser(userData);
     };
 
     // 필터 조건에 따른 데이터 필터링 (예시)
     const filteredUsers = sampleUsers.filter((user) => {
-        if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter) return false;
+        if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter)
+            return false;
         return true;
     });
 
@@ -115,7 +201,7 @@ export default function DuoPage() {
                 {/* 테이블 헤더 */}
                 <DuoHeader />
 
-                {/* 각 소환사 행. onUserClick prop을 전달하여 행 클릭 시 모달 오픈 */}
+                {/* 각 소환사 행 (DuoItem) */}
                 {filteredUsers.map((user, idx) => (
                     <DuoItem
                         key={idx}
@@ -132,10 +218,8 @@ export default function DuoPage() {
             <DuoDetailModal
                 open={Boolean(selectedUser)}
                 handleClose={() => setSelectedUser(null)}
-                // 여기서는 sampleUsers의 데이터를 그대로 partyData로 전달.
-                // 실제로는 필요한 데이터 매핑(userMapper 등) 로직을 추가할 수 있습니다.
+                // sampleUsers의 객체를 그대로 partyData로 전달
                 partyData={selectedUser || {}}
-            // 필요하다면 props로 전달하세요.
             />
         </Box>
     );
@@ -256,7 +340,7 @@ function DuoHeader() {
         '한 줄 소개',
         '등록 일시',
         '듀오 신청',
-        ''
+        '',
     ];
     return (
         <Box
@@ -292,7 +376,7 @@ function DuoItem({ user, currentUser, onUserClick }) {
     };
 
     // 점점점 메뉴 상태
-    const [anchorEl, setAnchorEl] = useState(null);
+    const [anchorEl, setAnchorEl] = React.useState(null);
     const handleMenuClick = (e) => {
         e.stopPropagation();
         setAnchorEl(e.currentTarget);
@@ -307,11 +391,10 @@ function DuoItem({ user, currentUser, onUserClick }) {
         alert('삭제 로직 실행');
     };
 
-    // 내 게시물 여부 (이름, 태그가 일치하면)
+    // 내 게시물 여부 (이름, 태그 비교)
     const isMine = user.name === currentUser.name && user.tag === currentUser.tag;
 
     return (
-        // 행 전체를 클릭하면 onUserClick(user)를 호출하여 상세모달에 해당 사용자 정보를 전달
         <Box
             onClick={() => onUserClick(user)}
             sx={{
