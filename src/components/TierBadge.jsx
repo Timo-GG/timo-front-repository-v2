@@ -1,3 +1,5 @@
+/** 티어 이미지 표시 */
+
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { getTierIcon } from '../utils/tierUtils';

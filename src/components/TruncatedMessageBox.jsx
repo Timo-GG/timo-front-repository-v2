@@ -1,4 +1,5 @@
-// components/TruncatedMessageBox.jsx
+/** 한줄 소개 용량 초과 표시 */
+
 import React from 'react';
 import { Box } from '@mui/material';
 

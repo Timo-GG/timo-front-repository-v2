@@ -1,3 +1,5 @@
+/** 전적 검색 모달창 */
+
 import React from 'react';
 import {
   Dialog,

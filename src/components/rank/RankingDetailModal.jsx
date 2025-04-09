@@ -4,10 +4,10 @@ import {
 
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import TierBadge from './TierBadge';
+import TierBadge from '../TierBadge';
 import ChampionIconList from './ChampionIconList';
-import PositionIcon from './PositionIcon';
-import SummonerInfo from '../components/SummonerInfo';
+import PositionIcon from '../PositionIcon';
+import SummonerInfo from '../SummonerInfo';
 
 export default function RankingDetailModal({ open, handleClose, data }) {
     const theme = useTheme();
@@ -67,7 +67,7 @@ export default function RankingDetailModal({ open, handleClose, data }) {
 
                 {/* 메모 */}
                 <Typography fontSize="0.85rem" color="#888">메모</Typography>
-                <Box fontSize="0.8rem" sx={{backgroundColor: '#424254', p: 1.3, borderRadius: 1, color: '#fff', mt:1, mb: 2 }}>
+                <Box fontSize="0.8rem" sx={{ backgroundColor: '#424254', p: 1.3, borderRadius: 1, color: '#fff', mt: 1, mb: 2 }}>
                     {data.message}
                 </Box>
 

@@ -1,3 +1,5 @@
+/** 소셜 로그인 버튼 */
+
 import React from 'react';
 import { Button, Box, useTheme } from '@mui/material';
 import KakaoLogo from '../assets/social/kakao-logo.svg?react';

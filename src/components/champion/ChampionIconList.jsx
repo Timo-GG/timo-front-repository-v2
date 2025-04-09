@@ -1,7 +1,8 @@
-// src/components/ChampionIconList.jsx
+/** 모스트 챔피언 3개 표시 */
+
 import React from 'react';
 import { Box, Avatar } from '@mui/material';
-import { getChampionImageUrl } from '../utils/championUtils';
+import { getChampionImageUrl } from '../../utils/championUtils';
 
 export default function ChampionIconList({ championNames = [] }) {
   return (

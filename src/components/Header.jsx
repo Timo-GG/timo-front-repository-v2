@@ -16,7 +16,7 @@ import {
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import { useLocation, useNavigate } from 'react-router-dom';
-import LoginModal from './LoginModal';
+import LoginModal from './login/LoginModal';
 
 export default function Header() {
     const location = useLocation();

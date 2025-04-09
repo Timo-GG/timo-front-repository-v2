@@ -1,3 +1,5 @@
+/** 내전 신청하기 모달창 */
+
 import React, { useState } from 'react';
 import {
     Dialog, DialogTitle, DialogContent,
@@ -5,11 +7,11 @@ import {
     Button, IconButton, Avatar
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SummonerInfo from './SummonerInfo';
-import TierBadge from './TierBadge';
-import PositionFilterBar from './PositionFilterBar';
-import ChampionIconList from './ChampionIconList';
-import theme from '../theme';
+import SummonerInfo from '../SummonerInfo';
+import TierBadge from '../TierBadge';
+import PositionFilterBar from '../duo/PositionFilterBar';
+import ChampionIconList from '../champion/ChampionIconList';
+import theme from '../../theme';
 
 const POSITION_LIST = ['top', 'jungle', 'mid', 'bottom', 'support'];
 const defaultMember = {

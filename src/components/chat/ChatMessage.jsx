@@ -1,3 +1,5 @@
+/** 채팅 화면 내 메시지 표시 */
+
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 

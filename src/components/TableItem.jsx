@@ -1,10 +1,12 @@
+/**  */
+
 import React from 'react';
 import { Box, Typography, Button, Avatar } from '@mui/material';
 import TierImage from '../assets/tier.png';
 import WinRateBar from './WinRateBar';
 import SummonerInfo from './SummonerInfo';
 import TierBadge from './TierBadge';
-import ChampionIconList from './ChampionIconList';
+import ChampionIconList from './champion/ChampionIconList';
 import TruncatedMessageBox from './TruncatedMessageBox';
 export default function TableItem({ received, user, sentStatus }) {
     const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];

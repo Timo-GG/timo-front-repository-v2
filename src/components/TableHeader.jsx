@@ -1,4 +1,5 @@
-// components/MyRequestHeader.jsx
+/** 마이페이지 요청 탭의 헤더 */
+
 import React from 'react';
 import { Box } from '@mui/material';
 

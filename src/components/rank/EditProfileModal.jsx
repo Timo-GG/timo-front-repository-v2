@@ -1,12 +1,14 @@
+/** 랭킹 페이지 내 정보 수정하기 모달창 */
+
 import React, { useState } from 'react';
 import {
     Dialog, Button, Typography, Box, TextField, Select, MenuItem, IconButton
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SummonerInfo from '../components/SummonerInfo';
+import SummonerInfo from '../SummonerInfo';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import PositionFilterBar from '../components/PositionFilterBar';
-import PositionIcon from '../components/PositionIcon';
+import PositionFilterBar from '../duo/PositionFilterBar';
+import PositionIcon from '../PositionIcon';
 
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 

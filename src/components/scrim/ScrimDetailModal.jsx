@@ -1,13 +1,14 @@
-// ScrimDetailModal.jsx
+/** 내전 상세정보 모달창 */
+
 import React from 'react';
 import {
     Dialog, DialogContent, Box, Typography, IconButton
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import TierBadge from './TierBadge';
-import ChampionIconList from './ChampionIconList';
-import PositionIcon from './PositionIcon';
-import SummonerInfo from './SummonerInfo';
+import TierBadge from '../TierBadge';
+import ChampionIconList from '../champion/ChampionIconList';
+import PositionIcon from '../PositionIcon';
+import SummonerInfo from '../SummonerInfo';
 // import StarIcon from '@mui/icons-material/Star'; // 별 아이콘 사용 시 import
 
 export default function ScrimDetailModal({ open, handleClose, partyId, scrims }) {

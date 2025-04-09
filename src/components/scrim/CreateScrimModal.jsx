@@ -1,14 +1,16 @@
+/** 내전 파티 생성하기 모달창 */
+
 import React, { useState, useEffect } from 'react';
 import {
     Dialog, Box, Typography, TextField, Select, MenuItem,
     Button, IconButton, Avatar
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SummonerInfo from './SummonerInfo';
-import TierBadge from './TierBadge';
-import PositionFilterBar from './PositionFilterBar';
-import ChampionIconList from './ChampionIconList';
-import theme from '../theme';
+import SummonerInfo from '../SummonerInfo';
+import TierBadge from '../TierBadge';
+import PositionFilterBar from '../PositionFilterBar';
+import ChampionIconList from '../champion/ChampionIconList';
+import theme from '../../theme';
 
 const defaultMember = {
     name: '',

@@ -1,3 +1,5 @@
+/** 마이페이지 Tab */
+
 import React from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
 

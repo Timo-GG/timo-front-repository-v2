@@ -1,5 +1,7 @@
+/** 모스트 챔피언 단일 설정 */
+
 import React, { useEffect, useState } from 'react';
-import { getChampionImageUrl } from '../utils/championUtils';
+import { getChampionImageUrl } from '../../utils/championUtils';
 
 export default function ChampionIcon({ championId }) {
   const [imgUrl, setImgUrl] = useState(null);

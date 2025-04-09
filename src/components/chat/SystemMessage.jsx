@@ -1,10 +1,11 @@
-// src/components/SystemMessage.jsx
+/** 채팅 내 시스템 메시지 */
+
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
-export default function SystemMessage({message }) {
+export default function SystemMessage({ message }) {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1}}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1 }}>
       <Box
         sx={{
           backgroundColor: '#31313C',
