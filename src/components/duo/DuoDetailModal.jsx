@@ -45,16 +45,9 @@ export default function DuoDetailModal({
                 <Box display="flex" justifyContent="space-between" alignItems="center">
                     {/* 왼쪽: 맵 */}
                     <Box display="flex" alignItems="center" gap={1} mr={3}>
-                        <Typography fontSize="0.75rem" color="#888">맵</Typography>
+                        <Typography fontSize="0.75rem" color="#888">큐 타입</Typography>
                         <Typography fontSize="0.75rem" color="#fff">
                             {partyData.map || ''}
-                        </Typography>
-                    </Box>
-                    {/* 오른쪽: 인원 */}
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Typography fontSize="0.75rem" color="#888">내전 인원</Typography>
-                        <Typography fontSize="0.75rem" color="#fff">
-                            {partyData.people || ''}
                         </Typography>
                     </Box>
 
@@ -326,27 +319,6 @@ export default function DuoDetailModal({
                         ))}
                     </DialogContent>
 
-                    {/* 전적 갱신 버튼 */}
-                    <Box sx={{ backgroundColor: '#31313C' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<RefreshIcon sx={{ color: '#fff' }} />}
-                            fullWidth
-                            sx={{
-                                backgroundColor: '#65c7a3',
-                                borderTopLeftRadius: '0px',
-                                borderTopRightRadius: '0px',
-                                borderBottomLeftRadius: '8px',
-                                borderBottomRightRadius: '8px',
-                                py: 1.2,
-                                '&:hover': { backgroundColor: '#57b294' },
-                            }}
-                        >
-                            <Typography fontSize={16} fontWeight="bold" color="#fff">
-                                전적 갱신
-                            </Typography>
-                        </Button>
-                    </Box>
                 </Box>
             </Box>
         </Dialog>
