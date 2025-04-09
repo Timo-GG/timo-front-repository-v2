@@ -8,7 +8,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import SummonerInfo from '../SummonerInfo';
 import TierBadge from '../TierBadge';
-import PositionFilterBar from '../PositionFilterBar';
+import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import ChampionIconList from '../champion/ChampionIconList';
 import theme from '../../theme';
 

@@ -22,10 +22,10 @@ import TableItem from '../components/TableItem';
 import SummonerInfo from '../components/SummonerInfo';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import SystemMessage from '../components/SystemMessage';
+import SystemMessage from '/src/components/chat/SystemMessage';
 import chatDummy from '../data/chatDummy';
-import ChatMessage from '../components/ChatMessage';
-import ConfirmDialog from '../components/ConfirmDialog';
+import ChatMessage from '/src/components/chat/ChatMessage';
+import ConfirmDialog from '/src/components/ConfirmDialog';
 
 const sampleUser = {
     name: '롤10년차고인물',

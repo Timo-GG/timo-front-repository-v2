@@ -1,10 +1,10 @@
 import React from 'react';
 import rankingDummy from '../data/rankingDummy';
 import TierBadge from '../components/TierBadge';
-import ChampionIconList from '../components/ChampionIconList';
+import ChampionIconList from '/src/components/champion/ChampionIconList';
 import PositionIcon from '../components/PositionIcon';
-import EditProfileModal from '../components/EditProfileModal';
-import RankingDetailModal from '../components/RankingDetailModal';
+import EditProfileModal from '../components/rank/EditProfileModal';
+import RankingDetailModal from '../components/rank/RankingDetailModal';
 import WinRateBar from '../components/WinRateBar';
 
 import {

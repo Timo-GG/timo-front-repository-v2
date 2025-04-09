@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import TierBadge from '../TierBadge';
-import ChampionIconList from './ChampionIconList';
+import ChampionIconList from '/src/components/champion/ChampionIconList';
 import PositionIcon from '../PositionIcon';
 import SummonerInfo from '../SummonerInfo';
 

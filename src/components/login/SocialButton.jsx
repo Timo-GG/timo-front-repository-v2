@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { Button, Box, useTheme } from '@mui/material';
-import KakaoLogo from '../assets/social/kakao-logo.svg?react';
-import NaverLogo from '../assets/social/naver-logo.svg?react';
-import DiscordLogo from '../assets/social/discord-logo.svg?react';
+import KakaoLogo from '/src/assets/social/kakao-logo.svg?react';
+import NaverLogo from '/src/assets/social/naver-logo.svg?react';
+import DiscordLogo from '/src/assets/social/discord-logo.svg?react';
 
 export default function SocialButton({ provider, onClick }) {
   const theme = useTheme();

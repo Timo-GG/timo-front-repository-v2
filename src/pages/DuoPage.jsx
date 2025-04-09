@@ -15,11 +15,11 @@ import {
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import TierImage from '../assets/tier.png';
-import CreateDuoModal from '../components/CreateDuoModal';
-import SummonerInfo from '../components/SummonerInfo';
-import TierBadge from '../components/TierBadge';
-import PositionIcon from '../components/PositionIcon';
-import PositionFilterBar from '../components/PositionFilterBar';
+import CreateDuoModal from '/src/components/duo/CreateDuoModal';
+import SummonerInfo from '/src/components/SummonerInfo';
+import TierBadge from '/src/components/TierBadge';
+import PositionIcon from '/src/components/PositionIcon';
+import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 
 // 더미 데이터에 queueType 추가 (예: "랭크", "일반")
 const sampleUsers = [

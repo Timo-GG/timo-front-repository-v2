@@ -13,9 +13,9 @@ import {
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SummonerInfo from '../components/SummonerInfo';
 import TierBadge from '../components/TierBadge';
-import CreateScrimModal from '../components/CreateScrimModal';
-import ApplyScrimModal from '../components/ApplyScrimModal';
-import ScrimDetailModal from '../components/ScrimDetailModal';
+import CreateScrimModal from '/src/components//scrim/CreateScrimModal';
+import ApplyScrimModal from '/src/components/scrim/ApplyScrimModal';
+import ScrimDetailModal from '/src/components/scrim/ScrimDetailModal';
 import scrimDummy from '../data/scrimDummy';
 import { useTheme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
@@ -91,18 +91,18 @@ export default function ScrimPage() {
     const currentUser = { name: '롤10년차고인물', tag: '1234', avatarUrl: '/default.png' };
 
     // (3) 새 스크림 추가 (최신순: 앞에 추가)
-const handleAddScrim = (newScrim) => {
-    newScrim.isNew = true;
-    setScrims(prev => [newScrim, ...prev]);
-    // 일정 시간 뒤 isNew 제거
-    setTimeout(() => {
-        setScrims(prev =>
-            prev.map(scrim =>
-                scrim.id === newScrim.id ? { ...scrim, isNew: false } : scrim
-            )
-        );
-    }, 2000); // 애니메이션과 동일한 시간
-};
+    const handleAddScrim = (newScrim) => {
+        newScrim.isNew = true;
+        setScrims(prev => [newScrim, ...prev]);
+        // 일정 시간 뒤 isNew 제거
+        setTimeout(() => {
+            setScrims(prev =>
+                prev.map(scrim =>
+                    scrim.id === newScrim.id ? { ...scrim, isNew: false } : scrim
+                )
+            );
+        }, 2000); // 애니메이션과 동일한 시간
+    };
 
     // (4) 스크림 삭제
     const handleDeleteScrim = (id) => {
