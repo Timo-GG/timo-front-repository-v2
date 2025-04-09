@@ -37,7 +37,7 @@ export default function TableItem({ received, user, sentStatus }) {
                 <ChampionIconList championNames={user.champions} />
             </Box>
             <Box sx={{
-                flex: columns[4],
+                flex: columns[4], display: 'flex', justifyContent: 'center'
             }}>
                 <TruncatedMessageBox
                     message={user.message}
