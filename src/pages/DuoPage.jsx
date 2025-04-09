@@ -135,8 +135,8 @@ const sampleUsers = [
         tier: 'diamond',
         score: 1,
         queueType: '일반',
-        mainPosition: 'nothing',
-        lookingForPosition: 'top',
+        mainPosition: 'top',
+        lookingForPosition: 'jungle',
         createdAt: '10분 전',
         members: [
             {
@@ -366,7 +366,6 @@ function DuoHeader() {
     );
 }
 
-/** 테이블 아이템 – onUserClick 콜백을 받아 행 클릭 시 상세정보 모달을 열도록 처리 */
 function DuoItem({ user, currentUser, onUserClick }) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
 
@@ -411,7 +410,7 @@ function DuoItem({ user, currentUser, onUserClick }) {
                 },
             }}
         >
-            {/* 소환사 영역 */}
+            {/* (1) 소환사 영역 */}
             <Box
                 sx={{
                     flex: columns[0],
@@ -421,32 +420,40 @@ function DuoItem({ user, currentUser, onUserClick }) {
                     gap: 1,
                 }}
             >
-                <SummonerInfo name={`${user.name} | ${user.school}`} tag={user.tag} avatarUrl="avatar" />
+                <SummonerInfo
+                    /** 
+                     *  name → 소환사 이름만 
+                     *  tag  → "#태그 | 학교" 형태 (예: "#9999 | 고려대")
+                     */
+                    name={user.name}
+                    tag={`${user.tag} | ${user.school}`}
+                    avatarUrl="avatar"
+                />
             </Box>
 
-            {/* 큐 타입 */}
+            {/* (2) 큐 타입 */}
             <Box sx={{ flex: columns[1], display: 'flex', justifyContent: 'center' }}>
                 <Typography color="#fff" fontSize={14}>
                     {user.queueType}
                 </Typography>
             </Box>
 
-            {/* 주 포지션 */}
+            {/* (3) 주 포지션 */}
             <Box sx={{ flex: columns[2], display: 'flex', justifyContent: 'center' }}>
-                <PositionIcon position="top" />
+                <PositionIcon position={user.mainPosition} />
             </Box>
 
-            {/* 티어 */}
+            {/* (4) 티어 */}
             <Box sx={{ flex: columns[3], display: 'flex', justifyContent: 'center' }}>
-                <TierBadge tier="emerald" score="1" />
+                <TierBadge tier={user.tier} score={user.score} />
             </Box>
 
-            {/* 찾는 포지션 */}
+            {/* (5) 찾는 포지션 */}
             <Box sx={{ flex: columns[4], display: 'flex', justifyContent: 'center' }}>
-                <PositionIcon position="jungle" />
+                <PositionIcon position={user.lookingForPosition} />
             </Box>
 
-            {/* 한 줄 소개 */}
+            {/* (6) 한 줄 소개 */}
             <Box sx={{ flex: columns[5], textAlign: 'center' }}>
                 <Box
                     sx={{
@@ -470,14 +477,14 @@ function DuoItem({ user, currentUser, onUserClick }) {
                 </Box>
             </Box>
 
-            {/* 등록 일시 */}
+            {/* (7) 등록 일시 */}
             <Box sx={{ flex: columns[6], textAlign: 'center' }}>
                 <Typography color="#aaa" sx={{ fontSize: 14 }}>
                     {user.createdAt}
                 </Typography>
             </Box>
 
-            {/* 듀오 신청 버튼 */}
+            {/* (8) 듀오 신청 버튼 */}
             <Box sx={{ flex: columns[7], display: 'flex', justifyContent: 'center' }}>
                 <Button
                     variant="contained"
@@ -496,7 +503,7 @@ function DuoItem({ user, currentUser, onUserClick }) {
                 </Button>
             </Box>
 
-            {/* 내 게시물인 경우 점점점 메뉴 */}
+            {/* (9) 내 게시물인 경우 점점점 메뉴 */}
             <Box sx={{ flex: columns[8], display: 'flex', justifyContent: 'flex-end', minWidth: 40 }}>
                 {isMine && (
                     <>
@@ -513,3 +520,4 @@ function DuoItem({ user, currentUser, onUserClick }) {
         </Box>
     );
 }
+
