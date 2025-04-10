@@ -10,11 +10,15 @@ import ScrimPage from './pages/ScrimPage';
 import DuoPage from './pages/DuoPage';
 import SignupPage from './pages/SignupPage';
 import ProfileSetup from './pages/ProfileSetup';
+import TestPage from './pages/TestPage';
+import NotificationListener from './socket/NotificationListener';
 
 function App() {
   return (
     <Router>
       <Header />
+      <NotificationListener />
+
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/search" element={<SearchPage />} />
@@ -25,6 +29,7 @@ function App() {
         <Route path="/scrim" element={<ScrimPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="/test" element={<TestPage />} />
       </Routes>
     </Router>
   );
