@@ -36,14 +36,116 @@ export default function ScrimRequestModal({
     //   ...
     // }
     const {
-        map = '',
-        people = '',
+        map = '무작위',
+        people = '5:5',
         ourSchool = '우리대학교',
         ourDepartment = '우리학과',
         enemySchool = '상대대학교',
         enemyDepartment = '상대학과',
-        ourTeam = [],
-        enemyTeam = [],
+        ourTeam = [
+            {
+                id: 1,
+                name: "롤10년차고인물",
+                tag: "1234",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
+                position: "top",
+                tier: "emerald",
+                score: 1,
+                champions: ['Amumu', 'LeeSin', 'Graves'],
+            },
+            {
+                id: 2,
+                name: "듀오장인티모",
+                tag: "5678",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1234.png',
+                position: "jungle",
+                tier: "platinum",
+                score: 3,
+                champions: ['Garen', 'Darius', 'Riven'],
+            },
+            {
+                id: 3,
+                name: "팀랭마스터",
+                tag: "8765",
+                avatarUrl: "https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/5678.png",
+                position: "mid",
+                tier: "emerald",
+                score: 3,
+                champions: ['Zed', 'Ahri', 'Lux'],
+            },
+            {
+                id: 4,
+                name: "정글잘함",
+                tag: "1111",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
+                position: "bottom",
+                tier: "gold",
+                score: 2,
+                champions: ['Ezreal', 'Yasuo', 'Jhin'],
+            },
+            {
+                id: 5,
+                name: "라인전고수",
+                tag: "2222",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon//1234.png',
+                position: "support",
+                tier: "diamond",
+                score: 2,
+                champions: ['Thresh', 'Braum', 'Leona'],
+            },
+        ],
+        enemyTeam = [
+            {
+                id: 1,
+                name: "롤10년차고인물",
+                tag: "1234",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
+                position: "top",
+                tier: "emerald",
+                score: 1,
+                champions: ['Amumu', 'LeeSin', 'Graves'],
+            },
+            {
+                id: 2,
+                name: "듀오장인티모",
+                tag: "5678",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1234.png',
+                position: "jungle",
+                tier: "platinum",
+                score: 3,
+                champions: ['Garen', 'Darius', 'Riven'],
+            },
+            {
+                id: 3,
+                name: "팀랭마스터",
+                tag: "8765",
+                avatarUrl: "https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/5678.png",
+                position: "mid",
+                tier: "emerald",
+                score: 3,
+                champions: ['Zed', 'Ahri', 'Lux'],
+            },
+            {
+                id: 4,
+                name: "정글잘함",
+                tag: "1111",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
+                position: "bottom",
+                tier: "gold",
+                score: 2,
+                champions: ['Ezreal', 'Yasuo', 'Jhin'],
+            },
+            {
+                id: 5,
+                name: "라인전고수",
+                tag: "2222",
+                avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon//1234.png',
+                position: "support",
+                tier: "diamond",
+                score: 2,
+                champions: ['Thresh', 'Braum', 'Leona'],
+            },
+        ],
     } = partyData;
 
     return (
@@ -66,7 +168,7 @@ export default function ScrimRequestModal({
                                 내전 인원
                             </Typography>
                             <Typography fontSize="0.75rem" color="#fff">
-                                {partyData.people || ''}
+                                {people || ''}
                             </Typography>
                         </Box>
                     </Box>
@@ -267,3 +369,4 @@ export default function ScrimRequestModal({
         </Dialog>
     );
 }
+
