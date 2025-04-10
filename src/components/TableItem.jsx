@@ -1,5 +1,3 @@
-/**  */
-
 import React from 'react';
 import { Box, Typography, Button, Avatar } from '@mui/material';
 import TierImage from '../assets/tier.png';
@@ -93,3 +91,4 @@ export default function TableItem({ received, user, sentStatus }) {
         </Box>
     );
 }
+
