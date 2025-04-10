@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
+import useAuthStore from '../storage/useAuthStore';
+
 import {
     AppBar,
     Toolbar,
@@ -21,8 +23,8 @@ import LoginModal from './login/LoginModal';
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { accessToken, userData, setAccessToken, setRefreshToken } = useAuthStore();
 
-    const [user, setUser] = useState(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const userMenuOpen = Boolean(anchorEl);
@@ -42,11 +44,13 @@ export default function Header() {
 
     const handleLogout = () => {
         handleUserMenuClose();
-        setUser(null);
+        setAccessToken(null);
+        setRefreshToken(null);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        navigate('/');
     };
 
-
-    // 알림 상태 관련
     const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
     const notificationOpen = Boolean(notificationAnchorEl);
 
@@ -58,14 +62,9 @@ export default function Header() {
         setNotificationAnchorEl(null);
     };
 
-    // 알림 리스트 상태
     const [notifications, setNotifications] = useState([
         { id: 1, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '1시간 전' },
         { id: 2, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '04/01 20:05' },
-        { id: 3, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '04/01 20:05' },
-        { id: 4, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '04/01 20:05' },
-        { id: 5, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '04/01 20:05' },
-        { id: 6, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '04/01 20:05' },
     ]);
 
     const handleRemoveNotification = (id) => {
@@ -86,26 +85,11 @@ export default function Header() {
 
     return (
         <>
-            <AppBar
-                position="sticky"
-                sx={{
-                    backgroundColor: '#2b2c3c',
-                    padding: 0,
-                    overflow: 'visible',
-                }}
-            >
+            <AppBar position="sticky" sx={{ backgroundColor: '#2b2c3c', padding: 0, overflow: 'visible' }}>
                 <Box sx={{ borderBottom: '1px solid #3c3d4e' }}>
                     <Container maxWidth="lg">
                         <Toolbar sx={{ minHeight: '72px', px: 0, py: 1 }}>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    width: '100%',
-                                }}
-                            >
-                                {/* 로고 & 접속자 수 */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                     <img src={logo} alt="TIMO.GG logo" style={{ height: 42 }} />
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -116,9 +100,8 @@ export default function Header() {
                                     </Box>
                                 </Box>
 
-                                {/* 로그인 / 유저 버튼 */}
                                 <Box sx={{ marginLeft: 'auto' }}>
-                                    {user ? (
+                                    {accessToken ? (
                                         <>
                                             <Button
                                                 onClick={handleUserMenuClick}
@@ -135,20 +118,14 @@ export default function Header() {
                                                     ':hover': { backgroundColor: '#50516a' },
                                                 }}
                                             >
-                                                {user.displayName}
+                                                {userData.memberProfile?.nickname || '유저'}
                                             </Button>
                                             <Menu
                                                 anchorEl={anchorEl}
                                                 open={userMenuOpen}
                                                 onClose={handleUserMenuClose}
-                                                anchorOrigin={{
-                                                    vertical: 'bottom',
-                                                    horizontal: 'right',
-                                                }}
-                                                transformOrigin={{
-                                                    vertical: 'top',
-                                                    horizontal: 'right',
-                                                }}
+                                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                                 PaperProps={{
                                                     sx: {
                                                         backgroundColor: '#2b2c3c',
@@ -209,11 +186,9 @@ export default function Header() {
                     </Container>
                 </Box>
 
-                {/* 메뉴 탭 + 알림 */}
                 <Box sx={{ backgroundColor: '#2d2d32' }}>
                     <Container maxWidth="lg">
                         <Toolbar sx={{ minHeight: '48px', px: 0 }}>
-                            {/* 메뉴 탭 */}
                             <Box sx={{ display: 'flex', gap: 4 }}>
                                 {menuItems.map((item) => {
                                     const isActive = location.pathname === item.path;
@@ -236,7 +211,6 @@ export default function Header() {
                                 })}
                             </Box>
 
-                            {/* 알림 아이콘 */}
                             <Box sx={{ marginLeft: 'auto' }}>
                                 <IconButton onClick={handleNotificationClick}>
                                     <Badge badgeContent={notifications.length} color="error">
@@ -254,10 +228,9 @@ export default function Header() {
                                             backgroundColor: '#2d2d32',
                                             color: '#fff',
                                             width: 320,
-                                        
                                             boxShadow: 3,
                                             borderRadius: 1,
-                                            overflow: 'visible', // 전체는 스크롤 안 생기게
+                                            overflow: 'visible',
                                         },
                                     }}
                                 >
@@ -266,8 +239,6 @@ export default function Header() {
                                             알림
                                         </Typography>
                                     </Box>
-
-                                    {/* ✅ 알림 리스트만 스크롤 */}
                                     <Box
                                         sx={{
                                             px: 2,
@@ -278,11 +249,11 @@ export default function Header() {
                                                 width: '6px',
                                             },
                                             '&::-webkit-scrollbar-thumb': {
-                                                backgroundColor: '#C1C1C1', // thumb 색상 알림 배경과 동일
+                                                backgroundColor: '#C1C1C1',
                                                 borderRadius: 4,
                                             },
                                             '&::-webkit-scrollbar-track': {
-                                                backgroundColor: '#2d2d32', // track 배경도 알림창 배경과 동일
+                                                backgroundColor: '#2d2d32',
                                             },
                                         }}
                                     >
@@ -299,9 +270,7 @@ export default function Header() {
                                                         fontSize: '0.875rem',
                                                     }}
                                                 >
-                                                    <Typography variant="body2">
-                                                        <strong>짱아깨비</strong> 님으로부터 <strong>듀오 신청</strong>이 왔습니다.
-                                                    </Typography>
+                                                    <Typography variant="body2">{noti.message}</Typography>
                                                     <Typography variant="caption" sx={{ color: '#aaa' }}>
                                                         {noti.time}
                                                     </Typography>
@@ -326,7 +295,6 @@ export default function Header() {
                                             </Typography>
                                         )}
                                     </Box>
-
                                     <Box sx={{ textAlign: 'center', py: 1 }}>
                                         <Button
                                             size="small"
@@ -343,19 +311,14 @@ export default function Header() {
                                     </Box>
                                 </Menu>
                             </Box>
-
                         </Toolbar>
                     </Container>
                 </Box>
             </AppBar>
 
-            {/* 로그인 모달 */}
             <LoginModal
                 open={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}
-                onSocialLogin={(userInfo) => {
-                    setUser(userInfo);
-                }}
             />
         </>
     );
