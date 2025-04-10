@@ -19,10 +19,19 @@ export default function LoginModal({ open, onClose, onSocialLogin }) {
 
   // 소셜 로그인 버튼 클릭 시 호출되는 핸들러
   const handleSocialClick = (provider) => {
-    // 백엔드 연동 전까지는 단순 시뮬레이션: 클릭하면 바로 '짱아깨비'로 로그인 처리
-    // 실제로는 provider에 따라 다른 API 호출 로직을 넣을 수 있습니다.
-    onSocialLogin({ displayName: '짱아깨비' });
-    onClose();
+    switch (provider) {
+      case 'kakao':
+        window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${import.meta.env.VITE_KAKAO_REST_API_KEY}&redirect_uri=${import.meta.env.VITE_KAKAO_REDIRECT_URI}&response_type=code`;
+        break;
+      case 'naver':
+        window.location.href = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${import.meta.env.VITE_NAVER_CLIENT_ID}&redirect_uri=${import.meta.env.VITE_NAVER_REDIRECT_URI}&state=${import.meta.env.VITE_NAVER_STATE}`;
+        break;
+      case 'discord':
+        window.location.href = `https://discord.com/oauth2/authorize?client_id=${import.meta.env.VITE_DISCORD_CLIENT_ID}&response_type=code&redirect_uri=${import.meta.env.VITE_DISCORD_REDIRECT_URI}&scope=email+identify`;
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -104,7 +113,7 @@ export default function LoginModal({ open, onClose, onSocialLogin }) {
           <Typography
             component="span"
             color="primary"
-            sx={{ cursor: 'pointer', fontSize : '0.9rem' }}
+            sx={{ cursor: 'pointer', fontSize: '0.9rem' }}
             onClick={() => {
               navigate('/signup');
               onClose(); // 모달도 닫기

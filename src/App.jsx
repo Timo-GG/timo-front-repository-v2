@@ -12,6 +12,7 @@ import SignupPage from './pages/SignupPage';
 import ProfileSetup from './pages/ProfileSetup';
 import TestPage from './pages/TestPage';
 import NotificationListener from './socket/NotificationListener';
+import AuthCallback from './pages/AuthCallback';
 
 function App() {
   return (
@@ -30,6 +31,8 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
         <Route path="/test" element={<TestPage />} />
+        <Route path="/auth/callback/:provider" element={<AuthCallback />} />
+
       </Routes>
     </Router>
   );

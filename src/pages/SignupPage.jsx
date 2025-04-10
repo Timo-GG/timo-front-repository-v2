@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -7,13 +8,17 @@ import {
     useTheme
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { getMyInfo } from '../apis/authAPI'; // API 호출 함수
+import { requestUnivVerification } from '../apis/univAPI';
+import { verifyUnivCode } from '../apis/univAPI';
+
 
 export default function SignupPage() {
+
     const theme = useTheme();
     const navigate = useNavigate();
 
-    const oauthEmail = 'menten4859@seoultech.ac.kr';
-
+    const [oauthEmail, setOauthEmail] = useState('');
     const [nickname, setNickname] = useState('');
     const [summonerName, setSummonerName] = useState('');
     const [university, setUniversity] = useState('');
@@ -26,32 +31,64 @@ export default function SignupPage() {
     const [nicknameStatus, setNicknameStatus] = useState(""); // 예: 사용 가능 여부
     const [universityStatus, setUniversityStatus] = useState("");
 
-    const handleEmailRegister = () => {
+
+
+    const handleEmailRegister = async () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(schoolEmail)) {
             setEmailError("올바르지 않은 이메일 입니다.");
             return;
         }
-        setEmailError('');
-        setEmailSent(true);
-        setShowVerificationInput(true);
+
+        try {
+            await requestUnivVerification({
+                univName: university,
+                univEmail: schoolEmail,
+            });
+            setEmailError('');
+            setEmailSent(true);
+            setShowVerificationInput(true);
+        } catch (err) {
+            setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
+            console.error('이메일 인증 요청 실패:', err);
+        }
     };
 
-    const handleVerificationConfirm = () => {
-        if (verificationCode !== '123456') {
-            setVerificationError('인증코드가 일치하지 않습니다.');
-            return;
+    const handleVerificationConfirm = async () => {
+        try {
+            await verifyUnivCode(verificationCode, {
+                univName: university,
+                univEmail: schoolEmail,
+            });
+            navigate('/profile-setup', {
+                state: {
+                    nickname,
+                    summonerName,
+                    university,
+                    schoolEmail,
+                    oauthEmail
+                }
+            });
+        } catch (err) {
+            setVerificationError('인증코드가 올바르지 않거나 만료되었습니다.');
         }
-        navigate('/profile-setup', {
-            state: {
-                nickname,
-                summonerName,
-                university,
-                schoolEmail,
-                oauthEmail
-            }
-        });
     };
+
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const res = await getMyInfo();
+                const profile = res.data.memberProfile;
+                setNickname(profile.nickname);     // nickname 기본값 세팅
+                setOauthEmail(profile.email);      // email도 백엔드 값으로 세팅
+            } catch (err) {
+                console.error('유저 정보 불러오기 실패:', err);
+            }
+        };
+
+        fetchUserInfo();
+    }, []);
 
     return (
         <Box
@@ -362,6 +399,27 @@ export default function SignupPage() {
                     </Box>
                 </Box>
             )}
+            <Button
+                fullWidth
+                sx={{
+                    bgcolor: '#2A2B31',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    height: 44,
+                    fontSize: '1rem'
+                }}
+                onClick={() => navigate('/profile-setup', {
+                    state: {
+                        nickname,
+                        summonerName,
+                        university,
+                        schoolEmail: '',
+                        oauthEmail,
+                    }
+                })}
+            >
+                다음
+            </Button>
         </Box>
     );
 }

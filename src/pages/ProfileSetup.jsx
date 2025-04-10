@@ -10,15 +10,18 @@ import {
 } from '@mui/material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PositionFilterBar from '../components/duo/PositionFilterBar';
+import { useNavigate } from 'react-router-dom';
+
 
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 
 export default function ProfileSetUp() {
-    const [position, setPosition] = useState('top');
-    const [department, setDepartment] = useState('컴퓨터공학과');
-    const [selectedGender, setSelectedGender] = useState('비밀');
-    const [selectedMbti, setSelectedMbti] = useState(['E', 'S', 'T', 'P']);
+    const [position, setPosition] = useState(''); // ''로
+    const [department, setDepartment] = useState('');
+    const [selectedGender, setSelectedGender] = useState('');
+    const [selectedMbti, setSelectedMbti] = useState([]); // 전체 선택 초기화
     const [memo, setMemo] = useState('');
+    const navigate = useNavigate();
 
     const toggleMbti = (type) => {
         const groupMap = {
@@ -34,6 +37,7 @@ export default function ProfileSetUp() {
 
     const handleSubmit = () => {
         console.log({ position, department, selectedGender, selectedMbti, memo });
+        navigate('/');
     };
 
     return (
