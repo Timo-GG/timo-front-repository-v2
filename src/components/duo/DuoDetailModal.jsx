@@ -33,7 +33,7 @@ export default function DuoDetailModal({
 
     const {
         map,
-        university = 'XX대학교',
+        school = 'XX대학교',
         department = 'XX학과',
         message,
         playStyle,
@@ -106,7 +106,7 @@ export default function DuoDetailModal({
                         }}
                     >
                         <Typography fontSize="1rem" color="#A5A5A5">
-                            {`${university} ${department}`}
+                            {`${school} ${department}`}
                         </Typography>
                     </Box>
 
@@ -120,7 +120,7 @@ export default function DuoDetailModal({
                             fontSize: '1.00rem',
                             lineHeight: 1.4,
                             textAlign: 'left',
-                            mb: 2,
+                            mb: 5,
                             minHeight: '100px',
                             whiteSpace: 'pre-line',
                         }}
@@ -134,7 +134,7 @@ export default function DuoDetailModal({
                             backgroundColor: '#282830',
                             p: 2,
                             borderRadius: 1,
-                            mb: 2,
+                            mb: 5,
                             fontSize: '0.85rem',
                             color: '#DDD',
                         }}
@@ -238,7 +238,7 @@ export default function DuoDetailModal({
                 <Box
                     sx={{
                         flex: 1,
-                        maxHeight: '55vh',
+                        maxHeight: '49vh',
                         overflowY: 'auto',
                         '&::-webkit-scrollbar': { width: '8px' },
                         '&::-webkit-scrollbar-track': {

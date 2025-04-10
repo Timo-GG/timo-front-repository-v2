@@ -24,7 +24,7 @@ export default function TableItem({ received, user, sentStatus }) {
                 backgroundColor: '#2E2E38',
             },
         }}>
-            <Box sx={{ flex: columns[0], display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <Box sx={{ flex: columns[0], display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
                 <SummonerInfo name={user.name} tag={user.tag} avatarUrl={user.avatarUrl} />
             </Box>
             <Box sx={{ flex: columns[1], display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
@@ -37,7 +37,7 @@ export default function TableItem({ received, user, sentStatus }) {
                 <ChampionIconList championNames={user.champions} />
             </Box>
             <Box sx={{
-                flex: columns[4],
+                flex: columns[4], display: 'flex', justifyContent: 'center'
             }}>
                 <TruncatedMessageBox
                     message={user.message}
