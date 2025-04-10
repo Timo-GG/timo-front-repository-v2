@@ -16,19 +16,19 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import TierImage from '../assets/tier.png';
 import CreateDuoModal from '/src/components/duo/CreateDuoModal';
 import DuoDetailModal from '/src/components/duo/DuoDetailModal';
+import SendDuoModal from '/src/components/duo/SendDuoModal';
 import SummonerInfo from '/src/components/SummonerInfo';
 import TierBadge from '/src/components/TierBadge';
 import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 
-// sampleUsers 배열 – 각 듀오는 1명의 소환사(멤버) 데이터를 포함하도록 구성
 const sampleUsers = [
     {
         name: '롤10년차고인물',
         tag: '1234',
         school: '서울과기대',
         department: '컴퓨터공학과',
-        map: '솔로 큐',
+        map: '솔로 랭크',
         message:
             '정글과 서폿 듀오 구합니다! 적극적인 소통을 통해 승리를 이끌고 싶습니다.',
         playStyle: '공격적',
@@ -42,6 +42,9 @@ const sampleUsers = [
         mainPosition: 'jungle',
         lookingForPosition: 'support',
         createdAt: '38초 전',
+        type: '듀오',
+        wins: 7,
+        losses: 3,
         members: [
             {
                 name: '롤10년차고인물',
@@ -56,75 +59,11 @@ const sampleUsers = [
         ],
     },
     {
-        name: '화이팅하자고인물',
-        tag: '9999',
-        school: '고려대',
-        department: '경영학과',
-        map: '자유 큐',
-        message:
-            '상체/봇 듀오 구합니다! 팀워크를 중요하게 생각하며, 전략적 플레이로 승리를 도모합니다.',
-        playStyle: '전략적',
-        status: '바쁨',
-        mic: '사용 안 함',
-        gender: '여성',
-        mbti: 'INTJ',
-        tier: 'emerald',
-        score: 3,
-        queueType: '일반',
-        mainPosition: 'top',
-        lookingForPosition: 'bottom',
-        createdAt: '1분 전',
-        members: [
-            {
-                name: '화이팅하자고인물',
-                tag: '9999',
-                avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/9999.png',
-                tier: 'emerald',
-                score: 3,
-                champions: ['Garen', 'Darius', 'Riven'],
-                position: 'top',
-            },
-        ],
-    },
-    {
-        name: '서포터만한다',
-        tag: '4567',
-        school: '홍익대',
-        department: '디자인학과',
-        map: '랭크 큐',
-        message:
-            '유미와 쓰레쉬 듀오 찾습니다! 창의적이고 유연한 플레이로 승리를 이끌어 나가겠습니다.',
-        playStyle: '유연함',
-        status: '듀오 가능',
-        mic: '사용함',
-        gender: '남성',
-        mbti: 'ISFP',
-        tier: 'gold',
-        score: 4,
-        queueType: '랭크',
-        mainPosition: 'support',
-        lookingForPosition: 'mid',
-        createdAt: '2분 전',
-        members: [
-            {
-                name: '서포터만한다',
-                tag: '4567',
-                avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
-                tier: 'gold',
-                score: 4,
-                champions: ['Thresh', 'Braum', 'Leona'],
-                position: 'support',
-            },
-        ],
-    },
-    {
         name: '솔랭장인',
         tag: '1111',
         school: '성균관대',
         department: '경제학과',
-        map: '솔로 큐',
+        map: '소환사 협곡',
         message:
             '팀운이 부족해 탑 듀오 구합니다. 꾸준한 플레이로 팀에 기여할 자신이 있습니다.',
         playStyle: '신중함',
@@ -138,6 +77,9 @@ const sampleUsers = [
         mainPosition: 'top',
         lookingForPosition: 'jungle',
         createdAt: '10분 전',
+        type: '내전',
+        wins: 5,
+        losses: 5,
         members: [
             {
                 name: '솔랭장인',
@@ -153,16 +95,26 @@ const sampleUsers = [
     },
 ];
 
+function TabPanel({ children, value, index }) {
+    return (
+        <div hidden={value !== index}>
+            {value === index && <Box sx={{ pt: 0 }}>{children}</Box>}
+        </div>
+    );
+}
+
 export default function DuoPage() {
     const theme = useTheme();
+    const [tab, setTab] = useState(0);
     const [positionFilter, setPositionFilter] = useState('nothing');
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // 각 소환사 행 클릭 시 전달받은 데이터를 담는 상태 (모달에 전달됨)
+    // 상세정보 모달(DuoDetailModal)용 상태
     const [selectedUser, setSelectedUser] = useState(null);
+    // 신청 모달(SendDuoModal)용 상태
+    const [openSendDuoModal, setOpenSendDuoModal] = useState(false);
 
-    // 현재 사용자 정보 (내 게시물 등 비교에 사용)
     const currentUser = { name: '롤10년차고인물', tag: '1234' };
 
     const handleRegisterDuo = () => {
@@ -173,12 +125,19 @@ export default function DuoPage() {
         setPositionFilter(pos);
     };
 
-    // 소환사 행 클릭 시 해당 사용자 데이터를 selectedUser에 저장
+    // 행 전체 클릭 (신청 버튼 제외): 상세정보 모달 열기
     const handleUserClick = (userData) => {
+        // 신청 버튼 외의 부분 클릭 시 DuoDetailModal을 엽니다.
         setSelectedUser(userData);
     };
 
-    // 필터 조건에 따른 데이터 필터링 (예시)
+    // 신청 버튼 클릭: SendDuoModal 열기
+    const handleApplyDuo = (userData) => {
+        // 신청 버튼 클릭 시 SendDuoModal을 엽니다.
+        setSelectedUser(userData);
+        setOpenSendDuoModal(true);
+    };
+
     const filteredUsers = sampleUsers.filter((user) => {
         if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter)
             return false;
@@ -207,40 +166,45 @@ export default function DuoPage() {
                         key={idx}
                         user={user}
                         currentUser={currentUser}
+                        // 클릭 시, 행(신청 버튼 제외) 클릭이면 상세정보 모달 열기
                         onUserClick={handleUserClick}
+                        // 신청 버튼 클릭 시 SendDuoModal 열기
+                        onApplyDuo={handleApplyDuo}
                     />
                 ))}
             </Container>
 
             <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
-            {/* selectedUser가 있을 때 상세정보 모달 열기 */}
-            <DuoDetailModal
-                open={Boolean(selectedUser)}
-                handleClose={() => setSelectedUser(null)}
-                // sampleUsers의 객체를 그대로 partyData로 전달
-                partyData={selectedUser || {}}
-            />
+            {/* 상세 정보 모달 (DuoDetailModal): 행 클릭 시 열림 */}
+            {selectedUser && !openSendDuoModal && (
+                <DuoDetailModal
+                    open={Boolean(selectedUser)}
+                    handleClose={() => setSelectedUser(null)}
+                    partyData={selectedUser || {}}
+                />
+            )}
+
+            {/* 신청 모달 (SendDuoModal): 신청 버튼 클릭 시 열림 */}
+            {openSendDuoModal && (
+                <SendDuoModal
+                    open={openSendDuoModal}
+                    handleClose={() => {
+                        setOpenSendDuoModal(false);
+                        setSelectedUser(null);
+                    }}
+                    userData={selectedUser || {}}
+                />
+            )}
         </Box>
     );
 }
 
 /** 필터 영역 – 기존 코드 그대로 */
-function FilterBar({
-    positionFilter,
-    onPositionClick,
-    rankType,
-    setRankType,
-    schoolFilter,
-    setSchoolFilter,
-    onRegisterDuo,
-}) {
+function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, schoolFilter, setSchoolFilter, onRegisterDuo }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <PositionFilterBar
-                positionFilter={positionFilter}
-                onPositionClick={onPositionClick}
-            />
+            <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick} />
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                 <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
                     <Select
@@ -249,18 +213,9 @@ function FilterBar({
                             color: '#fff',
                             borderRadius: 0.8,
                             height: 48,
-                            '.MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#424254',
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#42E6B5',
-                            },
-                            '.MuiSelect-select': {
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '0 32px 0 14px',
-                                height: '100%',
-                            },
+                            '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#42E6B5' },
+                            '.MuiSelect-select': { display: 'flex', alignItems: 'center', padding: '0 32px 0 14px', height: '100%' },
                             '& .MuiSelect-icon': { color: '#7B7B8E' },
                         }}
                         value={rankType}
@@ -280,12 +235,7 @@ function FilterBar({
                             height: 48,
                             '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#42E6B5' },
-                            '.MuiSelect-select': {
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '0 32px 0 14px',
-                                height: '100%',
-                            },
+                            '.MuiSelect-select': { display: 'flex', alignItems: 'center', padding: '0 32px 0 14px', height: '100%' },
                             '& .MuiSelect-icon': { color: '#7B7B8E' },
                         }}
                         value={schoolFilter}
@@ -328,7 +278,7 @@ function FilterBar({
     );
 }
 
-/** 테이블 헤더 – 마지막 메뉴 칼럼 포함 (큐타입 추가) */
+/** 테이블 헤더 – 수정된 소환사 열 왼쪽 정렬 */
 function DuoHeader() {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
     const headers = [
@@ -358,7 +308,7 @@ function DuoHeader() {
             }}
         >
             {headers.map((text, i) => (
-                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>
+                <Box key={i} sx={{ flex: columns[i], textAlign: i === 0 ? 'left' : 'center' }}>
                     {text}
                 </Box>
             ))}
@@ -366,15 +316,15 @@ function DuoHeader() {
     );
 }
 
-function DuoItem({ user, currentUser, onUserClick }) {
+function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
 
-    const handleApplyDuo = (e) => {
+    const handleApplyClick = (e) => {
         e.stopPropagation();
-        alert(`${user.name} 님께 듀오를 신청했습니다!`);
+        // 신청 버튼 클릭 시 onApplyDuo 호출해서 신청 모달 열기
+        if (onApplyDuo) onApplyDuo(user);
     };
 
-    // 점점점 메뉴 상태
     const [anchorEl, setAnchorEl] = React.useState(null);
     const handleMenuClick = (e) => {
         e.stopPropagation();
@@ -390,7 +340,6 @@ function DuoItem({ user, currentUser, onUserClick }) {
         alert('삭제 로직 실행');
     };
 
-    // 내 게시물 여부 (이름, 태그 비교)
     const isMine = user.name === currentUser.name && user.tag === currentUser.tag;
 
     return (
@@ -405,30 +354,26 @@ function DuoItem({ user, currentUser, onUserClick }) {
                 borderBottom: '2px solid #12121a',
                 transition: 'background-color 0.2s',
                 cursor: 'pointer',
-                '&:hover': {
-                    backgroundColor: '#2E2E38',
-                },
+                '&:hover': { backgroundColor: '#2E2E38' },
             }}
         >
-            {/* (1) 소환사 영역 */}
+            {/* (1) 소환사 영역: 왼쪽 정렬, 이름 및 태그|학교 2줄 표시 */}
             <Box
                 sx={{
                     flex: columns[0],
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    gap: 1,
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                    gap: 0.5,
                 }}
             >
-                <SummonerInfo
-                    /** 
-                     *  name → 소환사 이름만 
-                     *  tag  → "#태그 | 학교" 형태 (예: "#9999 | 고려대")
-                     */
-                    name={user.name}
-                    tag={`${user.tag} | ${user.school}`}
-                    avatarUrl="avatar"
-                />
+                <Typography variant="subtitle1" sx={{ color: '#fff', fontWeight: 'bold' }}>
+                    {user.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#ccc' }}>
+                    #{user.tag} | {user.school}
+                </Typography>
             </Box>
 
             {/* (2) 큐 타입 */}
@@ -484,7 +429,7 @@ function DuoItem({ user, currentUser, onUserClick }) {
                 </Typography>
             </Box>
 
-            {/* (8) 듀오 신청 버튼 */}
+            {/* (8) 신청 버튼: 클릭 시 SendDuoModal 열기 */}
             <Box sx={{ flex: columns[7], display: 'flex', justifyContent: 'center' }}>
                 <Button
                     variant="contained"
@@ -497,13 +442,13 @@ function DuoItem({ user, currentUser, onUserClick }) {
                         py: 1,
                         border: '1px solid #71717D',
                     }}
-                    onClick={handleApplyDuo}
+                    onClick={handleApplyClick}
                 >
                     신청
                 </Button>
             </Box>
 
-            {/* (9) 내 게시물인 경우 점점점 메뉴 */}
+            {/* (9) 내 게시물 메뉴 (선택사항) */}
             <Box sx={{ flex: columns[8], display: 'flex', justifyContent: 'flex-end', minWidth: 40 }}>
                 {isMine && (
                     <>
