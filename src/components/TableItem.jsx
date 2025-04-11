@@ -1,3 +1,4 @@
+// TableItem
 import React from 'react';
 import { Box, Typography, Button, Avatar } from '@mui/material';
 import TierImage from '../assets/tier.png';
@@ -23,7 +24,7 @@ export default function TableItem({ received, user, sentStatus }) {
             },
         }}>
             <Box sx={{ flex: columns[0], display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
-                <SummonerInfo name={user.name} tag={user.tag} avatarUrl={user.avatarUrl} />
+                <SummonerInfo name={user.name} tag={user.tag} school={user.school} avatarUrl={user.avatarUrl} />
             </Box>
             <Box sx={{ flex: columns[1], display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                 <TierBadge tier={user.tier} score={user.score} />
@@ -91,4 +92,5 @@ export default function TableItem({ received, user, sentStatus }) {
         </Box>
     );
 }
+
 
