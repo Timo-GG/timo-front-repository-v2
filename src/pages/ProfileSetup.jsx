@@ -1,3 +1,5 @@
+import { schoolDepartmentsJson } from '../data/schoolDepartmentsJson.cleaned';
+import { useEffect } from 'react';
 import React, { useState } from 'react';
 import {
     Box,
@@ -5,15 +7,22 @@ import {
     Button,
     Select,
     MenuItem,
+    IconButton,
     TextField,
-    IconButton
+    List,
+    ListItem,
+    Paper,
+    ListItemText
 } from '@mui/material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PositionFilterBar from '../components/duo/PositionFilterBar';
 import { useNavigate } from 'react-router-dom';
+import SearchIcon from '@mui/icons-material/Search';
+
 
 
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
+
 
 export default function ProfileSetUp() {
     const [position, setPosition] = useState(''); // ''로
@@ -22,6 +31,24 @@ export default function ProfileSetUp() {
     const [selectedMbti, setSelectedMbti] = useState([]); // 전체 선택 초기화
     const [memo, setMemo] = useState('');
     const navigate = useNavigate();
+    const [search, setSearch] = useState('');
+    const [filteredDepts, setFilteredDepts] = useState([]);
+    const [focusedIndex, setFocusedIndex] = useState(-1); // 포커스된 인덱스
+    const selectedUniversity = '호서대학교'; // 예시
+
+    useEffect(() => {
+        if (!search || !schoolDepartmentsJson[selectedUniversity]) {
+            setFilteredDepts([]);
+            return;
+        }
+
+        const allDepts = schoolDepartmentsJson[selectedUniversity];
+        const result = allDepts.filter((dept) =>
+            dept.toLowerCase().includes(search.toLowerCase())
+        );
+        setFilteredDepts(result);
+    }, [search, selectedUniversity]);
+
 
     const toggleMbti = (type) => {
         const groupMap = {
@@ -62,23 +89,93 @@ export default function ProfileSetUp() {
 
             {/* 학과 */}
             <Typography mb={0.5} color="#aaa" fontSize="0.8rem">학과</Typography>
-            <Select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                fullWidth
-                size="small"
-                sx={{
-                    mb: 3,
-                    backgroundColor: '#2A2B31',
-                    color: '#fff',
-                    fontSize: '0.8rem',
-                    '& .MuiSelect-icon': { color: '#7B7B8E' },
-                }}
-            >
-                <MenuItem value="컴퓨터공학과" sx={{ fontSize: '0.8rem' }}>컴퓨터공학과</MenuItem>
-                <MenuItem value="전자공학과" sx={{ fontSize: '0.8rem' }}>전자공학과</MenuItem>
-                <MenuItem value="기계공학과" sx={{ fontSize: '0.8rem' }}>기계공학과</MenuItem>
-            </Select>
+            <Box sx={{ position: 'relative', mb: 3 }}>
+                <TextField
+                    fullWidth
+                    size="small"
+                    value={search}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                        setDepartment('');
+                        setFocusedIndex(-1);
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'ArrowDown') {
+                            setFocusedIndex((prev) => Math.min(prev + 1, filteredDepts.length - 1));
+                        } else if (e.key === 'ArrowUp') {
+                            setFocusedIndex((prev) => Math.max(prev - 1, 0));
+                        } else if (e.key === 'Enter' && focusedIndex >= 0) {
+                            const selected = filteredDepts[focusedIndex];
+                            setDepartment(selected);
+                            setSearch(selected);
+                            setFilteredDepts([]);
+                            setFocusedIndex(-1);
+                        }
+                    }}
+                    placeholder="학과명을 입력하세요"
+                    InputProps={{
+                        startAdornment: (
+                            <SearchIcon sx={{ color: '#888', mr: 1 }} />
+                        ),
+                    }}
+                    sx={{
+                        backgroundColor: '#2A2B31',
+                        color: '#fff',
+                        fontSize: '0.8rem',
+                        input: { color: '#fff' },
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': { border: '1px solid #424254', borderRadius: '6px' },
+                        },
+                    }}
+                />
+
+                {filteredDepts.length > 0 && (
+                    <Paper
+                        sx={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 10,
+                            backgroundColor: '#2A2B31',
+                            border: '1px solid #424254',
+                            borderTop: 'none',
+                            borderBottomLeftRadius: 6,
+                            borderBottomRightRadius: 6,
+                            color: '#fff',
+                            maxHeight: 180,
+                            overflowY: 'auto',
+                        }}
+                    >
+                        <List dense>
+                            {filteredDepts.map((dept, index) => (
+                                <ListItem
+                                    key={index}
+                                    selected={focusedIndex === index}
+                                    onMouseEnter={() => setFocusedIndex(index)}
+                                    onClick={() => {
+                                        setDepartment(dept);
+                                        setSearch(dept);
+                                        setFilteredDepts([]);
+                                        setFocusedIndex(-1);
+                                    }}
+                                    sx={{
+                                        px: 2,
+                                        py: 1,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        bgcolor: focusedIndex === index ? '#42E6B5' : 'inherit',
+                                        color: focusedIndex === index ? '#000' : '#fff',
+                                    }}
+                                >
+                                    <ListItemText primary={dept} />
+                                </ListItem>
+                            ))}
+                        </List>
+                    </Paper>
+                )}
+            </Box>
+
 
             {/* 성별 */}
             <Typography mb={0.5} color="#aaa" fontSize="0.8rem">성별</Typography>

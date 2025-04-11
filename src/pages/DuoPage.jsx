@@ -20,6 +20,7 @@ import SummonerInfo from '/src/components/SummonerInfo';
 import TierBadge from '/src/components/TierBadge';
 import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
+import useAuthStore from '../storage/useAuthStore';
 
 // 상대시간 계산 함수 (초/분/시간 단위)
 function getRelativeTime(dateString) {
@@ -131,6 +132,8 @@ export default function DuoPage() {
     const [duoUsers, setDuoUsers] = useState(sampleUsers);
     // forceRender state: 1초마다 재렌더링용 (상대시간 갱신)
     const [forceRender, setForceRender] = useState(false);
+    const { isLoggedIn, userData } = useAuthStore();
+
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -140,9 +143,19 @@ export default function DuoPage() {
     }, []);
 
     // 현재 로그인한 사용자 (예시)
-    const currentUser = { name: '롤10년차고인물', tag: '1234' };
+    const currentUser = userData; // userData 안에 name, tag 포함된 상태로 가정
 
     const handleRegisterDuo = () => {
+
+        if(!isLoggedIn) {
+            alert('로그인 후 사용 가능합니다.');
+            return; 
+        }
+
+        if (!isEmailVerified || !isSummonerVerified) {
+            alert('학교 이메일과 소환사 인증이 모두 완료되어야 등록할 수 있습니다.');
+            return;
+        }
         setIsModalOpen(true);
     };
 
@@ -163,6 +176,10 @@ export default function DuoPage() {
 
     // 신청 버튼 클릭 시
     const handleApplyDuo = (userData) => {
+        if (!isEmailVerified || !isSummonerVerified) {
+            alert('학교 이메일과 소환사 인증이 모두 완료되어야 듀오 신청이 가능합니다.');
+            return;
+        }
         setSelectedUser(userData);
         setOpenSendDuoModal(true);
     };
@@ -172,6 +189,8 @@ export default function DuoPage() {
         if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter) return false;
         return true;
     });
+    const { isEmailVerified, isSummonerVerified } = useAuthStore();
+
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
