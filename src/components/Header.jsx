@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import useAuthStore from '../storage/useAuthStore';
+import { getMyInfo } from '../apis/authAPI';
 
 import {
     AppBar,
@@ -24,11 +25,28 @@ export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const { accessToken, userData, logout } = useAuthStore();
-
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const userMenuOpen = Boolean(anchorEl);
 
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                console.log('Header에서 유저 정보 불러오기');
+                console.log('accessToken:', accessToken); // ✅ accessToken 확인
+                console.log('userData:', userData); // ✅ userData 확인
+                if (accessToken && !userData) {
+                    const res = await getMyInfo();
+                    console.log('🔍 getMyInfo 결과:', res); // ✅ 구조 확인
+                    useAuthStore.setState({ userData: res });
+                }
+            } catch (err) {
+                console.error('Header에서 유저 정보 불러오기 실패', err);
+            }
+        };
+
+        fetchUser();
+    }, [accessToken]);
     const handleUserMenuClick = (event) => {
         setAnchorEl(event.currentTarget);
     };

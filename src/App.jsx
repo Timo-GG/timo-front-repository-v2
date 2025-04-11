@@ -15,6 +15,7 @@ import NotificationListener from './socket/NotificationListener';
 import AuthCallback from './pages/AuthCallback';
 
 function App() {
+
   return (
     <Router>
       <Header />

@@ -21,6 +21,7 @@ import TierBadge from '/src/components/TierBadge';
 import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import useAuthStore from '../storage/useAuthStore';
+import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 
 // 상대시간 계산 함수 (초/분/시간 단위)
 function getRelativeTime(dateString) {
@@ -133,6 +134,7 @@ export default function DuoPage() {
     // forceRender state: 1초마다 재렌더링용 (상대시간 갱신)
     const [forceRender, setForceRender] = useState(false);
     const { isLoggedIn, userData } = useAuthStore();
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
 
     useEffect(() => {
@@ -147,13 +149,13 @@ export default function DuoPage() {
 
     const handleRegisterDuo = () => {
 
-        if(!isLoggedIn) {
+        if (!isLoggedIn) {
             alert('로그인 후 사용 가능합니다.');
-            return; 
+            return;
         }
 
         if (!isEmailVerified || !isSummonerVerified) {
-            alert('학교 이메일과 소환사 인증이 모두 완료되어야 등록할 수 있습니다.');
+            setOpenConfirmDialog(true); // 모달 열기
             return;
         }
         setIsModalOpen(true);
@@ -177,7 +179,7 @@ export default function DuoPage() {
     // 신청 버튼 클릭 시
     const handleApplyDuo = (userData) => {
         if (!isEmailVerified || !isSummonerVerified) {
-            alert('학교 이메일과 소환사 인증이 모두 완료되어야 듀오 신청이 가능합니다.');
+            setOpenConfirmDialog(true); // 모달 열기
             return;
         }
         setSelectedUser(userData);
@@ -247,6 +249,7 @@ export default function DuoPage() {
                     userData={selectedUser || {}}
                 />
             )}
+            <ConfirmRequiredDialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)} />
         </Box>
     );
 }
@@ -510,6 +513,8 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
                 )}
             </Box>
         </Box>
+
     );
+
 }
 
