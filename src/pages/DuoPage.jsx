@@ -1,5 +1,5 @@
-// src/pages/DuoPage.jsx
-import React, { useState } from 'react';
+// DuoPage
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -13,7 +13,6 @@ import {
     Menu,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import TierImage from '../assets/tier.png';
 import CreateDuoModal from '/src/components/duo/CreateDuoModal';
 import DuoDetailModal from '/src/components/duo/DuoDetailModal';
 import SendDuoModal from '/src/components/duo/SendDuoModal';
@@ -22,13 +21,30 @@ import TierBadge from '/src/components/TierBadge';
 import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 
+// 상대시간 계산 함수 (초/분/시간 단위)
+function getRelativeTime(dateString) {
+    if (!dateString) return '방금 전';
+    const target = new Date(dateString);
+    const now = new Date();
+    const diffSeconds = Math.floor((now - target) / 1000);
+    if (diffSeconds < 60) return `${diffSeconds}초 전`;
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes}분 전`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    return `${diffHours}시간 전`;
+}
+
+// 초기 듀오 데이터 (예시)
 const sampleUsers = [
     {
+        id: 1,
         name: '롤10년차고인물',
         tag: '1234',
         school: '서울과기대',
+        avatarUrl:
+            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
         department: '컴퓨터공학과',
-        map: '솔로 랭크',
+        queueType: '랭크',
         message:
             '정글과 서폿 듀오 구합니다! 적극적인 소통을 통해 승리를 이끌고 싶습니다.',
         playStyle: '공격적',
@@ -38,10 +54,10 @@ const sampleUsers = [
         mbti: 'ENTJ',
         tier: 'platinum',
         score: 2,
-        queueType: '랭크',
         mainPosition: 'jungle',
         lookingForPosition: 'support',
-        createdAt: '38초 전',
+        // createdAt는 ISO 문자열로 등록 후 동적으로 갱신됩니다.
+        createdAt: new Date(new Date().getTime() - 38000).toISOString(), // 38초 전 예시
         type: '듀오',
         wins: 7,
         losses: 3,
@@ -59,11 +75,14 @@ const sampleUsers = [
         ],
     },
     {
+        id: 2,
         name: '솔랭장인',
         tag: '1111',
         school: '성균관대',
+        avatarUrl:
+            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
         department: '경제학과',
-        map: '소환사 협곡',
+        queueType: '일반',
         message:
             '팀운이 부족해 탑 듀오 구합니다. 꾸준한 플레이로 팀에 기여할 자신이 있습니다.',
         playStyle: '신중함',
@@ -73,11 +92,10 @@ const sampleUsers = [
         mbti: 'ISTJ',
         tier: 'diamond',
         score: 1,
-        queueType: '일반',
         mainPosition: 'top',
         lookingForPosition: 'jungle',
-        createdAt: '10분 전',
-        type: '내전',
+        createdAt: new Date(new Date().getTime() - 600000).toISOString(), // 10분 전 예시
+        type: '내전', // 내전인 경우
         wins: 5,
         losses: 5,
         members: [
@@ -96,11 +114,7 @@ const sampleUsers = [
 ];
 
 function TabPanel({ children, value, index }) {
-    return (
-        <div hidden={value !== index}>
-            {value === index && <Box sx={{ pt: 0 }}>{children}</Box>}
-        </div>
-    );
+    return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 0 }}>{children}</Box>}</div>;
 }
 
 export default function DuoPage() {
@@ -110,37 +124,52 @@ export default function DuoPage() {
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // 상세정보 모달(DuoDetailModal)용 상태
+    // 상세정보 모달 (DuoDetailModal) 및 신청 모달 (SendDuoModal)용 상태
     const [selectedUser, setSelectedUser] = useState(null);
-    // 신청 모달(SendDuoModal)용 상태
     const [openSendDuoModal, setOpenSendDuoModal] = useState(false);
+    // duoUsers state에 새 듀오 등록 항목 추가
+    const [duoUsers, setDuoUsers] = useState(sampleUsers);
+    // forceRender state: 1초마다 재렌더링용 (상대시간 갱신)
+    const [forceRender, setForceRender] = useState(false);
 
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setForceRender(prev => !prev);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // 현재 로그인한 사용자 (예시)
     const currentUser = { name: '롤10년차고인물', tag: '1234' };
 
     const handleRegisterDuo = () => {
         setIsModalOpen(true);
     };
 
+    // CreateDuoModal에서 전달한 듀오 객체를 리스트 최상단에 추가
+    const handleAddDuo = (newDuo) => {
+        setDuoUsers((prev) => [newDuo, ...prev]);
+    };
+
     const handlePositionClick = (pos) => {
         setPositionFilter(pos);
     };
 
-    // 행 전체 클릭 (신청 버튼 제외): 상세정보 모달 열기
+    // 행 전체 클릭 (신청 버튼 영역 제외)
     const handleUserClick = (userData) => {
-        // 신청 버튼 외의 부분 클릭 시 DuoDetailModal을 엽니다.
+        if (userData.name === currentUser.name && userData.tag === currentUser.tag) return;
         setSelectedUser(userData);
     };
 
-    // 신청 버튼 클릭: SendDuoModal 열기
+    // 신청 버튼 클릭 시
     const handleApplyDuo = (userData) => {
-        // 신청 버튼 클릭 시 SendDuoModal을 엽니다.
         setSelectedUser(userData);
         setOpenSendDuoModal(true);
     };
 
-    const filteredUsers = sampleUsers.filter((user) => {
-        if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter)
-            return false;
+    // 필터 적용 (예시: 포지션 필터만 적용)
+    const filteredUsers = duoUsers.filter((user) => {
+        if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter) return false;
         return true;
     });
 
@@ -160,23 +189,26 @@ export default function DuoPage() {
                 {/* 테이블 헤더 */}
                 <DuoHeader />
 
-                {/* 각 소환사 행 (DuoItem) */}
+                {/* 듀오 항목 렌더링 */}
                 {filteredUsers.map((user, idx) => (
                     <DuoItem
                         key={idx}
                         user={user}
                         currentUser={currentUser}
-                        // 클릭 시, 행(신청 버튼 제외) 클릭이면 상세정보 모달 열기
-                        onUserClick={handleUserClick}
-                        // 신청 버튼 클릭 시 SendDuoModal 열기
                         onApplyDuo={handleApplyDuo}
+                        onUserClick={handleUserClick}
                     />
                 ))}
             </Container>
 
-            <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            {/* 듀오 등록 모달 */}
+            <CreateDuoModal
+                open={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onCreateDuo={handleAddDuo}
+            />
 
-            {/* 상세 정보 모달 (DuoDetailModal): 행 클릭 시 열림 */}
+            {/* 상세정보 모달 */}
             {selectedUser && !openSendDuoModal && (
                 <DuoDetailModal
                     open={Boolean(selectedUser)}
@@ -185,7 +217,7 @@ export default function DuoPage() {
                 />
             )}
 
-            {/* 신청 모달 (SendDuoModal): 신청 버튼 클릭 시 열림 */}
+            {/* 신청 모달 */}
             {openSendDuoModal && (
                 <SendDuoModal
                     open={openSendDuoModal}
@@ -200,7 +232,6 @@ export default function DuoPage() {
     );
 }
 
-/** 필터 영역 – 기존 코드 그대로 */
 function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, schoolFilter, setSchoolFilter, onRegisterDuo }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -221,7 +252,7 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
                         value={rankType}
                         onChange={(e) => setRankType(e.target.value)}
                     >
-                        <MenuItem value="solo">솔로랭크</MenuItem>
+                        <MenuItem value="solo">랭크</MenuItem>
                         <MenuItem value="flex">일반</MenuItem>
                         <MenuItem value="aram">칼바람</MenuItem>
                     </Select>
@@ -278,7 +309,6 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
     );
 }
 
-/** 테이블 헤더 – 수정된 소환사 열 왼쪽 정렬 */
 function DuoHeader() {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
     const headers = [
@@ -321,11 +351,10 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
 
     const handleApplyClick = (e) => {
         e.stopPropagation();
-        // 신청 버튼 클릭 시 onApplyDuo 호출해서 신청 모달 열기
         if (onApplyDuo) onApplyDuo(user);
     };
 
-    const [anchorEl, setAnchorEl] = React.useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
     const handleMenuClick = (e) => {
         e.stopPropagation();
         setAnchorEl(e.currentTarget);
@@ -344,7 +373,9 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
 
     return (
         <Box
-            onClick={() => onUserClick(user)}
+            onClick={() => {
+                if (!isMine) onUserClick(user);
+            }}
             sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -357,7 +388,7 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
                 '&:hover': { backgroundColor: '#2E2E38' },
             }}
         >
-            {/* (1) 소환사 영역: 왼쪽 정렬, 이름 및 태그|학교 2줄 표시 */}
+            {/* (1) 소환사 영역 */}
             <Box
                 sx={{
                     flex: columns[0],
@@ -368,12 +399,7 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
                     gap: 0.5,
                 }}
             >
-                <Typography variant="subtitle1" sx={{ color: '#fff', fontWeight: 'bold' }}>
-                    {user.name}
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#ccc' }}>
-                    #{user.tag} | {user.school}
-                </Typography>
+                <SummonerInfo name={user.name} avatarUrl={user.avatarUrl} tag={user.tag} school={user.school} />
             </Box>
 
             {/* (2) 큐 타입 */}
@@ -422,14 +448,14 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
                 </Box>
             </Box>
 
-            {/* (7) 등록 일시 */}
+            {/* (7) 등록 일시 (상대 시간으로 갱신) */}
             <Box sx={{ flex: columns[6], textAlign: 'center' }}>
                 <Typography color="#aaa" sx={{ fontSize: 14 }}>
-                    {user.createdAt}
+                    {getRelativeTime(user.createdAt)}
                 </Typography>
             </Box>
 
-            {/* (8) 신청 버튼: 클릭 시 SendDuoModal 열기 */}
+            {/* (8) 신청 버튼 */}
             <Box sx={{ flex: columns[7], display: 'flex', justifyContent: 'center' }}>
                 <Button
                     variant="contained"
@@ -442,13 +468,15 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
                         py: 1,
                         border: '1px solid #71717D',
                     }}
-                    onClick={handleApplyClick}
+                    onClick={(e) => {
+                        handleApplyClick(e);
+                    }}
                 >
                     신청
                 </Button>
             </Box>
 
-            {/* (9) 내 게시물 메뉴 (선택사항) */}
+            {/* (9) 내 게시물 메뉴 */}
             <Box sx={{ flex: columns[8], display: 'flex', justifyContent: 'flex-end', minWidth: 40 }}>
                 {isMine && (
                     <>
