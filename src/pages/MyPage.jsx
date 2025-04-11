@@ -38,6 +38,8 @@ const sampleUsers = [
         name: '롤10년차고인물',
         tag: '1234',
         school: '서울과기대',
+        avatarUrl:
+            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
         department: '컴퓨터공학과',
         map: '솔로 랭크',
         tier: 'platinum',
@@ -59,7 +61,7 @@ const sampleUsers = [
                 name: '롤10년차고인물',
                 tag: '1234',
                 avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1234.png',
+                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
                 tier: 'platinum',
                 score: 2,
                 champions: ['Akali', 'Thresh', 'Yasuo'],
@@ -71,6 +73,8 @@ const sampleUsers = [
         name: '솔랭장인',
         tag: '1111',
         school: '성균관대',
+        avatarUrl:
+            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
         department: '경제학과',
         map: '소환사 협곡',
         tier: 'diamond',
@@ -92,7 +96,7 @@ const sampleUsers = [
                 name: '솔랭장인',
                 tag: '1111',
                 avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
+                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
                 tier: 'diamond',
                 score: 1,
                 champions: ['Gnar', 'Shen', 'Malphite'],
@@ -375,3 +379,4 @@ export default function MyPage() {
         </Box>
     );
 }
+
