@@ -23,7 +23,7 @@ import LoginModal from './login/LoginModal';
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { accessToken, userData, setAccessToken, setRefreshToken } = useAuthStore();
+    const { accessToken, userData, logout } = useAuthStore();
 
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
@@ -44,8 +44,7 @@ export default function Header() {
 
     const handleLogout = () => {
         handleUserMenuClose();
-        setAccessToken(null);
-        setRefreshToken(null);
+        logout(); // 상태 초기화
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         navigate('/');

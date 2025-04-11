@@ -19,6 +19,8 @@ import ScrimDetailModal from '/src/components/scrim/ScrimDetailModal';
 import scrimDummy from '../data/scrimDummy';
 import { useTheme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
+import useAuthStore from '../storage/useAuthStore';
+
 
 // 필요하다면 ChampionIconList, PositionFilterBar 등 기타 컴포넌트도 import
 
@@ -88,7 +90,8 @@ export default function ScrimPage() {
     const [scrims, setScrims] = useState(scrimDummy);
 
     // (2) 현재 로그인한 유저
-    const currentUser = { name: '롤10년차고인물', tag: '1234', avatarUrl: '/default.png' };
+    const { isLoggedIn, isEmailVerified, isSummonerVerified, userData } = useAuthStore();
+    const currentUser = userData;
 
     // (3) 새 스크림 추가 (최신순: 앞에 추가)
     const handleAddScrim = (newScrim) => {
@@ -179,7 +182,12 @@ export default function ScrimPage() {
                             px: 2,
                             py: 1.4
                         }}
-                            onClick={() => setOpen(true)}
+                            onClick={() => {
+                                if (!isLoggedIn) return alert('로그인이 필요합니다.');
+                                if (!isEmailVerified || !isSummonerVerified)
+                                    return alert('학교 이메일과 소환사 인증이 필요합니다.');
+                                setOpen(true);
+                            }}
                         >
                             <Typography variant="h7" fontWeight="bold" color="white">
                                 파티 생성하기
@@ -310,6 +318,9 @@ export default function ScrimPage() {
                                             }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    if (!isLoggedIn) return alert('로그인이 필요합니다.');
+                                                    if (!isEmailVerified || !isSummonerVerified)
+                                                        return alert('학교 이메일과 소환사 인증이 필요합니다.');
                                                     setApplyOpen(true);
                                                 }}
                                             >

@@ -117,10 +117,10 @@ export default function DuoDetailModal({
                             p: 2,
                             borderRadius: 0.8,
                             color: '#fff',
-                            fontSize: '1.00rem',
+                            fontSize: '0.9rem',
                             lineHeight: 1.4,
                             textAlign: 'left',
-                            mb: 5,
+                            mb: 2,
                             minHeight: '100px',
                             whiteSpace: 'pre-line',
                         }}
@@ -134,7 +134,7 @@ export default function DuoDetailModal({
                             backgroundColor: '#282830',
                             p: 2,
                             borderRadius: 1,
-                            mb: 5,
+                            mb: 3,
                             fontSize: '0.85rem',
                             color: '#DDD',
                         }}
@@ -148,23 +148,23 @@ export default function DuoDetailModal({
                             }}
                         >
                             <Box>
-                                <Typography color="#888">플레이스타일</Typography>
+                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>플레이스타일</Typography>
                                 <Typography>{playStyle || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888">내 상태</Typography>
+                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>내 상태</Typography>
                                 <Typography>{status || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888">마이크</Typography>
+                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>마이크</Typography>
                                 <Typography>{mic || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888">성별</Typography>
+                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>성별</Typography>
                                 <Typography>{gender || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888">MBTI</Typography>
+                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>MBTI</Typography>
                                 <Typography>{mbti || '정보 없음'}</Typography>
                             </Box>
                         </Box>
