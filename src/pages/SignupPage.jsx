@@ -9,11 +9,14 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { getMyInfo } from '../apis/authAPI'; // API 호출 함수
-import { requestUnivVerification } from '../apis/univAPI';
-import { verifyUnivCode } from '../apis/univAPI';
+import { requestUnivVerification, verifyUnivCode, checkUniv } from '../apis/univAPI';
+import useAuthStore from '../storage/useAuthStore';
+import { verifyAccount } from '../apis/accountAPI';
+
 
 
 export default function SignupPage() {
+    const { setUserData } = useAuthStore(); // ✅ Zustand에서 setUserData 가져옴
 
     const theme = useTheme();
     const navigate = useNavigate();
@@ -30,8 +33,10 @@ export default function SignupPage() {
     const [showVerificationInput, setShowVerificationInput] = useState(false);
     const [nicknameStatus, setNicknameStatus] = useState(""); // 예: 사용 가능 여부
     const [universityStatus, setUniversityStatus] = useState("");
-
-
+    const [isUniversityValid, setIsUniversityValid] = useState(false);
+    const [isUniversityLocked, setIsUniversityLocked] = useState(false); // 대학교 확인 후 lock
+    const [isSummonerVerified, setIsSummonerVerified] = useState(false);
+    const [summonerStatusMsg, setSummonerStatusMsg] = useState('');
 
     const handleEmailRegister = async () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -74,14 +79,35 @@ export default function SignupPage() {
         }
     };
 
+    const handleSummonerVerify = async () => {
+        const [name, tag] = summonerName.split('#');
+        if (!name || !tag) {
+            setSummonerStatusMsg('형식이 올바르지 않습니다. 예: 짱아깨비#KR1');
+            return;
+        }
+
+        try {
+            const res = await verifyAccount({ accountName: name, tagLine: tag });
+            if (res.success) {
+                setSummonerStatusMsg('✔️ 소환사 이름 인증 완료');
+                setIsSummonerVerified(true);
+            } else {
+                setSummonerStatusMsg('소환사 정보를 찾을 수 없습니다.');
+            }
+        } catch (e) {
+            setSummonerStatusMsg('검증 중 오류가 발생했습니다.');
+        }
+    };
+
 
     useEffect(() => {
         const fetchUserInfo = async () => {
             try {
                 const res = await getMyInfo();
                 const profile = res.data.memberProfile;
-                setNickname(profile.nickname);     // nickname 기본값 세팅
-                setOauthEmail(profile.email);      // email도 백엔드 값으로 세팅
+                setNickname(profile.nickname);     // 로컬 상태
+                setOauthEmail(profile.email);      // 로컬 상태
+                setUserData(res.data);             // ✅ Zustand에 userData 저장
             } catch (err) {
                 console.error('유저 정보 불러오기 실패:', err);
             }
@@ -139,6 +165,7 @@ export default function SignupPage() {
                 <Box sx={{ display: 'flex', height: '56px' }}>
                     <TextField
                         fullWidth
+                        autoComplete='off'
                         value={nickname}
                         onChange={(e) => {
                             setNickname(e.target.value);
@@ -201,8 +228,14 @@ export default function SignupPage() {
                 <Box sx={{ display: 'flex', height: '56px' }}>
                     <TextField
                         fullWidth
+                        autoComplete='off'
                         value={summonerName}
-                        onChange={(e) => setSummonerName(e.target.value)}
+                        onChange={(e) => {
+                            setSummonerName(e.target.value);
+                            setIsSummonerVerified(false); // 수정 시 재검증 유도
+                            setSummonerStatusMsg('');
+                        }}
+                        disabled={isSummonerVerified}
                         variant="outlined"
                         placeholder="짱아깨비#KR1"
                         sx={{
@@ -217,6 +250,15 @@ export default function SignupPage() {
                         }}
                     />
                     <Button
+                        onClick={() => {
+                            if (isSummonerVerified) {
+                                setIsSummonerVerified(false);
+                                setSummonerName('');
+                                setSummonerStatusMsg('');
+                                return;
+                            }
+                            handleSummonerVerify();
+                        }}
                         sx={{
                             height: '100%',
                             borderRadius: '0 12px 12px 0',
@@ -228,10 +270,25 @@ export default function SignupPage() {
                             minWidth: '80px'
                         }}
                     >
-                        확인
+                        {isSummonerVerified ? '해제' : '확인'}
                     </Button>
                 </Box>
+
+                {summonerStatusMsg && (
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            mt: 1,
+                            color: summonerStatusMsg.includes('✔️')
+                                ? theme.palette.success.main
+                                : theme.palette.error.main,
+                        }}
+                    >
+                        {summonerStatusMsg}
+                    </Typography>
+                )}
             </Box>
+
 
             {/* 대학교 */}
             <Box>
@@ -239,11 +296,13 @@ export default function SignupPage() {
                 <Box sx={{ display: 'flex', height: '56px' }}>
                     <TextField
                         fullWidth
+                        autoComplete='off'
                         value={university}
                         onChange={(e) => {
                             setUniversity(e.target.value);
                             setUniversityStatus("");
                         }}
+                        disabled={isUniversityLocked}
                         variant="outlined"
                         placeholder="서울과학기술대학교"
                         sx={{
@@ -258,12 +317,34 @@ export default function SignupPage() {
                         }}
                     />
                     <Button
-                        onClick={() => {
-                            // 대학교 유효성 확인 로직 (나중엔 API)
-                            if (university.includes("서울과학기술대학교")) {
-                                setUniversityStatus("존재하는 대학교입니다.");
-                            } else {
-                                setUniversityStatus("존재하지 않는 대학교입니다.");
+                        onClick={async () => {
+                            if (isUniversityLocked) {
+                                // ✅ 해제 로직
+                                setIsUniversityLocked(false);
+                                setUniversity("");
+                                setUniversityStatus("");
+                                setIsUniversityValid(false);
+                                setSchoolEmail("");
+                                setEmailError('');
+                                setEmailSent(false);
+                                setShowVerificationInput(false);
+                                return;
+                            }
+
+                            try {
+                                const res = await checkUniv({ univName: university });
+                                if (res.success) {
+                                    setUniversityStatus("존재하는 대학교입니다.");
+                                    setIsUniversityValid(true);
+                                    setIsUniversityLocked(true); // ✅ 입력 잠금
+                                } else {
+                                    setUniversityStatus("존재하지 않는 대학교입니다.");
+                                    setIsUniversityValid(false);
+                                }
+                            } catch (error) {
+                                console.error("대학교 확인 실패:", error);
+                                setUniversityStatus("대학교 확인 중 오류가 발생했습니다.");
+                                setIsUniversityValid(false);
                             }
                         }}
                         sx={{
@@ -277,7 +358,7 @@ export default function SignupPage() {
                             minWidth: '80px'
                         }}
                     >
-                        확인
+                        {isUniversityLocked ? "해제" : "확인"}
                     </Button>
                 </Box>
 
@@ -301,12 +382,14 @@ export default function SignupPage() {
                 <Box sx={{ display: 'flex', height: '56px' }}>
                     <TextField
                         fullWidth
+                        autoComplete='off'
                         value={schoolEmail}
                         onChange={(e) => {
-                            setSchoolEmail(e.target.value);
+                            setSchoolEmail(e.target.value); // ✅ 수정
                             setEmailError('');
-                            setEmailSent(false); // 입력 중엔 메시지 초기화
+                            setEmailSent(false);
                         }}
+                        disabled={!isUniversityValid} // ✅ 대학교 미인증 시 비활성화
                         variant="outlined"
                         placeholder="학교 이메일 입력"
                         sx={{
@@ -322,6 +405,7 @@ export default function SignupPage() {
                     />
                     <Button
                         onClick={handleEmailRegister}
+                        disabled={!isUniversityValid} // ✅ 대학교 미인증 시 등록 버튼도 비활성화
                         sx={{
                             height: '100%',
                             borderRadius: '0 12px 12px 0',
@@ -362,6 +446,7 @@ export default function SignupPage() {
                     <Box sx={{ display: 'flex', height: '56px' }}>
                         <TextField
                             fullWidth
+                            autoComplete='off'
                             value={verificationCode}
                             onChange={(e) => {
                                 setVerificationCode(e.target.value);

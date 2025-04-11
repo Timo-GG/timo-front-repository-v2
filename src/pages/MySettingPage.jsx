@@ -7,6 +7,7 @@ import {
   Paper,
   useTheme,
 } from '@mui/material';
+import WithdrawConfirmDialog from '../components/WithdrawConfirmDialog';
 
 export default function MySettingPage() {
   const theme = useTheme();
@@ -22,6 +23,13 @@ export default function MySettingPage() {
   const [emailError, setEmailError] = useState("");
   const [verificationError, setVerificationError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
+  const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
+
+  const handleWithdraw = () => {
+    setIsWithdrawDialogOpen(false);
+    // 실제 탈퇴 API 연동 필요
+    alert("탈퇴가 완료되었습니다.");
+  };
 
   const isSchoolRegistered = school !== "" && schoolEmail !== "";
 
@@ -333,12 +341,21 @@ export default function MySettingPage() {
           {/* 계정 삭제 */}
           <Box>
             <Typography color="text.secondary" sx={{ mb: 1 }}>계정 삭제</Typography>
-            <Button variant="contained" color="error" sx={{ mt: 1, borderRadius: 2 }}>
+            <Button variant="contained" color="error" sx={{ borderRadius: 1, fontSize: '0.rem' }}
+              onClick={() => setIsWithdrawDialogOpen(true)}
+
+            >
               회원 탈퇴
             </Button>
           </Box>
         </Box>
+
       </Paper>
+      <WithdrawConfirmDialog
+        open={isWithdrawDialogOpen}
+        onClose={() => setIsWithdrawDialogOpen(false)}
+        onConfirm={handleWithdraw}
+      />
     </Box>
   );
 }
