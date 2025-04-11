@@ -76,14 +76,14 @@ export default function MySettingPage() {
       sx={{
         backgroundColor: theme.palette.background.default,
         minHeight: '100vh',
-        pt: 10,
+        pt: 5,
         px: 2,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'flex-start'
       }}
     >
-      <Paper elevation={3} sx={{ width: '100%', maxWidth: 460, p: 4, backgroundColor: theme.palette.background.paper, borderRadius: 3 }}>
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 460, p: 4, backgroundColor: theme.palette.background.paper, borderRadius: 2 }}>
         <Typography variant="h5" fontWeight="bold" mb={4} color="text.primary">
           내 계정
         </Typography>
