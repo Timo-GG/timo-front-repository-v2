@@ -1,11 +1,18 @@
 import { useEffect } from 'react';
-import socket from '../socket/socket';
+import { getSocket } from '../socket/socket';
 import useNotificationStore from '../storage/useNotification';
 
 export default function NotificationListener() {
     const addNotification = useNotificationStore((state) => state.addNotification);
 
     useEffect(() => {
+        const socket = getSocket();
+
+        if (!socket) {
+            console.warn('❗ 소켓이 아직 연결되지 않았습니다.');
+            return;
+        }
+
         socket.on('connect', () => {
             console.log('✅ 소켓 연결됨');
         });
@@ -17,7 +24,7 @@ export default function NotificationListener() {
 
         return () => {
             socket.off('newNotification');
-            socket.disconnect();
+            socket.off('connect');
         };
     }, []);
 

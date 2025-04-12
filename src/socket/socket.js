@@ -1,11 +1,37 @@
+// src/socket/socket.js
 import { io } from 'socket.io-client';
 
-const accessToken =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJtZW1iZXJJZCI6MSwiZXhwIjoxNzQ0MjAzNzE1fQ.Sce6Q-iYv05AIZ1fyIATLdt0zXkkTDiWE0x4oh66VvekooVMY_ejNyaYfe5KJ6Qjtw2_zzKQnfJ6W9sj_YXZMA';
+let socket = null;
 
-const socket = io('wss://api.timo.kr', {
-    transports: ['websocket'],
-    query: { token: accessToken }, // ✅ 이렇게 쿼리 파라미터에 토큰 포함
-});
+export const connectSocket = (accessToken) => {
+    console.log('[소켓] connectSocket 호출됨:', accessToken); // ✅ 꼭 추가해봐
 
-export default socket;
+    if (!accessToken) {
+        console.warn('❗️ accessToken이 없습니다.');
+        return null;
+    }
+
+    // 기존 소켓이 있으면 정리
+    if (socket) {
+        socket.disconnect();
+        socket = null;
+    }
+
+    socket = io('ws://localhost:8085', {
+        transports: ['websocket'],
+        query: {
+            token: accessToken,
+        },
+    });
+
+    return socket;
+};
+
+export const getSocket = () => socket;
+
+export const disconnectSocket = () => {
+    if (socket) {
+        socket.disconnect();
+        socket = null;
+    }
+};

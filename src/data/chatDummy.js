@@ -9,9 +9,19 @@ const chatDummy = [
         ],
         lastMessage: '안녕하세요.',
         lastTime: '35분 전'
+    }, {
+        id: 1, // roomId
+        user: {
+            name: '상대유저',
+            tag: '0001',
+            avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/29.png',
+        },
+        messages: [],
+        lastMessage: '',
+        lastTime: '',
     },
     {
-        id: 1,
+        id: 2,
         user: { name: '무지개말파이트', tag: 'KR2', avatarUrl: '' },
         messages: [
             { type: 'received', text: '탑 말파 ㄱㄱ', timestamp: '2025-04-03 13:10' },

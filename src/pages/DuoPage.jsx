@@ -1,5 +1,7 @@
-// DuoPage
+// src/pages/DuoPage.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../apis/axiosInstance';
 import {
     Box,
     Container,
@@ -22,8 +24,8 @@ import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
+import useChatStore from '../storage/useChatStore';
 
-// 상대시간 계산 함수 (초/분/시간 단위)
 function getRelativeTime(dateString) {
     if (!dateString) return '방금 전';
     const target = new Date(dateString);
@@ -36,7 +38,7 @@ function getRelativeTime(dateString) {
     return `${diffHours}시간 전`;
 }
 
-// 초기 듀오 데이터 (예시)
+// 초기 듀오 데이터 예시
 const sampleUsers = [
     {
         id: 1,
@@ -58,8 +60,7 @@ const sampleUsers = [
         score: 2,
         mainPosition: 'jungle',
         lookingForPosition: 'support',
-        // createdAt는 ISO 문자열로 등록 후 동적으로 갱신됩니다.
-        createdAt: new Date(new Date().getTime() - 38000).toISOString(), // 38초 전 예시
+        createdAt: new Date(new Date().getTime() - 38000).toISOString(),
         type: '듀오',
         wins: 7,
         losses: 3,
@@ -96,8 +97,8 @@ const sampleUsers = [
         score: 1,
         mainPosition: 'top',
         lookingForPosition: 'jungle',
-        createdAt: new Date(new Date().getTime() - 600000).toISOString(), // 10분 전 예시
-        type: '내전', // 내전인 경우
+        createdAt: new Date(new Date().getTime() - 600000).toISOString(),
+        type: '내전',
         wins: 5,
         losses: 5,
         members: [
@@ -126,16 +127,14 @@ export default function DuoPage() {
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // 상세정보 모달 (DuoDetailModal) 및 신청 모달 (SendDuoModal)용 상태
     const [selectedUser, setSelectedUser] = useState(null);
     const [openSendDuoModal, setOpenSendDuoModal] = useState(false);
-    // duoUsers state에 새 듀오 등록 항목 추가
     const [duoUsers, setDuoUsers] = useState(sampleUsers);
-    // forceRender state: 1초마다 재렌더링용 (상대시간 갱신)
     const [forceRender, setForceRender] = useState(false);
-    const { isLoggedIn, userData } = useAuthStore();
+    const { isLoggedIn, userData, isEmailVerified, isSummonerVerified } = useAuthStore();
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-
+    const navigate = useNavigate();
+    const { setChatList } = useChatStore();
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -144,24 +143,21 @@ export default function DuoPage() {
         return () => clearInterval(timer);
     }, []);
 
-    // 현재 로그인한 사용자 (예시)
-    const currentUser = userData; // userData 안에 name, tag 포함된 상태로 가정
+    const currentUser = userData;
 
     const handleRegisterDuo = () => {
-
         if (!isLoggedIn) {
             alert('로그인 후 사용 가능합니다.');
             return;
         }
-
         if (!isEmailVerified || !isSummonerVerified) {
-            setOpenConfirmDialog(true); // 모달 열기
+            setOpenConfirmDialog(true);
             return;
         }
         setIsModalOpen(true);
     };
 
-    // CreateDuoModal에서 전달한 듀오 객체를 리스트 최상단에 추가
+    // 새로운 듀오 등록 시 리스트에 추가 (CreateDuoModal에서 호출)
     const handleAddDuo = (newDuo) => {
         setDuoUsers((prev) => [newDuo, ...prev]);
     };
@@ -170,29 +166,44 @@ export default function DuoPage() {
         setPositionFilter(pos);
     };
 
-    // 행 전체 클릭 (신청 버튼 영역 제외)
     const handleUserClick = (userData) => {
         if (userData.name === currentUser.name && userData.tag === currentUser.tag) return;
         setSelectedUser(userData);
     };
 
-    // 신청 버튼 클릭 시
-    const handleApplyDuo = (userData) => {
-        if (!isEmailVerified || !isSummonerVerified) {
-            setOpenConfirmDialog(true); // 모달 열기
-            return;
+    // 신청 버튼 클릭 시, 해당 행의 정보를 기반으로 채팅방 생성 및 이동
+    const handleApplyDuo = async (userDataRow) => {
+        try {
+            // ✅ API 호출: 상대방 ID를 담아 POST
+            const response = await axiosInstance.post(
+                '/chat/rooms',
+                { opponentId: 1 },
+                { withAuth: true } // ✅ 토큰 붙이기
+            );
+
+            const room = response.data.data; // ChatRoomResponse(roomId, 상대 정보 포함)
+
+            // ✅ 채팅 페이지로 이동 (user 정보 state로 넘김)
+            navigate(`/mypage?tab=chat&roomId=${room.roomId}`, {
+                state: {
+                    user: {
+                        name: room.opponentName,
+                        tag: room.opponentTag,
+                        avatarUrl: room.opponentAvatarUrl,
+                    },
+                    shouldJoin: true,
+                },
+            });
+        } catch (err) {
+            console.error('[handleApplyDuo] 채팅방 생성 실패:', err);
+            alert('채팅방 생성에 실패했습니다.');
         }
-        setSelectedUser(userData);
-        setOpenSendDuoModal(true);
     };
 
-    // 필터 적용 (예시: 포지션 필터만 적용)
     const filteredUsers = duoUsers.filter((user) => {
         if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter) return false;
         return true;
     });
-    const { isEmailVerified, isSummonerVerified } = useAuthStore();
-
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
@@ -207,10 +218,8 @@ export default function DuoPage() {
                     onRegisterDuo={handleRegisterDuo}
                 />
 
-                {/* 테이블 헤더 */}
                 <DuoHeader />
 
-                {/* 듀오 항목 렌더링 */}
                 {filteredUsers.map((user, idx) => (
                     <DuoItem
                         key={idx}
@@ -222,23 +231,12 @@ export default function DuoPage() {
                 ))}
             </Container>
 
-            {/* 듀오 등록 모달 */}
-            <CreateDuoModal
-                open={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onCreateDuo={handleAddDuo}
-            />
+            <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} onCreateDuo={handleAddDuo} />
 
-            {/* 상세정보 모달 */}
             {selectedUser && !openSendDuoModal && (
-                <DuoDetailModal
-                    open={Boolean(selectedUser)}
-                    handleClose={() => setSelectedUser(null)}
-                    partyData={selectedUser || {}}
-                />
+                <DuoDetailModal open={Boolean(selectedUser)} handleClose={() => setSelectedUser(null)} partyData={selectedUser || {}} />
             )}
 
-            {/* 신청 모달 */}
             {openSendDuoModal && (
                 <SendDuoModal
                     open={openSendDuoModal}
@@ -513,8 +511,5 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
                 )}
             </Box>
         </Box>
-
     );
-
 }
-

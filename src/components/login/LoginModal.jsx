@@ -87,8 +87,19 @@ export default function LoginModal({ open, onClose, onSocialLogin }) {
         />
 
         {/* 구분선과 텍스트 */}
-        <Divider sx={{ mb: 2, borderColor: 'grey.800' }}>
-          <Typography variant="caption" color="text.secondary">
+        <Divider
+          sx={{
+            borderColor: 'grey.700', // ← 원하는 선 색상
+            '&::before, &::after': {
+              borderColor: 'grey.700', // ← 양쪽 선 모두 동일 색 적용
+            },
+            mb: 2,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
+          >
             소셜 계정으로 로그인
           </Typography>
         </Divider>

@@ -250,7 +250,7 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                     sx={{
                                         border: '1px solid #424254',
                                         borderRadius: 1,
-                                        p: 1,
+                                        p: 0.5,
                                         justifyContent: 'center',
                                     }}
                                 >
