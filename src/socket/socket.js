@@ -4,6 +4,8 @@ import { io } from 'socket.io-client';
 let socket = null;
 
 export const connectSocket = (accessToken) => {
+    console.log('[소켓] connectSocket 호출됨:', accessToken); // ✅ 꼭 추가해봐
+
     if (!accessToken) {
         console.warn('❗️ accessToken이 없습니다.');
         return null;

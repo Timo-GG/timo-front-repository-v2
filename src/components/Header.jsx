@@ -1,10 +1,10 @@
+// src/components/Header.jsx
 import React, { useState, useEffect } from 'react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import useAuthStore from '../storage/useAuthStore';
 import { getMyInfo } from '../apis/authAPI';
-
 import {
     AppBar,
     Toolbar,
@@ -29,24 +29,6 @@ export default function Header() {
     const [anchorEl, setAnchorEl] = useState(null);
     const userMenuOpen = Boolean(anchorEl);
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                console.log('Header에서 유저 정보 불러오기');
-                console.log('accessToken:', accessToken); // ✅ accessToken 확인
-                console.log('userData:', userData); // ✅ userData 확인
-                if (accessToken && !userData) {
-                    const res = await getMyInfo();
-                    console.log('🔍 getMyInfo 결과:', res); // ✅ 구조 확인
-                    useAuthStore.setState({ userData: res });
-                }
-            } catch (err) {
-                console.error('Header에서 유저 정보 불러오기 실패', err);
-            }
-        };
-
-        fetchUser();
-    }, [accessToken]);
     const handleUserMenuClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
@@ -62,7 +44,7 @@ export default function Header() {
 
     const handleLogout = () => {
         handleUserMenuClose();
-        logout(); // 상태 초기화
+        logout();
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         navigate('/');
@@ -135,7 +117,7 @@ export default function Header() {
                                                     ':hover': { backgroundColor: '#50516a' },
                                                 }}
                                             >
-                                                {userData.memberProfile?.nickname || '유저'}
+                                                {userData?.memberProfile?.nickname || '유저'}
                                             </Button>
                                             <Menu
                                                 anchorEl={anchorEl}
@@ -208,7 +190,13 @@ export default function Header() {
                         <Toolbar sx={{ minHeight: '48px', px: 0 }}>
                             <Box sx={{ display: 'flex', gap: 4 }}>
                                 {menuItems.map((item) => {
-                                    const isActive = location.pathname === item.path;
+                                    let isActive = false;
+                                    // MyPage 메뉴는 '/mypage' 또는 '/chat' 경로일 때 active 처리
+                                    if (item.path === '/mypage') {
+                                        isActive = location.pathname === '/mypage' || location.pathname === '/chat';
+                                    } else {
+                                        isActive = location.pathname === item.path;
+                                    }
                                     return (
                                         <Typography
                                             key={item.path}
