@@ -51,31 +51,20 @@ const sampleUsers = [
         queueType: '랭크',
         message:
             '정글과 서폿 듀오 구합니다! 적극적인 소통을 통해 승리를 이끌고 싶습니다.',
-        playStyle: '공격적',
-        status: '듀오 가능',
+        playStyle: '즐겜',
+        status: '첫판',
         mic: '사용함',
         gender: '남성',
         mbti: 'ENTJ',
         tier: 'platinum',
         score: 2,
-        mainPosition: 'jungle',
+        position: 'jungle',
         lookingForPosition: 'support',
         createdAt: new Date(new Date().getTime() - 38000).toISOString(),
         type: '듀오',
         wins: 7,
         losses: 3,
-        members: [
-            {
-                name: '롤10년차고인물',
-                tag: '1234',
-                avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1234.png',
-                tier: 'platinum',
-                score: 2,
-                champions: ['Amumu', 'LeeSin', 'Graves'],
-                position: 'jungle',
-            },
-        ],
+        champions: ['Amumu', 'LeeSin', 'Graves'],
     },
     {
         id: 2,
@@ -88,31 +77,45 @@ const sampleUsers = [
         queueType: '일반',
         message:
             '팀운이 부족해 탑 듀오 구합니다. 꾸준한 플레이로 팀에 기여할 자신이 있습니다.',
-        playStyle: '신중함',
-        status: '듀오 가능',
-        mic: '사용 안 함',
-        gender: '남성',
-        mbti: 'ISTJ',
+        playStyle: '빡겜',
+        status: '계속 플레이',
+        mic: '사용 안함',
+        gender: '여성',
+        mbti: 'ISFJ',
         tier: 'diamond',
         score: 1,
-        mainPosition: 'top',
+        position: 'top',
         lookingForPosition: 'jungle',
         createdAt: new Date(new Date().getTime() - 600000).toISOString(),
         type: '내전',
         wins: 5,
         losses: 5,
-        members: [
-            {
-                name: '솔랭장인',
-                tag: '1111',
-                avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
-                tier: 'diamond',
-                score: 1,
-                champions: ['Gnar', 'Shen', 'Malphite'],
-                position: 'top',
-            },
-        ],
+        champions: ['Gnar', 'Shen', 'Malphite'],
+    },
+    {
+        id: 3,
+        name: '로랄로랄',
+        tag: '2222',
+        school: '서울과기대',
+        avatarUrl:
+            'https://opgg-static.akamaized.net/meta/images/profile_icons/profileIcon2098.jpg?image=q_auto:good,f_webp,w_200&v=1744455113',
+        department: '시디과',
+        queueType: '랭크',
+        message: '원딜 사장님 구합니다!! 충실한 노예 1호입니다.',
+        playStyle: '즐겜',
+        status: '막판',
+        mic: '사용 안함',
+        gender: '남성',
+        mbti: 'INFP',
+        tier: 'gold',
+        score: 3,
+        position: 'support',
+        lookingForPosition: 'bottom',
+        createdAt: new Date(new Date().getTime() - 900000).toISOString(),
+        type: '듀오',
+        wins: 5,
+        losses: 5,
+        champions: ['Neeko', 'Kaisa', 'Ezreal'],
     },
 ];
 
@@ -146,14 +149,14 @@ export default function DuoPage() {
     const currentUser = userData;
 
     const handleRegisterDuo = () => {
-        if (!isLoggedIn) {
-            alert('로그인 후 사용 가능합니다.');
-            return;
-        }
-        if (!isEmailVerified || !isSummonerVerified) {
-            setOpenConfirmDialog(true);
-            return;
-        }
+        // if (!isLoggedIn) {
+        //     alert('로그인 후 사용 가능합니다.');
+        //     return;
+        // }
+        // if (!isEmailVerified || !isSummonerVerified) {
+        //     setOpenConfirmDialog(true);
+        //     return;
+        // }
         setIsModalOpen(true);
     };
 
@@ -201,7 +204,7 @@ export default function DuoPage() {
     };
 
     const filteredUsers = duoUsers.filter((user) => {
-        if (positionFilter !== 'nothing' && user.mainPosition !== positionFilter) return false;
+        if (positionFilter !== 'nothing' && user.position !== positionFilter) return false;
         return true;
     });
 
@@ -234,7 +237,10 @@ export default function DuoPage() {
             <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} onCreateDuo={handleAddDuo} />
 
             {selectedUser && !openSendDuoModal && (
-                <DuoDetailModal open={Boolean(selectedUser)} handleClose={() => setSelectedUser(null)} partyData={selectedUser || {}} />
+                <DuoDetailModal
+                    open={Boolean(selectedUser)}
+                    handleClose={() => setSelectedUser(null)}
+                    partyData={selectedUser || {}} />
             )}
 
             {openSendDuoModal && (
@@ -431,7 +437,7 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
 
             {/* (3) 주 포지션 */}
             <Box sx={{ flex: columns[2], display: 'flex', justifyContent: 'center' }}>
-                <PositionIcon position={user.mainPosition} />
+                <PositionIcon position={user.position} />
             </Box>
 
             {/* (4) 티어 */}

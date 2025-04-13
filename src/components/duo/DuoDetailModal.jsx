@@ -23,13 +23,9 @@ export default function DuoDetailModal({
     open,
     handleClose,
     partyData,
-    members = [],
 }) {
     if (!partyData) return null;
 
-    // sampleUsers 데이터는 partyData에 멤버 정보(members) 필드를 포함하고 있으므로,
-    // members prop이 비어있으면 partyData.members를 기본값으로 사용하도록 함
-    const effectiveMembers = members.length > 0 ? members : partyData.members || [];
 
     const {
         map,
@@ -41,6 +37,13 @@ export default function DuoDetailModal({
         mic,
         gender,
         mbti,
+        name,
+        tag,
+        avatarUrl,
+        tier,
+        score,
+        position,
+        champions,
     } = partyData;
 
     return (
@@ -148,23 +151,23 @@ export default function DuoDetailModal({
                             }}
                         >
                             <Box>
-                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>플레이스타일</Typography>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>플레이스타일</Typography>
                                 <Typography>{playStyle || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>내 상태</Typography>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>내 상태</Typography>
                                 <Typography>{status || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>마이크</Typography>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>마이크</Typography>
                                 <Typography>{mic || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>성별</Typography>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>성별</Typography>
                                 <Typography>{gender || '정보 없음'}</Typography>
                             </Box>
                             <Box>
-                                <Typography color="#888" sx={{fontSize:'0.8rem'}}>MBTI</Typography>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>MBTI</Typography>
                                 <Typography>{mbti || '정보 없음'}</Typography>
                             </Box>
                         </Box>
@@ -187,51 +190,42 @@ export default function DuoDetailModal({
                     </Box>
 
                     {/* 멤버 리스트 */}
-                    <Box>
-                        {effectiveMembers.map((member, i) => {
-                            if (!member.name) return null;
-                            return (
-                                <Box
-                                    key={i}
-                                    display="flex"
-                                    alignItems="center"
-                                    px={1.5}
-                                    py={0.5}
-                                    borderTop="1px solid #393946"
-                                >
-                                    {/* (1) 소환사 이름 */}
-                                    <Box width="30%" display="flex" alignItems="center" gap={1}>
-                                        <SummonerInfo
-                                            name={member.name}
-                                            avatarUrl={member.avatarUrl}
-                                            tag={member.tag}
-                                            copyable
-                                        />
-                                    </Box>
+                    <Box
+                        display="flex"
+                        alignItems="center"
+                        px={1.5}
+                        py={0.5}
+                        borderTop="1px solid #393946"
+                    >
+                        {/* (1) 소환사 이름 */}
+                        <Box width="30%" display="flex" alignItems="center" gap={1}>
+                            <SummonerInfo
+                                name={name}
+                                avatarUrl={avatarUrl}
+                                tag={tag}
+                                copyable
+                            />
+                        </Box>
 
-                                    {/* (2) 포지션 */}
-                                    <Box width="10%" textAlign="center">
-                                        <PositionIcon position={member.position} />
-                                    </Box>
+                        {/* (2) 포지션 */}
+                        <Box width="10%" textAlign="center">
+                            <PositionIcon position={position} />
+                        </Box>
 
-                                    {/* (3) 티어 */}
-                                    <Box width="15%" textAlign="center">
-                                        {member.tier ? (
-                                            <TierBadge tier={member.tier} score={member.score} />
-                                        ) : (
-                                            <TierBadge tier="unrank" />
-                                        )}
-                                    </Box>
+                        {/* (3) 티어 */}
+                        <Box width="15%" textAlign="center">
+                            {tier ? (
+                                <TierBadge tier={tier} score={score} />
+                            ) : (
+                                <TierBadge tier="unrank" />
+                            )}
+                        </Box>
 
-                                    {/* (4) 모스트 챔피언 */}
-                                    <Box width="40%" display="flex" justifyContent="center">
-                                        <ChampionIconList championNames={member.champions || []} />
-                                    </Box>
-                                </Box>
-                            );
-                        })}
+                        {/* (4) 모스트 챔피언 */}
+                        <Box width="40%" display="flex" justifyContent="center">
+                            <ChampionIconList championNames={champions || []} />
+                        </Box>
                     </Box>
-
                 </Box>
 
                 {/* 오른쪽 패널 */}
