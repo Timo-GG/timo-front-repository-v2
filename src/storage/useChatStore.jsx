@@ -6,15 +6,21 @@ const useChatStore = create((set) => ({
     currentRoomId: null,
 
     setChatList: (newList) => set({ chatList: newList }),
-    
-    updateMessages: (roomId, newMessages) =>
-        set((state) => ({
-            chatList: state.chatList.map((room) =>
-                room.id === roomId
-                    ? { ...room, messages: newMessages }
-                    : room
-            ),
-        })),
+
+    updateMessages: (roomId, newMessages, prepend = false) =>
+        set((state) => {
+            const targetRoom = state.chatList.find(room => room.id === roomId);
+            if (!targetRoom) return state;
+            const updatedMessages = prepend
+                ? [...newMessages, ...targetRoom.messages]
+                : [...targetRoom.messages, ...newMessages];
+            return {
+                chatList: state.chatList.map(room =>
+                    room.id === roomId ? { ...room, messages: updatedMessages } : room
+                )
+            };
+        }),
+
 
     addMessage: (roomId, message) =>
         set((state) => {
