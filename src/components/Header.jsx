@@ -20,6 +20,8 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import LoginModal from './login/LoginModal';
+import { connectSocket, getSocket, disconnectSocket, listenOnlineCount } from '../socket/socket';
+import useOnlineStore from '../storage/useOnlineStore';
 
 export default function Header() {
     const location = useLocation();
@@ -28,6 +30,7 @@ export default function Header() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const userMenuOpen = Boolean(anchorEl);
+    const { onlineCount } = useOnlineStore(); // Zustand에서 가져옴
 
     const handleUserMenuClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -44,9 +47,23 @@ export default function Header() {
 
     const handleLogout = () => {
         handleUserMenuClose();
+
+        // 소켓 연결 해제 및 leave_online 이벤트 전송
+        const socket = getSocket();
+        const memberId = userData?.memberId;
+        if (socket && memberId) {
+            socket.emit('leave_online', { memberId }); // 서버에 접속 종료 알림
+        }
+        disconnectSocket();
+
+        // Zustand 상태 초기화
         logout();
+
+        // 로컬스토리지에서 토큰 제거
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+
+        // 홈으로 이동
         navigate('/');
     };
 
@@ -94,7 +111,7 @@ export default function Header() {
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <BarChartIcon sx={{ fontSize: 20, color: '#aaa' }} />
                                         <Typography variant="body2" sx={{ color: '#aaa' }}>
-                                            현재 접속중 <span style={{ color: '#ff5b5b' }}>135</span>
+                                            현재 접속중 <span style={{ color: '#ff5b5b' }}>{onlineCount}</span>
                                         </Typography>
                                     </Box>
                                 </Box>

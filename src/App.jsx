@@ -17,30 +17,57 @@ import AuthCallback from './pages/AuthCallback';
 import useAuthStore from './storage/useAuthStore';
 import { connectSocket } from './socket/socket';
 import ChatPage from './pages/ChatPage';
-import { getMyInfo } from './apis/authAPI';
+import useOnlineStore from './storage/useOnlineStore';
+import NotificationPermissionButton from './components/NotificationPermissionButton';
 function App() {
-  const { accessToken, userData, setUserData } = useAuthStore();
+  const { accessToken, userData } = useAuthStore();
+  const handleAllow = () => {
+    console.log('알림 허용된 이후 추가 동작 실행');
+  };
+  useEffect(() => {
+    const socket = connectSocket(accessToken); // ✅ token 없어도 guest 연결됨
+    // 로그인 유저일 경우에만 join_online
+
+
+    if (accessToken && userData?.memberId) {
+
+      socket.emit('join_online', { memberId: userData.memberId });
+    }
+
+    return () => {
+      // 로그인 유저면 leave_online 전송
+      if (accessToken && userData?.memberId) {
+        socket.emit('leave_online', { memberId: userData.memberId });
+      }
+      socket.disconnect();
+    };
+  }, [accessToken, userData?.memberId]);
+
+  const { setOnlineCount } = useOnlineStore();
 
   useEffect(() => {
-    if (accessToken) {
-      connectSocket(accessToken);
-    }
-  }, [accessToken]); // ✅ accessToken이 바뀌었을 때만 다시 연결
+    const socket = connectSocket(accessToken);
 
-  useEffect(() => {
-    if (accessToken && !userData?.memberId) {
-      getMyInfo()
-        .then((res) => {
-          console.log('[App] 사용자 정보 불러오기 성공', res);
-          console.log('userData:', res.data);
-          setUserData(res.data); // ✅ data 안에 실제 user 정보가 있는지 확인
-        })
-        .catch((err) => {
-          console.error('[App] 사용자 정보 불러오기 실패', err);
-        });
-    }
-  }, [accessToken, userData?.memberId]); // ✅ 의존성 변경
+    // ✅ online_count 리스너 등록
+    socket.on('online_count', (data) => {
+      console.log('[App] online_count 수신:', data);
+      if (data && typeof data.count === 'number') {
+        setOnlineCount(data.count);
+      }
+    });
 
+    // 로그인 유저일 경우 join_online
+    if (accessToken && userData?.memberId) {
+      socket.emit('join_online', { memberId: userData.memberId });
+    }
+
+    return () => {
+      if (accessToken && userData?.memberId) {
+        socket.emit('leave_online', { memberId: userData.memberId });
+      }
+      socket.disconnect();
+    };
+  }, [accessToken, userData?.memberId]);
   function ChatRouteWrapper() {
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
@@ -51,6 +78,7 @@ function App() {
   }
 
   return (
+
     <Router>
       <Header />
       <NotificationListener />
@@ -70,6 +98,7 @@ function App() {
         <Route path="/chat" element={<ChatRouteWrapper />} />
 
       </Routes>
+
     </Router>
   );
 }
