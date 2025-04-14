@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+// src/components/Header.jsx
+import React, { useState, useEffect } from 'react';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import useAuthStore from '../storage/useAuthStore';
-
+import { getMyInfo } from '../apis/authAPI';
 import {
     AppBar,
     Toolbar,
@@ -23,8 +24,7 @@ import LoginModal from './login/LoginModal';
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { accessToken, userData, setAccessToken, setRefreshToken } = useAuthStore();
-
+    const { accessToken, userData, logout } = useAuthStore();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const userMenuOpen = Boolean(anchorEl);
@@ -44,8 +44,7 @@ export default function Header() {
 
     const handleLogout = () => {
         handleUserMenuClose();
-        setAccessToken(null);
-        setRefreshToken(null);
+        logout();
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         navigate('/');
@@ -118,7 +117,7 @@ export default function Header() {
                                                     ':hover': { backgroundColor: '#50516a' },
                                                 }}
                                             >
-                                                {userData.memberProfile?.nickname || '유저'}
+                                                {userData?.username || '유저'}
                                             </Button>
                                             <Menu
                                                 anchorEl={anchorEl}
@@ -191,7 +190,13 @@ export default function Header() {
                         <Toolbar sx={{ minHeight: '48px', px: 0 }}>
                             <Box sx={{ display: 'flex', gap: 4 }}>
                                 {menuItems.map((item) => {
-                                    const isActive = location.pathname === item.path;
+                                    let isActive = false;
+                                    // MyPage 메뉴는 '/mypage' 또는 '/chat' 경로일 때 active 처리
+                                    if (item.path === '/mypage') {
+                                        isActive = location.pathname === '/mypage' || location.pathname === '/chat';
+                                    } else {
+                                        isActive = location.pathname === item.path;
+                                    }
                                     return (
                                         <Typography
                                             key={item.path}

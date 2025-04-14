@@ -1,9 +1,12 @@
-// src/components/socket/TestSocketConnect.jsx
 import { useEffect } from 'react';
-import socket from '../socket/socket';
+import { connectSocket, disconnectSocket } from '../socket/socket';
 
-export default function TestSocketConnect() {
+export default function TestSocketConnect({ accessToken }) {
     useEffect(() => {
+        const socket = connectSocket(accessToken);
+
+        if (!socket) return;
+
         socket.on('connect', () => {
             console.log('✅ 소켓 연결 성공!');
         });
@@ -13,9 +16,9 @@ export default function TestSocketConnect() {
         });
 
         return () => {
-            socket.disconnect();
+            disconnectSocket();
         };
-    }, []);
+    }, [accessToken]);
 
     return <div style={{ color: 'white' }}>소켓 연결 테스트 중...</div>;
 }

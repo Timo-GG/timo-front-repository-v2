@@ -1,175 +1,129 @@
 // src/pages/MyPage.jsx
-import React, { useState, useRef } from 'react';
-import {
-    Box,
-    Container,
-    Typography,
-    Tabs,
-    Tab,
-    Button,
-    Avatar,
-    useTheme,
-    TextField,
-    IconButton,
-    Menu,
-    MenuItem,
-} from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import TierImage from '../assets/tier.png';
+import React, { useState, useEffect } from 'react';
+import { Box, Container, useTheme } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
 import TabHeader from '../components/TabHeader';
 import TableHeader from '../components/TableHeader';
 import TableItem from '../components/TableItem';
-import SummonerInfo from '../components/SummonerInfo';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import SystemMessage from '/src/components/chat/SystemMessage';
-import chatDummy from '../data/chatDummy';
-import ChatMessage from '/src/components/chat/ChatMessage';
-import ConfirmDialog from '/src/components/ConfirmDialog';
-
-// 모달창들
-import DuoDetailModal from '/src/components/duo/DuoDetailModal';
-import ScrimRequestModal from '/src/components/scrim/ScrimRequestModal';
-import CreateDuoModal from '/src/components/duo/CreateDuoModal';
-
-// type이 '듀오'와 '내전'인 데이터를 구분하기 위한 예시 sampleUsers
+import ChatPage from './ChatPage';
+import DuoDetailModal from '../components/duo/DuoDetailModal';
+import ScrimRequestModal from '../components/scrim/ScrimRequestModal';
+import ReviewModal from '../components/ReviewModal';
+import useAuthStore from '../storage/useAuthStore';
+// 예시 데이터 (sampleUsers) - 받은 요청과 보낸 요청 모두 동일 데이터를 활용 (status에 따라 조건 처리)
 const sampleUsers = [
     {
+        id: 1,
         name: '롤10년차고인물',
         tag: '1234',
         school: '서울과기대',
+        avatarUrl:
+            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
         department: '컴퓨터공학과',
-        map: '솔로 랭크',
+        queueType: '랭크',
+        map: '소환사 협곡',
         tier: 'platinum',
         score: 2,
-        message:
-            '현 멀티 2층 최소 다이아 상위듀오 구합니다.',
+        position: 'jungle',
+        message: '현 멀티 2층 최소 다이아 상위듀오 구합니다.',
         playStyle: '즐겜',
         status: '첫판',
-        mic: '가능',
+        mic: '사용함',
         gender: '남성',
         mbti: 'ENTJ',
-        createdAt: '38초 전',
-        champions: ['Akali', 'Thresh', 'Yasuo'],
         type: '듀오',
+        createdAt: '38초 전',
+        matchStatus: '', // 빈 상태: 기본적으로 수락/거절 (받은 요청) 또는 취소하기 (보낸 요청) 처리
         wins: 7,
         losses: 3,
-        members: [
-            {
-                name: '롤10년차고인물',
-                tag: '1234',
-                avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1234.png',
-                tier: 'platinum',
-                score: 2,
-                champions: ['Akali', 'Thresh', 'Yasuo'],
-                position: 'jungle',
-            },
-        ],
+        champions: ['Amumu', 'LeeSin', 'Graves'],
     },
     {
+        id: 2,
         name: '솔랭장인',
         tag: '1111',
         school: '성균관대',
+        avatarUrl:
+            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
         department: '경제학과',
+        queueType: '일반',
         map: '소환사 협곡',
         tier: 'diamond',
         score: 1,
-        message:
-            '팀운이 부족해 탑 듀오 구합니다. 꾸준한 플레이로 팀에 기여할 자신이 있습니다.',
-        playStyle: '신중함',
-        status: '듀오 가능',
-        mic: '사용 안 함',
-        gender: '남성',
-        mbti: 'ISTJ',
-        createdAt: '10분 전',
-        champions: ['Gnar', 'Shen', 'Malphite'],
+        position: 'top',
+        message: '팀운이 부족해 탑 듀오 구합니다.',
+        playStyle: '빡겜',
+        status: '계속 플레이',
+        mic: '사용 안함',
+        gender: '여성',
+        mbti: 'ISFJ',
         type: '내전',
+        createdAt: '10분 전',
+        matchStatus: '평가', // 평가 상태: 평가하기 버튼 노출
+        wins: 6,
+        losses: 4,
+        champions: ['Gnar', 'Shen', 'Malphite'],
+    },
+    {
+        id: 3,
+        name: '로랄로랄',
+        tag: '2222',
+        school: '서울과기대',
+        avatarUrl:
+            'https://opgg-static.akamaized.net/meta/images/profile_icons/profileIcon2098.jpg?image=q_auto:good,f_webp,w_200&v=1744455113',
+        department: '시디과',
+        queueType: '랭크',
+        map: '소환사 협곡',
+        tier: 'gold',
+        score: 3,
+        position: 'support',
+        message: '원딜 사장님 구합니다!! 충실한 노예 1호입니다.',
+        playStyle: '즐겜',
+        status: '막판',
+        mic: '사용 안함',
+        gender: '남성',
+        mbti: 'INFP',
+        type: '듀오',
+        createdAt: '1시간 전',
+        matchStatus: '완료', // 완료 상태: 듀오 완료 텍스트 노출
         wins: 5,
         losses: 5,
-        members: [
-            {
-                name: '솔랭장인',
-                tag: '1111',
-                avatarUrl:
-                    'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
-                tier: 'diamond',
-                score: 1,
-                champions: ['Gnar', 'Shen', 'Malphite'],
-                position: 'top',
-            },
-        ],
+        champions: ['Neeko', 'Kaisa', 'Ezreal'],
     },
 ];
 
 function TabPanel({ children, value, index }) {
-    return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 0 }}>{children}</Box>}</div>;
+    return (
+        <div hidden={value !== index}>
+            {value === index && <Box sx={{ pt: 0 }}>{children}</Box>}
+        </div>
+    );
 }
 
-export default function MyPage() {
+export default function MyPage({ defaultTab, initialRoomId }) {
     const theme = useTheme();
-    const [tab, setTab] = useState(0);
-    const [chatInput, setChatInput] = useState('');
-    const [isComposing, setIsComposing] = useState(false);
-    const isSendingRef = useRef(false);
-    const [chatList, setChatList] = useState(chatDummy);
-    const [selectedChatId, setSelectedChatId] = useState(null);
-    const [anchorEls, setAnchorEls] = useState({});
-    const [openConfirm, setOpenConfirm] = useState(false);
-    const [targetChatId, setTargetChatId] = useState(null);
-    // 듀오와 내전 모달을 위한 상태
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedScrim, setSelectedScrim] = useState(null);
+    const [reviewUser, setReviewUser] = useState(null);
+    const { userData } = useAuthStore();
+    console.log('userData:', userData);
+    const [tab, setTab] = useState(defaultTab || 0);
+    const [searchParams] = useSearchParams();
+    const tabFromURL = searchParams.get('tab') === 'chat' ? 2 : 0;
+    const roomIdFromURL = searchParams.get('roomId') ? parseInt(searchParams.get('roomId'), 10) : null;
+    const roomIdFromProps =
+        typeof initialRoomId === 'number' ? initialRoomId : roomIdFromURL;
 
-    const handleMenuOpen = (event, id) => {
-        setAnchorEls((prev) => ({ ...prev, [id]: event.currentTarget }));
-    };
-
-    const handleMenuClose = (id) => {
-        setAnchorEls((prev) => ({ ...prev, [id]: null }));
-    };
-
-    const handleDelete = (id) => {
-        setChatList((prev) => prev.filter((chat) => chat.id !== id));
-        if (selectedChatId === id) {
-            setSelectedChatId(null);
+    useEffect(() => {
+        if (searchParams.get('tab') === 'chat') {
+            setTab(2);
         }
-        handleMenuClose(id);
-    };
+    }, [searchParams]);
 
-    const handleTabChange = (_, newValue) => setTab(newValue);
 
-    const handleSendMessage = () => {
-        const trimmed = chatInput.trim();
-        if (!trimmed || isSendingRef.current || selectedChatId === null) return;
 
-        isSendingRef.current = true;
-        try {
-            setChatList((prev) =>
-                prev.map((chat) =>
-                    chat.id === selectedChatId
-                        ? {
-                            ...chat,
-                            messages: [
-                                ...chat.messages,
-                                { type: 'sent', text: trimmed, timestamp: new Date().toISOString() },
-                            ],
-                            lastMessage: trimmed,
-                            lastTime: '방금 전',
-                        }
-                        : chat
-                )
-            );
-            setChatInput('');
-        } finally {
-            isSendingRef.current = false;
-        }
-    };
-
-    const selectedChat = chatList.find((chat) => chat.id === selectedChatId);
+    // 행 클릭 시 호출 (모달 띄우기 예시)
     const handleRowClick = (user) => {
-        // 만약 행의 type이 '듀오'면 DuoDetailModal,
-        // '내전'이면 ScrimRequestModal을 열도록 분기 처리합니다.
         if (user.type === '듀오') {
             setSelectedUser(user);
         } else if (user.type === '내전') {
@@ -177,201 +131,82 @@ export default function MyPage() {
         }
     };
 
+    // TableItem에서 "평가하기" 버튼 클릭 시 호출되는 함수
+    const handleEvaluate = (user) => {
+        setReviewUser(user);
+    };
+
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
             <Container maxWidth="lg">
-                <TabHeader tab={tab} onTabChange={handleTabChange} firstLabel="받은 요청" secondLabel="보낸 요청" thirdLabel="채팅" />
+                <TabHeader
+                    tab={tab}
+                    onTabChange={(_, newValue) => setTab(newValue)}
+                    firstLabel="받은 요청"
+                    secondLabel="보낸 요청"
+                    thirdLabel="채팅"
+                />
 
                 {/* 받은 요청 탭 */}
                 <TabPanel value={tab} index={0}>
-                    <Box>
-                        <TableHeader />
-                        {sampleUsers.map((user, idx) => (
-                            <Box
-                                key={idx}
-                                onClick={() => handleRowClick(user)}
-                                sx={(user.type === '듀오' || user.type === '내전') ? { cursor: 'pointer' } : {}}
-                            >
-                                <TableItem received user={user} />
-                            </Box>
-                        ))}
-                    </Box>
+                    <TableHeader />
+                    {sampleUsers.map((user) => (
+                        <Box
+                            key={user.id}
+                            onClick={() => handleRowClick(user)}
+                            sx={{ cursor: 'pointer' }}
+                        >
+                            {/* received prop 전달: 받은 요청 모드 */}
+                            <TableItem received user={user} status={user.matchStatus} onEvaluate={handleEvaluate} />
+                        </Box>
+                    ))}
                 </TabPanel>
 
                 {/* 보낸 요청 탭 */}
                 <TabPanel value={tab} index={1}>
-                    <Box>
-                        <TableHeader />
-                        {sampleUsers.map((user, idx) => (
-                            <Box
-                                key={idx}
-                                onClick={() => handleRowClick(user)}
-                                sx={(user.type === '듀오' || user.type === '내전') ? { cursor: 'pointer' } : {}}
-                            >
-                                <TableItem user={user} sentStatus={idx === 3 ? '완료' : idx === 2 ? '평가' : '취소'} />
-                            </Box>
-                        ))}
-                    </Box>
+                    <TableHeader />
+                    {sampleUsers.map((user) => (
+                        <Box
+                            key={user.id}
+                            onClick={() => handleRowClick(user)}
+                            sx={{ cursor: 'pointer' }}
+                        >
+                            <TableItem user={user} status={user.matchStatus} onEvaluate={handleEvaluate} />
+                        </Box>
+                    ))}
                 </TabPanel>
 
                 {/* 채팅 탭 */}
                 <TabPanel value={tab} index={2}>
-                    <Box sx={{ display: 'flex', overflow: 'hidden', height: 700, backgroundColor: '#1e1f2d' }}>
-                        <Box sx={{ width: 500, backgroundColor: '#2c2c3a', borderRight: '2px solid #171717' }}>
-                            {chatList.map((chat) => (
-                                <Box
-                                    key={chat.id}
-                                    onClick={() => setSelectedChatId(chat.id)}
-                                    sx={{
-                                        p: 2,
-                                        cursor: 'pointer',
-                                        backgroundColor: selectedChatId === chat.id ? '#28282F' : 'transparent',
-                                    }}
-                                >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <SummonerInfo name={chat.user.name} tag={chat.user.tag} avatarUrl={chat.avatarUrl} />
-                                        <IconButton size="small" onClick={(e) => handleMenuOpen(e, chat.id)} sx={{ color: '#aaa' }}>
-                                            <MoreVertIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                    <Menu
-                                        anchorEl={anchorEls[chat.id]}
-                                        open={Boolean(anchorEls[chat.id])}
-                                        onClose={() => handleMenuClose(chat.id)}
-                                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                                    >
-                                        <MenuItem
-                                            onClick={() => {
-                                                setTargetChatId(chat.id);
-                                                setOpenConfirm(true);
-                                            }}
-                                        >
-                                            나가기
-                                        </MenuItem>
-                                    </Menu>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                                        <Typography fontSize={14} color="#aaa">
-                                            {chat.lastMessage}
-                                        </Typography>
-                                        <Typography fontSize={14} color="#666">
-                                            {chat.lastTime}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            ))}
-                        </Box>
-                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#292933' }}>
-                            {selectedChat ? (
-                                <>
-                                    <Box sx={{ p: 2, borderBottom: '1px solid #3b3c4f', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <SummonerInfo
-                                            name={selectedChat.user.name}
-                                            tag={selectedChat.user.tag}
-                                            avatarUrl={selectedChat.user.avatarUrl}
-                                            copyable
-                                            sx={{ flex: 1 }}
-                                        />
-                                        <Button
-                                            size="small"
-                                            onClick={() => {
-                                                setTargetChatId(selectedChat.id);
-                                                setOpenConfirm(true);
-                                            }}
-                                            sx={{ border: '1px solid #71717D', borderRadius: 0.8, ml: 'auto', color: '#fff', backgroundColor: '#3b3c4f', px: 2 }}
-                                        >
-                                            나가기
-                                        </Button>
-                                    </Box>
-                                    <Box sx={{ flex: 1, p: 2, overflowY: 'auto' }}>
-                                        <SystemMessage message="2025년 4월 3일" />
-                                        <SystemMessage message="채팅방이 생성되었습니다." />
-                                        {selectedChat.messages.map((msg, idx, arr) => {
-                                            const prev = arr[idx - 1];
-                                            const showTime =
-                                                !prev ||
-                                                new Date(msg.timestamp).getMinutes() !== new Date(prev.timestamp).getMinutes();
-                                            return msg.type === 'system' ? (
-                                                <SystemMessage key={idx} message={msg.text} />
-                                            ) : (
-                                                <ChatMessage key={idx} type={msg.type} text={msg.text} timestamp={msg.timestamp} showTime={showTime} />
-                                            );
-                                        })}
-                                    </Box>
-                                    <Box sx={{ display: 'flex', p: 2, borderTop: '1px solid #3b3c4f', backgroundColor: '#1e1f2d' }}>
-                                        <TextField
-                                            fullWidth
-                                            placeholder="내용을 입력해주세요.."
-                                            value={chatInput}
-                                            onChange={(e) => setChatInput(e.target.value)}
-                                            onCompositionStart={() => setIsComposing(true)}
-                                            onCompositionEnd={() => setIsComposing(false)}
-                                            onKeyDown={(e) => {
-                                                if (isComposing) return;
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleSendMessage();
-                                                }
-                                            }}
-                                            InputProps={{
-                                                disableUnderline: true,
-                                                sx: {
-                                                    color: '#fff',
-                                                    pl: 2,
-                                                    backgroundColor: '#2c2c3a',
-                                                    borderRadius: 1,
-                                                },
-                                            }}
-                                            sx={{ backgroundColor: '#2c2c3a', borderRadius: 1 }}
-                                        />
-                                        <IconButton sx={{ color: '#42E6B5', ml: 1 }} onClick={handleSendMessage} disabled={isSendingRef.current}>
-                                            <SendIcon />
-                                        </IconButton>
-                                    </Box>
-                                </>
-                            ) : (
-                                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
-                                    <Typography>대화방을 선택해주세요.</Typography>
-                                </Box>
-                            )}
-                        </Box>
-                    </Box>
+                    <ChatPage initialRoomId={roomIdFromProps} />
                 </TabPanel>
-                <ConfirmDialog
-                    open={openConfirm}
-                    onClose={() => setOpenConfirm(false)}
-                    onConfirm={() => {
-                        if (targetChatId !== null) {
-                            handleDelete(targetChatId);
-                        }
-                        setOpenConfirm(false);
-                    }}
-                    title="정말 나가시겠습니까?"
-                    message="채팅방에서 나가면 대화 내용이 사라집니다."
-                    confirmText="나가기"
-                    cancelText="취소"
-                    danger
-                />
             </Container>
 
-            {/* 듀오 타입인 행 클릭 시 DuoDetailModal 열기 */}
+            {/* 듀오 상세 모달 */}
             {selectedUser && (
                 <DuoDetailModal
-                    open={Boolean(selectedUser)}
+                    open
                     handleClose={() => setSelectedUser(null)}
-                    partyData={selectedUser || {}}
+                    partyData={selectedUser}
                 />
             )}
 
-            {/* 내전 타입인 행 클릭 시 ScrimRequestModal 열기 */}
+            {/* 내전 상세 모달 */}
             {selectedScrim && (
                 <ScrimRequestModal
-                    open={Boolean(selectedScrim)}
+                    open
                     handleClose={() => setSelectedScrim(null)}
                     partyId={selectedScrim.id}
                     scrims={[selectedScrim]}
                 />
             )}
+
+            {/* 리뷰 모달 (평가하기 버튼 클릭 시 열림) */}
+            <ReviewModal
+                open={Boolean(reviewUser)}
+                handleClose={() => setReviewUser(null)}
+                user={reviewUser}
+            />
         </Box>
     );
 }

@@ -19,6 +19,9 @@ import ScrimDetailModal from '/src/components/scrim/ScrimDetailModal';
 import scrimDummy from '../data/scrimDummy';
 import { useTheme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
+import useAuthStore from '../storage/useAuthStore';
+import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
+
 
 // 필요하다면 ChampionIconList, PositionFilterBar 등 기타 컴포넌트도 import
 
@@ -33,6 +36,7 @@ export default function ScrimPage() {
     const [open, setOpen] = useState(false);        // CreateScrimModal 열림 여부
     const [applyOpen, setApplyOpen] = useState(false); // ApplyScrimModal 열림 여부
     const [detailOpen, setDetailOpen] = useState(false);
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
     // 메뉴(anchorEl) 관련
     const [anchorEl, setAnchorEl] = useState(null);
@@ -88,7 +92,8 @@ export default function ScrimPage() {
     const [scrims, setScrims] = useState(scrimDummy);
 
     // (2) 현재 로그인한 유저
-    const currentUser = { name: '롤10년차고인물', tag: '1234', avatarUrl: '/default.png' };
+    const { isLoggedIn, isEmailVerified, isSummonerVerified, userData } = useAuthStore();
+    const currentUser = userData;
 
     // (3) 새 스크림 추가 (최신순: 앞에 추가)
     const handleAddScrim = (newScrim) => {
@@ -179,7 +184,14 @@ export default function ScrimPage() {
                             px: 2,
                             py: 1.4
                         }}
-                            onClick={() => setOpen(true)}
+                            onClick={() => {
+                                if (!isLoggedIn) return alert('로그인이 필요합니다.');
+                                if (!isEmailVerified || !isSummonerVerified) {
+                                    setOpenConfirmDialog(true); // 모달 열기
+                                    return;
+                                }
+                                setOpen(true);
+                            }}
                         >
                             <Typography variant="h7" fontWeight="bold" color="white">
                                 파티 생성하기
@@ -310,6 +322,11 @@ export default function ScrimPage() {
                                             }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    if (!isLoggedIn) return alert('로그인이 필요합니다.');
+                                                    if (!isEmailVerified || !isSummonerVerified) {
+                                                        setOpenConfirmDialog(true); // 모달 열기
+                                                        return;
+                                                    }
                                                     setApplyOpen(true);
                                                 }}
                                             >
@@ -374,6 +391,8 @@ export default function ScrimPage() {
                 partyId={selectedPartyId}
                 scrims={scrims} // ScrimDetailModal에서 scrims 배열을 참조
             />
+            <ConfirmRequiredDialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)} />
+
         </Box>
     );
 }

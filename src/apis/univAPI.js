@@ -15,3 +15,15 @@ export const verifyUnivCode = async (code, { univName, univEmail }) => {
   });
   return response.data;
 };
+
+export const checkUniv = async ({ univName }) => {
+  const response = await axiosInstance.post('/auth/univ/checkUniv', {
+    univName
+  });
+  return response.data;
+};
+
+export const updateUnivAccount = async (payload) => {
+  const res = await axiosInstance.put('/members/univ', payload);
+  return res.data;
+};

@@ -1,395 +1,353 @@
-// src/components/CreateDuoModal.jsx
+// CreateDuoModal
 import React, { useState } from 'react';
 import {
+    Dialog,
     Box,
     Typography,
     IconButton,
-    Modal,
     TextField,
+    Select,
+    MenuItem,
     Button,
-    Avatar
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import PositionFilterBar from './PositionFilterBar';
 
-/** ----- 헬퍼 함수 (아이콘 경로) ----- **/
-// 포지션 6가지: top, jungle, mid, bottom, support, nothing
-const getPositionImage = (position) => `/src/assets/position/${position}.png`;
+export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
+    const [formData, setFormData] = useState({
+        myPosition: 'nothing',
+        playStyle: '즐겜',
+        gameStatus: '첫판',
+        mic: 'off',
+        duoPosition: 'nothing',
+        duoPlayStyle: '즐겜',
+        queueType: '랭크',
+        memo: '',
+    });
 
-// 마이크 on/off 아이콘 (예: mic_on.png, mic_off.png)
-const getMicImage = (micState) => `/src/assets/mic/${micState}.png`;
-
-/** ----- 선택지 목록 ----- **/
-const positions = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
-const playStyles = ['즐겜', '빡겜'];
-const lineStates = ['침착', '계속 플레이', '마지막판'];
-const micOptions = ['on', 'off'];
-const queueTypes = ['솔로랭크', '자유랭크', '일반'];
-
-// 이미지 사이즈 상수 (모든 이미지 40×40)
-const ICON_SIZE = 40;
-
-export default function CreateDuoModal({ open, onClose }) {
-    // --- 내 정보 (왼쪽) ---
-    const [myPosition, setMyPosition] = useState('top');       // 포지션
-    const [myPlayStyle, setMyPlayStyle] = useState('즐겜');    // 플레이스타일
-    const [myLineState, setMyLineState] = useState('침착');    // 라인 상태
-    const [myMic, setMyMic] = useState('off');                // 마이크 on/off
-
-    // --- 듀오 정보 (오른쪽) ---
-    const [duoPosition, setDuoPosition] = useState('mid');     // 포지션
-    const [duoPlayStyle, setDuoPlayStyle] = useState('빡겜');  // 선호 플레이스타일
-    const [duoQueue, setDuoQueue] = useState('솔로랭크');      // 큐 타입
-
-    // 메모 (한 줄 소개 등)
-    const [memo, setMemo] = useState('');
-
-    // 모달 닫기
-    const handleClose = () => {
-        onClose();
+    const updateField = (field, value) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    // 등록 버튼
-    const handleRegister = () => {
-        // 실제로는 여기서 API 호출 혹은 상위 콜백 처리
-        alert(`
-[내 정보]
-포지션: ${myPosition}
-플레이스타일: ${myPlayStyle}
-라인 상태: ${myLineState}
-마이크: ${myMic}
+    const currentUser = {
+        name: '롤10년차고인물',
+        tag: '1234',
+        avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
+        school: '서울과기대',
+        tier: 'platinum',
+        score: 2,
+    };
 
-[듀오 정보]
-포지션: ${duoPosition}
-선호 플레이스타일: ${duoPlayStyle}
-큐 타입: ${duoQueue}
+    const handleSubmit = () => {
+        const newDuo = {
+            id: Date.now(),
+            name: currentUser.name,
+            tag: currentUser.tag,
+            school: currentUser.school,
+            avatarUrl: currentUser.avatarUrl,
+            queueType: formData.queueType,
+            message: formData.memo,
+            playStyle: formData.playStyle,
+            status: '듀오 가능',
+            mic: formData.mic === 'on' ? '사용함' : '사용 안 함',
+            mainPosition: formData.myPosition,
+            lookingForPosition: formData.duoPosition,
+            createdAt: new Date().toISOString(),
+            type: '듀오',
+            tier: currentUser.tier,
+            score: currentUser.score,
+            wins: 0,
+            losses: 0,
+            members: [
+                {
+                    name: currentUser.name,
+                    tag: currentUser.tag,
+                    avatarUrl: currentUser.avatarUrl,
+                    tier: 'platinum',
+                    score: 2,
+                    champions: [],
+                    position: formData.myPosition,
+                },
+            ],
+        };
 
-메모: ${memo}
-    `);
+        if (onCreateDuo) {
+            onCreateDuo(newDuo);
+        }
         onClose();
     };
 
     return (
-        <Modal open={open} onClose={handleClose}>
-            {/* 모달 배경 (가운데 정렬) */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    outline: 'none'
-                }}
-            >
-                {/* 모달 컨테이너 */}
-                <Box
-                    sx={{
-                        width: 700,
-                        maxWidth: '90%',
-                        backgroundColor: '#2c2c3a',
-                        borderRadius: 2,
-                        p: 3,
-                        position: 'relative'
-                    }}
-                >
-                    {/* 상단 헤더 */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'bold' }}>
+        <Dialog open={open} onClose={onClose} maxWidth="sm">
+            {/* 내부 영역에는 백드롭 이벤트에 영향 주지 않는 정도의 stopPropagation만 사용 */}
+            <Box>
+                <Box sx={{ backgroundColor: '#31313D', p: 2 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography fontSize="1.1rem" fontWeight="bold" color="#fff">
                             듀오 등록하기
                         </Typography>
-                        <IconButton onClick={handleClose} sx={{ color: '#fff', ml: 'auto' }}>
-                            <CloseIcon />
+                        <IconButton onClick={onClose} size="small">
+                            <CloseIcon sx={{ color: '#fff' }} />
                         </IconButton>
                     </Box>
+                </Box>
 
-                    {/* 본문: 2개 컬럼 (내 정보 / 듀오 정보) */}
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        {/* 내 정보 (왼쪽 컬럼) */}
-                        <Box
-                            sx={{
-                                flex: 1,
-                                backgroundColor: '#1e1f2d',
-                                borderRadius: 2,
-                                p: 2
-                            }}
-                        >
-                            <Typography sx={{ color: '#fff', fontWeight: 'bold', mb: 2 }}>
+                <Box sx={{ height: '1px', backgroundColor: '#171717' }} />
+
+                <Box sx={{ backgroundColor: '#31313E', p: 3 }}>
+                    <Box display="flex" justifyContent="center" gap={3} mb={3}>
+                        {/* 왼쪽: 내 정보 패널 */}
+                        <Box sx={{ width: 280, p: 2, borderRadius: 1, backgroundColor: '#31313E' }}>
+                            <Typography fontSize="1rem" fontWeight="bold" color="#fff" mb={2}>
                                 내 정보
                             </Typography>
-
-                            {/* 포지션 */}
-                            <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
+                            <Box mb={2}>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                                     포지션
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {positions.map((pos) => (
-                                        <Avatar
-                                            key={pos}
-                                            src={getPositionImage(pos)}
-                                            variant="square"
-                                            sx={{
-                                                width: ICON_SIZE,
-                                                height: ICON_SIZE,
-                                                cursor: 'pointer',
-                                                backgroundColor: myPosition === pos ? '#424254' : 'transparent',
-                                                p: 1,
-                                                borderRadius: 1,
-                                                '&:hover': {
-                                                    backgroundColor: '#424254'
-                                                }
-                                            }}
-                                            onClick={() => setMyPosition(pos)}
-                                        />
-                                    ))}
-                                </Box>
+                                <PositionFilterBar
+                                    positionFilter={formData.myPosition}
+                                    onPositionClick={(val) => updateField('myPosition', val)}
+                                    selectedColor="#42E6B5"
+                                    unselectedColor="#424254"
+                                    hoverColor="#42E6B5"
+                                    iconSize={26}
+                                    iconInvert
+                                />
                             </Box>
-
-                            {/* 플레이스타일 */}
-                            <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
-                                    플레이스타일
+                            <Box mb={2}>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
+                                    플레이 스타일
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {playStyles.map((style) => (
-                                        <Button
+                                <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
+                                    {['즐겜', '빡겜'].map((style) => (
+                                        <Box
                                             key={style}
-                                            variant="contained"
+                                            onClick={() => updateField('playStyle', style)}
                                             sx={{
-                                                fontSize: 14,
-                                                backgroundColor: myPlayStyle === style ? '#424254' : '#2c2c3a',
-                                                color: '#fff',
+                                                flex: 1,
+                                                textAlign: 'center',
+                                                py: 1,
+                                                cursor: 'pointer',
                                                 borderRadius: 1,
-                                                minWidth: 70,
-                                                '&:hover': {
-                                                    backgroundColor: '#424254'
-                                                }
+                                                fontSize: '0.85rem',
+                                                color: formData.playStyle === style ? '#fff' : '#888',
+                                                fontWeight: formData.playStyle === style ? 'bold' : 'normal',
+                                                backgroundColor: formData.playStyle === style ? '#42E6B5' : 'transparent',
                                             }}
-                                            onClick={() => setMyPlayStyle(style)}
                                         >
                                             {style}
-                                        </Button>
+                                        </Box>
                                     ))}
                                 </Box>
                             </Box>
-
-                            {/* 라인 상태 */}
-                            <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
-                                    라인 상태
+                            <Box mb={2}>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
+                                    내 상태
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {lineStates.map((state) => (
-                                        <Button
-                                            key={state}
-                                            variant="contained"
+                                <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
+                                    {['첫판', '계속 플레이', '마지막판'].map((status) => (
+                                        <Box
+                                            key={status}
+                                            onClick={() => updateField('gameStatus', status)}
                                             sx={{
-                                                fontSize: 14,
-                                                backgroundColor: myLineState === state ? '#424254' : '#2c2c3a',
-                                                color: '#fff',
+                                                flex: 1,
+                                                textAlign: 'center',
+                                                py: 1,
+                                                cursor: 'pointer',
                                                 borderRadius: 1,
-                                                '&:hover': {
-                                                    backgroundColor: '#424254'
-                                                }
+                                                fontSize: '0.85rem',
+                                                color: formData.gameStatus === status ? '#fff' : '#888',
+                                                fontWeight: formData.gameStatus === status ? 'bold' : 'normal',
+                                                backgroundColor: formData.gameStatus === status ? '#42E6B5' : 'transparent',
                                             }}
-                                            onClick={() => setMyLineState(state)}
                                         >
-                                            {state}
-                                        </Button>
+                                            {status}
+                                        </Box>
                                     ))}
                                 </Box>
                             </Box>
-
-                            {/* 마이크 */}
-                            <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
+                            <Box mb={1}>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                                     마이크
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {micOptions.map((micVal) => (
-                                        <Avatar
-                                            key={micVal}
-                                            src={getMicImage(micVal)}
-                                            variant="square"
+                                <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
+                                    {['on', 'off'].map((m) => (
+                                        <Box
+                                            key={m}
+                                            onClick={() => updateField('mic', m)}
                                             sx={{
-                                                width: ICON_SIZE,
-                                                height: ICON_SIZE,
+                                                flex: 1,
+                                                textAlign: 'center',
+                                                py: 1,
                                                 cursor: 'pointer',
-                                                backgroundColor: myMic === micVal ? '#424254' : 'transparent',
-                                                p: 1,
                                                 borderRadius: 1,
-                                                '&:hover': {
-                                                    backgroundColor: '#424254'
-                                                }
+                                                fontSize: '0.85rem',
+                                                color: formData.mic === m ? '#fff' : '#888',
+                                                fontWeight: formData.mic === m ? 'bold' : 'normal',
+                                                backgroundColor: formData.mic === m ? '#42E6B5' : 'transparent',
                                             }}
-                                            onClick={() => setMyMic(micVal)}
-                                        />
+                                        >
+                                            {m === 'on' ? '사용' : '사용 안 함'}
+                                        </Box>
                                     ))}
                                 </Box>
                             </Box>
                         </Box>
 
-                        {/* 듀오 정보 (오른쪽 컬럼) */}
-                        <Box
-                            sx={{
-                                flex: 1,
-                                backgroundColor: '#1e1f2d',
-                                borderRadius: 2,
-                                p: 2
-                            }}
-                        >
-                            <Typography sx={{ color: '#fff', fontWeight: 'bold', mb: 2 }}>
+                        {/* 오른쪽: 듀오 정보 패널 */}
+                        <Box sx={{ width: 280, p: 2, borderRadius: 1, backgroundColor: '#31313E' }}>
+                            <Typography fontSize="1rem" fontWeight="bold" color="#fff" mb={2}>
                                 듀오 정보
                             </Typography>
-
-                            {/* 포지션 */}
-                            <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
-                                    포지션
+                            <Box mb={2}>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
+                                    선호 포지션
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {positions.map((pos) => (
-                                        <Avatar
-                                            key={pos}
-                                            src={getPositionImage(pos)}
-                                            variant="square"
-                                            sx={{
-                                                width: ICON_SIZE,
-                                                height: ICON_SIZE,
-                                                cursor: 'pointer',
-                                                backgroundColor: duoPosition === pos ? '#424254' : 'transparent',
-                                                p: 1,
-                                                borderRadius: 1,
-                                                '&:hover': {
-                                                    backgroundColor: '#424254'
-                                                }
-                                            }}
-                                            onClick={() => setDuoPosition(pos)}
-                                        />
-                                    ))}
-                                </Box>
+                                <PositionFilterBar
+                                    positionFilter={formData.duoPosition}
+                                    onPositionClick={(val) => updateField('duoPosition', val)}
+                                    selectedColor="#42E6B5"
+                                    unselectedColor="#424254"
+                                    hoverColor="#42E6B5"
+                                    iconSize={26}
+                                    iconInvert
+                                />
                             </Box>
-
-                            {/* 선호 플레이스타일 */}
-                            <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
-                                    선호 플레이스타일
+                            <Box mb={2}>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
+                                    선호 플레이 스타일
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {playStyles.map((style) => (
-                                        <Button
+                                <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
+                                    {['즐겜', '빡겜'].map((style) => (
+                                        <Box
                                             key={style}
-                                            variant="contained"
+                                            onClick={() => updateField('duoPlayStyle', style)}
                                             sx={{
-                                                fontSize: 14,
-                                                backgroundColor: duoPlayStyle === style ? '#424254' : '#2c2c3a',
-                                                color: '#fff',
+                                                flex: 1,
+                                                textAlign: 'center',
+                                                py: 1,
+                                                cursor: 'pointer',
                                                 borderRadius: 1,
-                                                minWidth: 70,
-                                                '&:hover': {
-                                                    backgroundColor: '#424254'
-                                                }
+                                                fontSize: '0.85rem',
+                                                color: formData.duoPlayStyle === style ? '#fff' : '#888',
+                                                fontWeight: formData.duoPlayStyle === style ? 'bold' : 'normal',
+                                                backgroundColor: formData.duoPlayStyle === style ? '#42E6B5' : 'transparent',
                                             }}
-                                            onClick={() => setDuoPlayStyle(style)}
                                         >
                                             {style}
-                                        </Button>
+                                        </Box>
                                     ))}
                                 </Box>
                             </Box>
-
-                            {/* 큐 타입 */}
-                            <Box sx={{ mb: 2 }}>
-                                <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
+                            <Box mb={2}>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                                     큐 타입
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {queueTypes.map((qt) => (
-                                        <Button
-                                            key={qt}
-                                            variant="contained"
-                                            sx={{
-                                                fontSize: 14,
-                                                backgroundColor: duoQueue === qt ? '#424254' : '#2c2c3a',
-                                                color: '#fff',
-                                                borderRadius: 1,
-                                                '&:hover': {
-                                                    backgroundColor: '#424254'
-                                                }
-                                            }}
-                                            onClick={() => setDuoQueue(qt)}
-                                        >
-                                            {qt}
-                                        </Button>
-                                    ))}
+                                <Box
+                                    display="inline-flex"
+                                    alignItems="center"
+                                    sx={{
+                                        border: '1px solid #424254',
+                                        borderRadius: 1,
+                                        p: 0.5,
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <Select
+                                        value={formData.queueType}
+                                        onChange={(e) => updateField('queueType', e.target.value)}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: 'transparent',
+                                            color: '#fff',
+                                            borderRadius: 1,
+                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
+                                            '& .MuiSelect-icon': { color: '#7B7B8E' },
+                                            '& .MuiSelect-select': {
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                p: 1,
+                                            },
+                                        }}
+                                    >
+                                        <MenuItem value="랭크" sx={{ fontSize: '0.85rem' }}>
+                                            랭크
+                                        </MenuItem>
+                                        <MenuItem value="일반" sx={{ fontSize: '0.85rem' }}>
+                                            일반
+                                        </MenuItem>
+                                        <MenuItem value="칼바람" sx={{ fontSize: '0.85rem' }}>
+                                            칼바람
+                                        </MenuItem>
+                                    </Select>
                                 </Box>
                             </Box>
                         </Box>
                     </Box>
 
-                    {/* 메모 (아래쪽, 전체 너비) */}
-                    <Box sx={{ mt: 2 }}>
-                        <Typography sx={{ color: '#999', fontSize: 14, mb: 1 }}>
+                    <Box mb={3}>
+                        <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                             메모
                         </Typography>
                         <TextField
-                            placeholder="짧은 한 줄 소개를 입력해주세요."
-                            variant="outlined"
-                            value={memo}
-                            onChange={(e) => setMemo(e.target.value)}
+                            fullWidth
+                            multiline
+                            minRows={2}
+                            maxRows={4}
+                            placeholder="간단한 소개나 원하는 조건을 적어주세요."
+                            value={formData.memo}
+                            onChange={(e) => updateField('memo', e.target.value)}
                             sx={{
-                                width: '100%',
-                                backgroundColor: '#1e1f2d',
+                                backgroundColor: '#424254',
                                 borderRadius: 1,
-                                '.MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#424254'
-                                },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#42E6B5'
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': { border: 'none' },
                                 },
                                 '& .MuiInputBase-input': {
+                                    fontSize: '0.85rem',
                                     color: '#fff',
-                                    fontSize: 14
-                                }
+                                },
                             }}
-                            inputProps={{ maxLength: 50 }}
                         />
                     </Box>
 
-                    {/* 하단 버튼 (취소 / 등록) */}
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 2 }}>
+                    <Box display="flex" gap={2}>
                         <Button
-                            variant="contained"
+                            fullWidth
+                            onClick={onClose}
                             sx={{
-                                width: 80,
-                                backgroundColor: '#424254',
+                                backgroundColor: '#2A2B31',
                                 color: '#fff',
                                 fontWeight: 'bold',
-                                '&:hover': {
-                                    backgroundColor: '#56566c'
-                                }
+                                height: 42,
+                                fontSize: '1rem',
+                                borderRadius: 1,
                             }}
-                            onClick={handleClose}
                         >
                             취소
                         </Button>
                         <Button
-                            variant="contained"
+                            fullWidth
+                            onClick={handleSubmit}
                             sx={{
-                                width: 80,
                                 backgroundColor: '#42E6B5',
                                 color: '#000',
                                 fontWeight: 'bold',
-                                '&:hover': {
-                                    backgroundColor: '#36c9a1'
-                                }
+                                height: 42,
+                                fontSize: '1rem',
+                                borderRadius: 1,
                             }}
-                            onClick={handleRegister}
                         >
-                            등록
+                            <Typography fontWeight="bold" color="#fff">
+                                등록
+                            </Typography>
                         </Button>
                     </Box>
                 </Box>
             </Box>
-        </Modal>
+        </Dialog>
     );
 }
+
