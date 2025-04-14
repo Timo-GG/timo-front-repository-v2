@@ -90,6 +90,7 @@ export default function SignupPage() {
                 setUniversityStatus('존재하는 대학교입니다.');
                 setIsUniversityValid(true);
                 setIsUniversityLocked(true);
+
             } else {
                 setUniversityStatus('존재하지 않는 대학교입니다.');
                 setIsUniversityValid(false);
@@ -128,7 +129,13 @@ export default function SignupPage() {
             setEmailVerified(true);
             setShowVerificationInput(false);
             setEmailSent(false);
-
+            setUserData((prev) => ({
+                ...prev,
+                certifiedUnivInfo: {
+                    univName: university,
+                    univCertifiedEmail: schoolEmail,
+                },
+            }));
             navigate('/profile-setup', {
                 state: { nickname, summonerName, university, schoolEmail, oauthEmail },
             });
@@ -150,6 +157,15 @@ export default function SignupPage() {
                 setSummonerStatusMsg('✔️ 소환사 이름 인증 완료');
                 setIsSummonerVerified(true);
                 setSummonerVerified(true);
+
+                setUserData((prev) => ({
+                    ...prev,
+                    riotAccount: {
+                        accountName: name,
+                        accountTag: tag,
+                        puuid: res.data.puuid,
+                    },
+                }));
             } else {
                 setSummonerStatusMsg('소환사 정보를 찾을 수 없습니다.');
             }
