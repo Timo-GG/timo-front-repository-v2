@@ -24,7 +24,7 @@ import SearchIcon from '@mui/icons-material/Search';
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 
 
-export default function ProfileSetUp() {
+export default function ProfileSetupPage() {
     const [position, setPosition] = useState(''); // ''로
     const [department, setDepartment] = useState('');
     const [selectedGender, setSelectedGender] = useState('');
@@ -34,7 +34,7 @@ export default function ProfileSetUp() {
     const [search, setSearch] = useState('');
     const [filteredDepts, setFilteredDepts] = useState([]);
     const [focusedIndex, setFocusedIndex] = useState(-1); // 포커스된 인덱스
-    const selectedUniversity = '호서대학교'; // 예시
+    const selectedUniversity = '서울과학기술대학교'; // 예시
 
     useEffect(() => {
         if (!search || !schoolDepartmentsJson[selectedUniversity]) {

@@ -9,7 +9,7 @@ import ChatPage from './ChatPage';
 import DuoDetailModal from '../components/duo/DuoDetailModal';
 import ScrimRequestModal from '../components/scrim/ScrimRequestModal';
 import ReviewModal from '../components/ReviewModal';
-
+import useAuthStore from '../storage/useAuthStore';
 // 예시 데이터 (sampleUsers) - 받은 요청과 보낸 요청 모두 동일 데이터를 활용 (status에 따라 조건 처리)
 const sampleUsers = [
     {
@@ -102,7 +102,8 @@ export default function MyPage({ defaultTab, initialRoomId }) {
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedScrim, setSelectedScrim] = useState(null);
     const [reviewUser, setReviewUser] = useState(null);
-
+    const { userData } = useAuthStore();
+    console.log('userData:', userData);
     const [tab, setTab] = useState(defaultTab || 0);
     const [searchParams] = useSearchParams();
     const tabFromURL = searchParams.get('tab') === 'chat' ? 2 : 0;

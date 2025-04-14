@@ -13,14 +13,16 @@ axiosInstance.interceptors.request.use((config) => {
     const token = useAuthStore.getState().accessToken;
     console.log('[axiosInterceptor]', { withAuth: config.withAuth, token });
 
-    if (config.withAuth && token) {
-        config.headers = {
-            ...config.headers,
+    const customConfig = config; // 타입 안정성 고려 시 config as any 또는 config as CustomConfig
+
+    if (customConfig.withAuth && token) {
+        customConfig.headers = {
+            ...customConfig.headers,
             Authorization: `Bearer ${token}`,
         };
     }
 
-    return config;
+    return customConfig;
 });
 
 // 🔁 중복 요청 방지용 상태 관리
