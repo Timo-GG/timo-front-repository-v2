@@ -28,7 +28,7 @@ export default function DuoDetailModal({
 
 
     const {
-        map,
+        queueType,
         school = 'XX대학교',
         department = 'XX학과',
         message,
@@ -57,7 +57,7 @@ export default function DuoDetailModal({
                             큐 타입
                         </Typography>
                         <Typography fontSize="0.75rem" color="#fff">
-                            {map || ''}
+                            {queueType || ''}
                         </Typography>
                     </Box>
 

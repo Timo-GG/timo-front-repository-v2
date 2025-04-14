@@ -20,7 +20,8 @@ const sampleUsers = [
         avatarUrl:
             'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
         department: '컴퓨터공학과',
-        map: '솔로 랭크',
+        queueType: '랭크',
+        map: '소환사 협곡',
         tier: 'platinum',
         score: 2,
         position: 'jungle',
@@ -45,6 +46,7 @@ const sampleUsers = [
         avatarUrl:
             'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
         department: '경제학과',
+        queueType: '일반',
         map: '소환사 협곡',
         tier: 'diamond',
         score: 1,
@@ -70,6 +72,7 @@ const sampleUsers = [
         avatarUrl:
             'https://opgg-static.akamaized.net/meta/images/profile_icons/profileIcon2098.jpg?image=q_auto:good,f_webp,w_200&v=1744455113',
         department: '시디과',
+        queueType: '랭크',
         map: '소환사 협곡',
         tier: 'gold',
         score: 3,
