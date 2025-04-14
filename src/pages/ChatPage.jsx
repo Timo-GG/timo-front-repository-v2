@@ -257,7 +257,7 @@ export default function ChatPage() {
       .then(res => {
         const rawMessages = res.data;
         const formatted = rawMessages.map(msg => ({
-          type: msg.senderId === userData.memberProfile.id ? 'sent' : 'received',
+          type: msg.senderId === userData.memberId ? 'sent' : 'received',
           text: msg.content,
           timestamp: msg.timestamp,
         })).reverse();

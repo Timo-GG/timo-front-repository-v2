@@ -10,7 +10,7 @@ import MyPage from './pages/MyPage';
 import ScrimPage from './pages/ScrimPage';
 import DuoPage from './pages/DuoPage';
 import SignupPage from './pages/SignupPage';
-import ProfileSetup from './pages/ProfileSetup';
+import ProfileSetup from './pages/ProfileSetupPage';
 import TestPage from './pages/TestPage';
 import NotificationListener from './socket/NotificationListener';
 import AuthCallback from './pages/AuthCallback';

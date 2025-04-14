@@ -117,7 +117,7 @@ export default function Header() {
                                                     ':hover': { backgroundColor: '#50516a' },
                                                 }}
                                             >
-                                                {userData?.memberProfile?.nickname || '유저'}
+                                                {userData?.username || '유저'}
                                             </Button>
                                             <Menu
                                                 anchorEl={anchorEl}

@@ -22,3 +22,8 @@ export const checkUniv = async ({ univName }) => {
   });
   return response.data;
 };
+
+export const updateUnivAccount = async (payload) => {
+  const res = await axiosInstance.put('/members/univ', payload);
+  return res.data;
+};

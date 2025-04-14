@@ -1,11 +1,28 @@
 import axiosInstance from './axiosInstance';
-import useAuthStore from '../storage/useAuthStore';
 
 
 export const verifyAccount = async ({ accountName, tagLine }) => {
-    const response = await axiosInstance.get(
-        `/members/player/verify?gameName=${encodeURIComponent(accountName)}&tagLine=${encodeURIComponent(tagLine)}`,
-        { withAuth: true }
-    );
-    return response.data;
+  const response = await axiosInstance.post(
+    '/members/player/verify',
+    {
+      gameName: accountName,
+      tagLine: tagLine,
+    },
+    {withAuth: true}
+  );
+  return response.data;
+};
+
+export const updateUsername = async (newName) => {
+  const res = await axiosInstance.put("/members/username", newName, {
+    withAuth: true,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+  return res.data;
+};
+
+export const resetRiotAccount = () => {
+  return axiosInstance.post('/members/riot/reset', {
+    withAuth: true,
+  });
 };
