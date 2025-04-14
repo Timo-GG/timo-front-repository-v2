@@ -30,8 +30,57 @@ export default function SignupPage() {
     const [showVerificationInput, setShowVerificationInput] = useState(false);
     const [nicknameStatus, setNicknameStatus] = useState(""); // 예: 사용 가능 여부
     const [universityStatus, setUniversityStatus] = useState("");
+    const [emailVerified, setEmailVerified] = useState(false);
+    const [isUniversityValid, setIsUniversityValid] = useState(false);
+    const [isUniversityLocked, setIsUniversityLocked] = useState(false);
+    const [isSummonerVerified, setIsSummonerVerified] = useState(false);
+    const [summonerStatusMsg, setSummonerStatusMsg] = useState('');
+    const [summonerVerified, setSummonerVerified] = useState(false);
+    const [userData, setUserData] = useState({});
 
+    const riot = profile.riotAccount;
+    if (riot?.accountName && riot?.accountTag) {
+        setSummonerName(`${riot.accountName}#${riot.accountTag}`);
+        setIsSummonerVerified(true);
+    }
 
+    const univ = profile.certifiedUnivInfo;
+    if (univ?.univCertifiedEmail) {
+        setUniversity(univ.univName);
+        setSchoolEmail(univ.univCertifiedEmail);
+        setIsUniversityLocked(true);
+        setIsUniversityValid(true);
+    }
+
+    const handleUniversityCheck = async () => {
+        if (isUniversityLocked) {
+            setIsUniversityLocked(false);
+            setUniversity('');
+            setUniversityStatus('');
+            setIsUniversityValid(false);
+            setSchoolEmail('');
+            setEmailError('');
+            setEmailSent(false);
+            setShowVerificationInput(false);
+            return;
+        }
+
+        try {
+            const res = await checkUniv({ univName: university });
+            if (res.success) {
+                setUniversityStatus('존재하는 대학교입니다.');
+                setIsUniversityValid(true);
+                setIsUniversityLocked(true);
+
+            } else {
+                setUniversityStatus('존재하지 않는 대학교입니다.');
+                setIsUniversityValid(false);
+            }
+        } catch (e) {
+            setUniversityStatus('대학교 확인 중 오류가 발생했습니다.');
+            setIsUniversityValid(false);
+        }
+    };
 
     const handleEmailRegister = async () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,6 +109,18 @@ export default function SignupPage() {
                 univName: university,
                 univEmail: schoolEmail,
             });
+
+            await updateUnivAccount({ univName: university, univEmail: schoolEmail });
+            setEmailVerified(true);
+            setShowVerificationInput(false);
+            setEmailSent(false);
+            setUserData((prev) => ({
+                ...prev,
+                certifiedUnivInfo: {
+                    univName: university,
+                    univCertifiedEmail: schoolEmail,
+                },
+            }));
             navigate('/profile-setup', {
                 state: {
                     nickname,
@@ -75,20 +136,38 @@ export default function SignupPage() {
     };
 
 
-    useEffect(() => {
-        const fetchUserInfo = async () => {
-            try {
-                const res = await getMyInfo();
-                const profile = res.data.memberProfile;
-                setNickname(profile.nickname);     // nickname 기본값 세팅
-                setOauthEmail(profile.email);      // email도 백엔드 값으로 세팅
-            } catch (err) {
-                console.error('유저 정보 불러오기 실패:', err);
-            }
-        };
+    const handleSummonerVerify = async () => {
+        const [name, tag] = summonerName.split('#');
+        if (!name || !tag) {
+            setSummonerStatusMsg('형식이 올바르지 않습니다. 예: 짱아깨비#KR1');
+            return;
+        }
 
-        fetchUserInfo();
-    }, []);
+        try {
+            const res = await verifyAccount({ accountName: name, tagLine: tag });
+            if (res.success) {
+                setSummonerStatusMsg('✔️ 소환사 이름 인증 완료');
+                setIsSummonerVerified(true);
+                setSummonerVerified(true);
+
+                // ✅ 상태 반영 (accountName, accountTag 각각 저장)
+                setUserData((prev) => ({
+                    ...prev,
+                    riotAccount: {
+                        accountName: name,
+                        accountTag: tag,
+                        puuid: res.data.puuid, // 필요 시 포함
+                    },
+                }));
+            } else {
+                setSummonerStatusMsg('소환사 정보를 찾을 수 없습니다.');
+            }
+        } catch (e) {
+            const msg = e.response?.data?.message || '검증 중 오류가 발생했습니다.';
+            setSummonerStatusMsg(msg);
+        }
+    };
+
 
     return (
         <Box

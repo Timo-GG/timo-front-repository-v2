@@ -22,7 +22,6 @@ export default function MySettingPage() {
   const [emailError, setEmailError] = useState("");
   const [verificationError, setVerificationError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
-
   const isSchoolRegistered = school !== "" && schoolEmail !== "";
 
   // 단순히 이메일 입력값 업데이트 + 에러, 성공 메시지 초기화
