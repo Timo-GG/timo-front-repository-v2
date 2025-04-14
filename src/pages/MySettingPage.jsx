@@ -131,6 +131,7 @@ export default function MySettingPage() {
         setRiotAccountInput(`${accountName}#${accountTag}`);
       }
 
+      console.log("userData : ", userData)
 
       if (userData.certifiedUnivInfo) {
         setUnivName(userData.certifiedUnivInfo.univName || ""); // 이제 포함됨
