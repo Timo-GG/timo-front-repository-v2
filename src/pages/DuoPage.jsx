@@ -364,7 +364,7 @@ function DuoHeader() {
             }}
         >
             {headers.map((text, i) => (
-                <Box key={i} sx={{ flex: columns[i], textAlign: i === 0 ? 'left' : 'center' }}>
+                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>
                     {text}
                 </Box>
             ))}
