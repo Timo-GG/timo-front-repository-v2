@@ -7,6 +7,7 @@ import {
     useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { updateUsername } from '../apis/accountAPI';
 import {
     requestUnivVerification,
     verifyUnivCode,
@@ -14,105 +15,101 @@ import {
     updateUnivAccount,
 } from '../apis/univAPI';
 import { getMyInfo } from '../apis/authAPI';
-import { verifyAccount, updateUsername } from '../apis/accountAPI';
+import { verifyAccount } from '../apis/accountAPI';
 import useAuthStore from '../storage/useAuthStore';
 
 export default function SignupPage() {
     const theme = useTheme();
     const navigate = useNavigate();
-    const {
-        userData,
-        setUserData,
-        setEmailVerified,
-        setSummonerVerified,
-    } = useAuthStore();
+    const { setUserData, setEmailVerified, setSummonerVerified } = useAuthStore();
 
-    const [username, setUsername] = useState('');
-    const [summonerName, setSummonerName] = useState('');
     const [oauthEmail, setOauthEmail] = useState('');
-
-    const [univName, setUnivName] = useState('');
-    const [univEmail, setUnivEmail] = useState('');
+    const [nickname, setNickname] = useState('');
+    const [summonerName, setSummonerName] = useState('');
+    const [university, setUniversity] = useState('');
+    const [schoolEmail, setSchoolEmail] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
 
-    const [isUnivLocked, setIsUnivLocked] = useState(false);
-    const [isUnivValid, setIsUnivValid] = useState(false);
-    const [emailSent, setEmailSent] = useState(false);
-    const [showVerificationInput, setShowVerificationInput] = useState(false);
-
-    const [univStatusMsg, setUnivStatusMsg] = useState('');
     const [emailError, setEmailError] = useState('');
     const [verificationError, setVerificationError] = useState('');
-    const [summonerVerified, setSummonerVerifiedLocal] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
+    const [showVerificationInput, setShowVerificationInput] = useState(false);
+    const [universityStatus, setUniversityStatus] = useState('');
+    const [isUniversityValid, setIsUniversityValid] = useState(false);
+    const [isUniversityLocked, setIsUniversityLocked] = useState(false);
+    const [isSummonerVerified, setIsSummonerVerified] = useState(false);
     const [summonerStatusMsg, setSummonerStatusMsg] = useState('');
 
+    const [nicknameStatus, setNicknameStatus] = useState('');
+    const [nicknameError, setNicknameError] = useState('');
     useEffect(() => {
-        const init = async () => {
+        const fetchUserInfo = async () => {
             try {
                 const res = await getMyInfo();
-                const data = res.data;
-                setUserData(data);
-                setOauthEmail(data.email || '');
-                setUsername(data.username || '');
+                const profile = res.data;
+                setUserData(profile);
+                setOauthEmail(profile.email || '');
+                setNickname(profile.username || '');
 
-                if (data.riotAccount?.accountName && data.riotAccount?.accountTag) {
-                    setSummonerName(`${data.riotAccount.accountName}#${data.riotAccount.accountTag}`);
-                    setSummonerVerifiedLocal(true);
+                const riot = profile.riotAccount;
+                if (riot?.accountName && riot?.accountTag) {
+                    setSummonerName(`${riot.accountName}#${riot.accountTag}`);
+                    setIsSummonerVerified(true);
                 }
 
-                if (data.certifiedUnivInfo?.univCertifiedEmail) {
-                    setUnivName(data.certifiedUnivInfo.univName);
-                    setUnivEmail(data.certifiedUnivInfo.univCertifiedEmail);
-                    setIsUnivLocked(true);
-                    setIsUnivValid(true);
+                const univ = profile.certifiedUnivInfo;
+                if (univ?.univCertifiedEmail) {
+                    setUniversity(univ.univName);
+                    setSchoolEmail(univ.univCertifiedEmail);
+                    setIsUniversityLocked(true);
+                    setIsUniversityValid(true);
                 }
             } catch (err) {
-                console.error(err);
+                console.error('유저 정보 불러오기 실패:', err);
             }
         };
-        init();
+        fetchUserInfo();
     }, []);
 
     const handleUniversityCheck = async () => {
-        if (isUnivLocked) {
-            setIsUnivLocked(false);
-            setIsUnivValid(false);
-            setUnivName('');
-            setUnivEmail('');
-            setUnivStatusMsg('');
+        if (isUniversityLocked) {
+            setIsUniversityLocked(false);
+            setUniversity('');
+            setUniversityStatus('');
+            setIsUniversityValid(false);
+            setSchoolEmail('');
+            setEmailError('');
             setEmailSent(false);
             setShowVerificationInput(false);
             return;
         }
 
         try {
-            const res = await checkUniv({ univName });
-            if (!res.success) {
-                setUnivStatusMsg('존재하지 않는 대학교입니다.');
-                setIsUnivValid(false);
-                return;
+            const res = await checkUniv({ univName: university });
+            if (res.success) {
+                setUniversityStatus('존재하는 대학교입니다.');
+                setIsUniversityValid(true);
+                setIsUniversityLocked(true);
+            } else {
+                setUniversityStatus('존재하지 않는 대학교입니다.');
+                setIsUniversityValid(false);
             }
-
-            setUnivStatusMsg('존재하는 대학교입니다.');
-            setIsUnivLocked(true);
-            setIsUnivValid(true);
-        } catch (err) {
-            setUnivStatusMsg('대학교 확인 중 오류가 발생했습니다.');
+        } catch (e) {
+            setUniversityStatus('대학교 확인 중 오류가 발생했습니다.');
+            setIsUniversityValid(false);
         }
     };
 
     const handleEmailRegister = async () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(univEmail)) {
-            setEmailError('올바르지 않은 이메일입니다.');
+        if (!emailRegex.test(schoolEmail)) {
+            setEmailError('올바르지 않은 이메일 입니다.');
             return;
         }
 
         try {
-            await requestUnivVerification({
-                univName,
-                univEmail,
-            });
+            await requestUnivVerification({ univName: university, univEmail: schoolEmail });
+            setEmailError('');
             setEmailSent(true);
             setShowVerificationInput(true);
         } catch (err) {
@@ -123,30 +120,20 @@ export default function SignupPage() {
     const handleVerificationConfirm = async () => {
         try {
             await verifyUnivCode(verificationCode, {
-                univName,
-                univEmail,
+                univName: university,
+                univEmail: schoolEmail,
             });
 
-            await updateUnivAccount({
-                univName,
-                univEmail,
-            });
-
-            setUserData({
-                ...userData,
-                certifiedUnivInfo: {
-                    univName,
-                    univCertifiedEmail: univEmail,
-                },
-            });
-
+            await updateUnivAccount({ univName: university, univEmail: schoolEmail });
             setEmailVerified(true);
             setShowVerificationInput(false);
             setEmailSent(false);
-            alert('학교 계정 인증 완료!');
+
+            navigate('/profile-setup', {
+                state: { nickname, summonerName, university, schoolEmail, oauthEmail },
+            });
         } catch (err) {
-            const msg = err.response?.data?.message || '인증 실패';
-            setVerificationError(msg);
+            setVerificationError('인증코드가 올바르지 않거나 만료되었습니다.');
         }
     };
 
@@ -161,13 +148,13 @@ export default function SignupPage() {
             const res = await verifyAccount({ accountName: name, tagLine: tag });
             if (res.success) {
                 setSummonerStatusMsg('✔️ 소환사 이름 인증 완료');
-                setSummonerVerifiedLocal(true);
+                setIsSummonerVerified(true);
                 setSummonerVerified(true);
             } else {
                 setSummonerStatusMsg('소환사 정보를 찾을 수 없습니다.');
             }
-        } catch (err) {
-            setSummonerStatusMsg(err.response?.data?.message || '인증 중 오류 발생');
+        } catch (e) {
+            setSummonerStatusMsg('검증 중 오류가 발생했습니다.');
         }
     };
 
@@ -176,105 +163,351 @@ export default function SignupPage() {
             sx={{
                 backgroundColor: theme.palette.background.default,
                 minHeight: '100vh',
-                pt: 5,
+                pt: 6,
                 px: 2,
-                display: 'flex',
-                flexDirection: 'column',
                 maxWidth: 460,
                 mx: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
                 gap: 3,
             }}
         >
-            <Typography variant="h5" fontWeight="bold">
-                회원가입
-            </Typography>
+            <Typography variant="h5" fontWeight="bold">회원가입</Typography>
 
             {/* 이메일 */}
-            <TextField
-                label="이메일"
-                value={oauthEmail}
-                disabled
-                fullWidth
-                sx={{ backgroundColor: theme.palette.background.inputDisabled }}
-            />
+            <Box>
+                <Typography color="text.secondary" mb={1}>이메일</Typography>
+                <TextField
+                    fullWidth
+                    disabled
+                    value={oauthEmail}
+                    variant="outlined"
+                    sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                            WebkitTextFillColor: theme.palette.text.disabled,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                            borderRadius: '12px',
+                            backgroundColor: theme.palette.background.inputDisabled,
+                        }
+                    }}
+                />
+            </Box>
 
             {/* 닉네임 */}
-            <TextField
-                label="닉네임"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                fullWidth
-            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography color="text.secondary">닉네임</Typography>
+                <Box sx={{ display: 'flex', height: '56px' }}>
+                    <TextField
+                        fullWidth
+                        value={nickname}
+                        onChange={(e) => {
+                            setNickname(e.target.value);
+                            setNicknameError('');
+                            setNicknameStatus('');
+                        }}
+                        variant="outlined"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                height: '100%',
+                                borderRadius: '12px 0 0 12px',
+                                backgroundColor: theme.palette.background.input,
+                                border: `1px solid ${theme.palette.border.main}`,
+                                '& fieldset': { borderColor: 'transparent' },
+                                '& input': {
+                                    color: theme.palette.text.primary,
+                                    padding: '12px 14px',
+                                },
+                            },
+                        }}
+                    />
+                    <Button
+                        onClick={async () => {
+                            try {
+                                await updateUsername(nickname);
+                                const res = await getMyInfo(); // 닉네임 수정 후 다시 유저 정보 조회
+                                setUserData(res.data); // Zustand에 유저 정보 갱신
+                                setNicknameStatus('닉네임이 성공적으로 변경되었습니다.');
+                                setNicknameError('');
+                            } catch (err) {
+                                console.log(err);
+                                setNicknameError('이미 사용 중인 닉네임입니다.');
+                                setNicknameStatus('');
+                            }
+                        }}
+
+                        sx={{
+                            height: '100%',
+                            borderRadius: '0 12px 12px 0',
+                            backgroundColor: theme.palette.background.input,
+                            color: theme.palette.text.secondary,
+                            border: `1px solid ${theme.palette.border.main}`,
+                            borderLeft: 'none',
+                            px: 3,
+                            minWidth: '80px',
+                        }}
+                    >
+                        수정
+                    </Button>
+                </Box>
+                {(nicknameStatus || nicknameError) && (
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            color: nicknameError
+                                ? theme.palette.error.main
+                                : theme.palette.success.main,
+                            pl: 1,
+                        }}
+                    >
+                        {nicknameError || nicknameStatus}
+                    </Typography>
+                )}
+            </Box>
+
 
             {/* 소환사 이름 */}
             <Box>
-                <TextField
-                    label="소환사 이름 (짱아깨비#KR1)"
-                    fullWidth
-                    value={summonerName}
-                    disabled={summonerVerified}
-                    onChange={(e) => setSummonerName(e.target.value)}
-                />
-                <Button onClick={handleSummonerVerify}>
-                    {summonerVerified ? '해제' : '확인'}
-                </Button>
+                <Typography color="text.secondary" sx={{ mb: 1 }}>소환사 이름</Typography>
+                <Box sx={{ display: 'flex', height: '56px' }}>
+                    <TextField
+                        fullWidth
+                        placeholder="짱아깨비#KR1"
+                        value={summonerName}
+                        disabled={isSummonerVerified}
+                        onChange={(e) => {
+                            setSummonerName(e.target.value);
+                            setIsSummonerVerified(false);
+                            setSummonerStatusMsg('');
+                        }}
+                        variant="outlined"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                height: '100%',
+                                borderRadius: '12px 0 0 12px',
+                                backgroundColor: theme.palette.background.input,
+                                border: `1px solid ${theme.palette.border.main}`,
+                                '& fieldset': { borderColor: 'transparent' },
+                                '& input': { color: theme.palette.text.primary, padding: '12px 14px' },
+                            },
+                        }}
+                    />
+                    <Button
+                        onClick={handleSummonerVerify}
+                        sx={{
+                            height: '100%',
+                            borderRadius: '0 12px 12px 0',
+                            backgroundColor: theme.palette.background.input,
+                            color: theme.palette.text.secondary,
+                            border: `1px solid ${theme.palette.border.main}`,
+                            borderLeft: 'none',
+                            px: 3,
+                            minWidth: '80px',
+                        }}
+                    >
+                        {isSummonerVerified ? '해제' : '확인'}
+                    </Button>
+                </Box>
                 {summonerStatusMsg && (
-                    <Typography variant="caption">{summonerStatusMsg}</Typography>
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            mt: 1,
+                            color: summonerStatusMsg.includes('✔️')
+                                ? theme.palette.success.main
+                                : theme.palette.error.main,
+                        }}
+                    >
+                        {summonerStatusMsg}
+                    </Typography>
                 )}
             </Box>
 
             {/* 대학교 */}
             <Box>
-                <TextField
-                    label="대학교명"
-                    value={univName}
-                    disabled={isUnivLocked}
-                    onChange={(e) => setUnivName(e.target.value)}
-                    fullWidth
-                />
-                <Button onClick={handleUniversityCheck}>
-                    {isUnivLocked ? '해제' : '확인'}
-                </Button>
-                {univStatusMsg && (
-                    <Typography variant="caption">{univStatusMsg}</Typography>
+                <Typography color="text.secondary" sx={{ mb: 1 }}>대학교</Typography>
+                <Box sx={{ display: 'flex', height: '56px' }}>
+                    <TextField
+                        fullWidth
+                        value={university}
+                        onChange={(e) => {
+                            setUniversity(e.target.value);
+                            setUniversityStatus('');
+                        }}
+                        disabled={isUniversityLocked}
+                        variant="outlined"
+                        placeholder="서울과학기술대학교"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                height: '100%',
+                                borderRadius: '12px 0 0 12px',
+                                backgroundColor: theme.palette.background.input,
+                                border: `1px solid ${theme.palette.border.main}`,
+                                '& fieldset': { borderColor: 'transparent' },
+                                '& input': { color: theme.palette.text.primary, padding: '12px 14px' },
+                            },
+                        }}
+                    />
+                    <Button
+                        onClick={handleUniversityCheck}
+                        sx={{
+                            height: '100%',
+                            borderRadius: '0 12px 12px 0',
+                            backgroundColor: theme.palette.background.input,
+                            color: theme.palette.text.secondary,
+                            border: `1px solid ${theme.palette.border.main}`,
+                            borderLeft: 'none',
+                            px: 3,
+                            minWidth: '80px',
+                        }}
+                    >
+                        {isUniversityLocked ? '해제' : '확인'}
+                    </Button>
+                </Box>
+                {universityStatus && (
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            mt: 1,
+                            color: universityStatus.includes('존재하지')
+                                ? theme.palette.error.main
+                                : theme.palette.info.main,
+                        }}
+                    >
+                        {universityStatus}
+                    </Typography>
                 )}
             </Box>
 
             {/* 학교 이메일 */}
             <Box>
-                <TextField
-                    label="학교 이메일"
-                    value={univEmail}
-                    disabled={!isUnivValid}
-                    onChange={(e) => setUnivEmail(e.target.value)}
-                    fullWidth
-                    error={Boolean(emailError)}
-                    helperText={emailError}
-                />
-                <Button onClick={handleEmailRegister} disabled={!isUnivValid}>
-                    등록
-                </Button>
-                {emailSent && (
-                    <Typography variant="caption" color="info.main">
-                        인증코드를 전송하였습니다.
-                    </Typography>
-                )}
+                <Typography color="text.secondary" sx={{ mb: 1 }}>학교 이메일</Typography>
+                <Box sx={{ display: 'flex', height: '56px' }}>
+                    <TextField
+                        fullWidth
+                        value={schoolEmail}
+                        onChange={(e) => {
+                            setSchoolEmail(e.target.value);
+                            setEmailError('');
+                            setEmailSent(false);
+                        }}
+                        disabled={!isUniversityValid}
+                        variant="outlined"
+                        placeholder="학교 이메일 입력"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                height: '100%',
+                                borderRadius: '12px 0 0 12px',
+                                backgroundColor: theme.palette.background.input,
+                                border: `1px solid ${theme.palette.border.main}`,
+                                '& fieldset': { borderColor: 'transparent' },
+                                '& input': { color: theme.palette.text.primary, padding: '12px 14px' },
+                            },
+                        }}
+                    />
+                    <Button
+                        onClick={handleEmailRegister}
+                        disabled={!isUniversityValid}
+                        sx={{
+                            height: '100%',
+                            borderRadius: '0 12px 12px 0',
+                            backgroundColor: theme.palette.background.input,
+                            color: theme.palette.text.secondary,
+                            border: `1px solid ${theme.palette.border.main}`,
+                            borderLeft: 'none',
+                            px: 3,
+                            minWidth: '80px',
+                        }}
+                    >
+                        등록
+                    </Button>
+                </Box>
+                <Box sx={{ minHeight: 20, mt: 1 }}>
+                    {emailError && (
+                        <Typography variant="caption" color={theme.palette.error.main}>
+                            {emailError}
+                        </Typography>
+                    )}
+                    {!emailError && emailSent && (
+                        <Typography variant="caption" color={theme.palette.info.main}>
+                            인증코드를 전송하였습니다.
+                        </Typography>
+                    )}
+                </Box>
             </Box>
 
-            {/* 인증코드 */}
+            {/* 인증 코드 */}
             {showVerificationInput && (
                 <Box>
-                    <TextField
-                        label="인증코드"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        fullWidth
-                        error={Boolean(verificationError)}
-                        helperText={verificationError}
-                    />
-                    <Button onClick={handleVerificationConfirm}>확인</Button>
+                    <Typography color="text.secondary" mb={1}>인증 코드</Typography>
+                    <Box sx={{ display: 'flex', height: '56px' }}>
+                        <TextField
+                            fullWidth
+                            value={verificationCode}
+                            onChange={(e) => {
+                                setVerificationCode(e.target.value);
+                                setVerificationError('');
+                            }}
+                            variant="outlined"
+                            placeholder="인증 코드를 입력하세요"
+                            error={Boolean(verificationError)}
+                            helperText={verificationError}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    height: '100%',
+                                    borderRadius: '12px 0 0 12px',
+                                    backgroundColor: theme.palette.background.input,
+                                    border: `1px solid ${theme.palette.border.main}`,
+                                    '& fieldset': { borderColor: 'transparent' },
+                                    '& input': { color: theme.palette.text.primary, padding: '12px 14px' },
+                                },
+                            }}
+                        />
+                        <Button
+                            onClick={handleVerificationConfirm}
+                            sx={{
+                                height: '100%',
+                                borderRadius: '0 12px 12px 0',
+                                backgroundColor: theme.palette.background.input,
+                                color: theme.palette.text.secondary,
+                                border: `1px solid ${theme.palette.border.main}`,
+                                borderLeft: 'none',
+                                px: 3,
+                                minWidth: '80px',
+                            }}
+                        >
+                            다음
+                        </Button>
+                    </Box>
                 </Box>
             )}
+            <Box>
+                <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{
+                        height: '56px',
+                        borderRadius: '12px',
+                        backgroundColor: theme.palette.primary.main,
+                        color: 'white',
+                        fontWeight: 'bold',
+                        mt: 4,
+                    }}
+                    onClick={() =>
+                        navigate('/profile-setup', {
+                            state: {
+                                nickname,
+                                summonerName,
+                                university,
+                                schoolEmail,
+                                oauthEmail,
+                            },
+                        })
+                    }
+                >
+                    다음
+                </Button>
+            </Box>
         </Box>
     );
 }
