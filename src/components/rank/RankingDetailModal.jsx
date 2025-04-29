@@ -9,19 +9,23 @@ import ChampionIconList from '/src/components/champion/ChampionIconList';
 import PositionIcon from '../PositionIcon';
 import SummonerInfo from '../SummonerInfo';
 
-export default function RankingDetailModal({ open, handleClose, data }) {
+export default function RankingDetailModal({open, handleClose, data}) {
     const theme = useTheme();
     if (!data) return null;
-
+    const genderDisplay = {
+        MALE: '남자',
+        FEMALE: '여자',
+        SECRET: '비밀',
+    };
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <Box sx={{ backgroundColor: '#2B2C3C' }}>
+            <Box sx={{backgroundColor: '#2B2C3C'}}>
                 {/* 헤더 */}
-                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ p: 2, ml: 1, mr: 1 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{p: 2, ml: 1, mr: 1}}>
                     <Typography fontSize="1.2rem" color="#fff">상세정보</Typography>
                     <IconButton onClick={handleClose}>
-                        <CloseIcon sx={{ color: '#fff' }} />
+                        <CloseIcon sx={{color: '#fff'}}/>
                     </IconButton>
                 </Box>
             </Box>
@@ -33,7 +37,7 @@ export default function RankingDetailModal({ open, handleClose, data }) {
                     width: '100%',
                 }}
             />
-            <Box sx={{ p: 2, ml: 1, mr: 1 }}>
+            <Box sx={{p: 2, ml: 1, mr: 1}}>
                 <Box
                     display="grid"
                     gridTemplateColumns="1fr 1fr"
@@ -61,18 +65,20 @@ export default function RankingDetailModal({ open, handleClose, data }) {
                     {/* 성별 */}
                     <Box mb={3}>
                         <Typography fontSize="0.85rem" color="#888">성별</Typography>
-                        <Typography fontSize="0.8rem" color="#fff">{data.gender}</Typography>
+                        <Typography fontSize="0.8rem" color="#fff">      {genderDisplay[data.gender] || '-'}
+                        </Typography>
                     </Box>
                 </Box>
 
                 {/* 메모 */}
                 <Typography fontSize="0.85rem" color="#888">메모</Typography>
-                <Box fontSize="0.8rem" sx={{ backgroundColor: '#424254', p: 1.3, borderRadius: 1, color: '#fff', mt: 1, mb: 2 }}>
+                <Box fontSize="0.8rem"
+                     sx={{backgroundColor: '#424254', p: 1.3, borderRadius: 1, color: '#fff', mt: 1, mb: 2}}>
                     {data.message}
                 </Box>
 
                 {/* 소환사 정보 테이블 헤더 */}
-                <Box sx={{ overflow: 'hidden' }}>
+                <Box sx={{overflow: 'hidden'}}>
                     <Box
                         sx={{
                             px: 0,
@@ -93,7 +99,7 @@ export default function RankingDetailModal({ open, handleClose, data }) {
 
                 {/* 소환사 정보 데이터 */}
                 <Box
-                    key={data.rank}
+                    key={data.ranking}
                     sx={{
                         px: 0,
                         py: 2,
@@ -106,16 +112,16 @@ export default function RankingDetailModal({ open, handleClose, data }) {
                     }}
                 >
                     <Box width="30%" display="flex" justifyContent="center">
-                        <SummonerInfo name={data.name} tag={data.tag} avatarUrl={data.avatarUrl} />
+                        <SummonerInfo name={data.name} tag={data.tag} avatarUrl={data.avatarUrl}/>
                     </Box>
                     <Box width="20%" textAlign="center">
-                        <PositionIcon position={data.position} />
+                        <PositionIcon position={data.position}/>
                     </Box>
                     <Box width="20%" textAlign="center">
-                        <TierBadge tier={data.tier} score={data.score} />
+                        <TierBadge tier={data.tier} score={data.lp} rank={data.rank} />
                     </Box>
                     <Box width="30%" textAlign="center">
-                        <ChampionIconList championNames={data.champions} />
+                        <ChampionIconList championNames={data.champions}/>
                     </Box>
                 </Box>
 

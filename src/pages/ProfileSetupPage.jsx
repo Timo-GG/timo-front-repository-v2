@@ -18,6 +18,7 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PositionFilterBar from '../components/duo/PositionFilterBar';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
+import { updateRankingInfo } from '/src/apis/rankAPI';
 
 
 
@@ -25,15 +26,15 @@ const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 
 
 export default function ProfileSetupPage() {
-    const [position, setPosition] = useState(''); // ''로
+    const [position, setPosition] = useState('');
     const [department, setDepartment] = useState('');
     const [selectedGender, setSelectedGender] = useState('');
-    const [selectedMbti, setSelectedMbti] = useState([]); // 전체 선택 초기화
+    const [selectedMbti, setSelectedMbti] = useState([]);
     const [memo, setMemo] = useState('');
-    const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [filteredDepts, setFilteredDepts] = useState([]);
-    const [focusedIndex, setFocusedIndex] = useState(-1); // 포커스된 인덱스
+    const [focusedIndex, setFocusedIndex] = useState(-1);
+    const navigate = useNavigate();
     const selectedUniversity = '서울과학기술대학교'; // 예시
 
     useEffect(() => {
@@ -49,7 +50,6 @@ export default function ProfileSetupPage() {
         setFilteredDepts(result);
     }, [search, selectedUniversity]);
 
-
     const toggleMbti = (type) => {
         const groupMap = {
             E: ['E', 'I'], I: ['E', 'I'],
@@ -62,9 +62,36 @@ export default function ProfileSetupPage() {
         setSelectedMbti([...updated, type]);
     };
 
-    const handleSubmit = () => {
-        console.log({ position, department, selectedGender, selectedMbti, memo });
-        navigate('/');
+    const handleSubmit = async () => {
+        try {
+            const mbtiString = [
+                selectedMbti.find((type) => type === 'E' || type === 'I') || '',
+                selectedMbti.find((type) => type === 'N' || type === 'S') || '',
+                selectedMbti.find((type) => type === 'F' || type === 'T') || '',
+                selectedMbti.find((type) => type === 'P' || type === 'J') || '',
+            ].join('');
+
+            const genderMap = {
+                '남자': 'MALE',
+                '여자': 'FEMALE',
+                '비밀': 'SECRET',
+            };
+
+            const dto = {
+                position: position.toUpperCase(), // 서버는 대문자 기대
+                department,
+                gender: genderMap[selectedGender],
+                mbti: mbtiString,
+                memo,
+            };
+
+            await updateRankingInfo(dto); // ✅ 서버에 등록 요청
+            alert('정보가 성공적으로 등록되었습니다.');
+            navigate('/'); // 등록 성공하면 메인으로 이동
+        } catch (error) {
+            console.error(error);
+            alert('정보 등록에 실패했습니다.');
+        }
     };
 
     return (
@@ -129,7 +156,7 @@ export default function ProfileSetupPage() {
                     }}
                 />
 
-                {filteredDepts.length > 0 && (
+                {filteredDepts.length > 0 && search !== department && (
                     <Paper
                         sx={{
                             position: 'absolute',
@@ -270,7 +297,7 @@ export default function ProfileSetupPage() {
             <Box display="flex" gap={1.5} mt={4}>
                 <Button
                     fullWidth
-                    onClick={() => console.log('건너뛰기')}
+                    onClick={() => navigate('/')}
                     sx={{
                         bgcolor: '#2A2B31',
                         color: '#fff',

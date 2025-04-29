@@ -93,7 +93,7 @@ export default function Header() {
 
     const menuItems = [
         { label: '전적 검색', path: '/' },
-        { label: '랭킹', path: '/ranking' },
+        { label: '랭킹', path: '/ranking' },    
         { label: '내전', path: '/scrim' },
         { label: '듀오 찾기', path: '/duo' },
         { label: '마이페이지', path: '/mypage' },

@@ -22,7 +22,19 @@ export const updateUsername = async (newName) => {
 };
 
 export const resetRiotAccount = () => {
-  return axiosInstance.post('/members/riot/reset', {
+  return axiosInstance.post('/members/riot/reset', null,{
     withAuth: true,
   });
+};
+
+export const registerRanking = async (puuid) => {
+  const res = await axiosInstance.post(
+      '/ranking', // "/api/v1"는 이미 axiosInstance에 베이스 URL로 있을 것으로 가정
+      null,
+      {
+        params: { puuid },
+        withAuth: true,
+      }
+  );
+  return res.data;
 };

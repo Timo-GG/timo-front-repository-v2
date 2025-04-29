@@ -16,6 +16,7 @@ import {
 } from '../apis/univAPI';
 import { getMyInfo } from '../apis/authAPI';
 import { verifyAccount } from '../apis/accountAPI';
+import { registerRanking } from '../apis/accountAPI'; // 추가
 import useAuthStore from '../storage/useAuthStore';
 
 export default function SignupPage() {
@@ -129,13 +130,22 @@ export default function SignupPage() {
             setEmailVerified(true);
             setShowVerificationInput(false);
             setEmailSent(false);
-            setUserData((prev) => ({
-                ...prev,
-                certifiedUnivInfo: {
-                    univName: university,
-                    univCertifiedEmail: schoolEmail,
-                },
-            }));
+
+            const refreshed = await getMyInfo();
+            setUserData(refreshed.data);
+
+            // 👇 소환사 인증도 완료된 경우에만 랭킹 등록 시도
+            if (isSummonerVerified) {
+                const puuid = refreshed?.data?.riotAccount?.puuid;
+                if (puuid) {
+                    try {
+                        await registerRanking(puuid);
+                    } catch (e) {
+                        console.error('랭킹 등록 실패', e);
+                    }
+                }
+            }
+
             navigate('/profile-setup', {
                 state: { nickname, summonerName, university, schoolEmail, oauthEmail },
             });
@@ -143,6 +153,7 @@ export default function SignupPage() {
             setVerificationError('인증코드가 올바르지 않거나 만료되었습니다.');
         }
     };
+
 
     const handleSummonerVerify = async () => {
         const [name, tag] = summonerName.split('#');
@@ -158,14 +169,8 @@ export default function SignupPage() {
                 setIsSummonerVerified(true);
                 setSummonerVerified(true);
 
-                setUserData((prev) => ({
-                    ...prev,
-                    riotAccount: {
-                        accountName: name,
-                        accountTag: tag,
-                        puuid: res.data.puuid,
-                    },
-                }));
+                const refreshed = await getMyInfo();
+                setUserData(refreshed.data);
             } else {
                 setSummonerStatusMsg('소환사 정보를 찾을 수 없습니다.');
             }

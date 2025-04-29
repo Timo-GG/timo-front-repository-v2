@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 let socket = null;
 
 export const connectSocket = (accessToken) => {
+    console.log('🚀 connectSocket()', accessToken);
     if (socket) {
         socket.disconnect();
         socket = null;

@@ -1,23 +1,89 @@
 /** 랭킹 페이지 내 정보 수정하기 모달창 */
 
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
-    Dialog, Button, Typography, Box, TextField, Select, MenuItem, IconButton
+    Dialog, Button, Typography, Box,
+    TextField, List, ListItem, Paper, ListItemText, IconButton
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from '@mui/icons-material/Search';
 import SummonerInfo from '../SummonerInfo';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PositionFilterBar from '../duo/PositionFilterBar';
-import PositionIcon from '../PositionIcon';
+import {updateRankingInfo} from '/src/apis/rankAPI';
+import {schoolDepartmentsJson} from '../../data/schoolDepartmentsJson.cleaned';
+
 
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 
-export default function EditProfileModal({ open, handleClose }) {
+export default function EditProfileModal({open, handleClose, userProfileData}) {
     const [position, setPosition] = useState('top');
-    const [department, setDepartment] = useState('컴퓨터공학과');
+    const [department, setDepartment] = useState('');
+    const [searchDept, setSearchDept] = useState('');
+    const [deptList, setDeptList] = useState([]);
+    const [filteredDepts, setFilteredDepts] = useState([]);
+    const [focusedIndex, setFocusedIndex] = useState(-1);
+
     const [selectedGender, setSelectedGender] = useState('비밀');
-    const [selectedMbti, setSelectedMbti] = useState(['E', 'S', 'T', 'P']);
+    const [selectedMbti, setSelectedMbti] = useState([]);
     const [memo, setMemo] = useState('');
+
+    React.useEffect(() => {
+        if (open && userProfileData) {
+            // 포지션, MBTI, 메모 세팅
+            setPosition(userProfileData.position?.toLowerCase() || 'top');
+            setSelectedMbti(userProfileData.mbti ? userProfileData.mbti.split('') : []);
+            setMemo(userProfileData.memo || '');
+            setSelectedGender({
+                MALE: '남자',
+                FEMALE: '여자',
+                SECRET: '비밀'
+            }[userProfileData.gender] || '비밀');
+
+            // 학과 리스트 세팅
+            const univ = userProfileData.university
+                || userProfileData.certifiedUnivInfo?.univName;
+            if (univ && schoolDepartmentsJson[univ]) {
+                setDeptList(schoolDepartmentsJson[univ]);
+                // 기존 학과가 있으면 searchDept에도 표시
+                setDepartment(userProfileData.department || '');
+                setSearchDept(userProfileData.department || '');
+            } else {
+                setDeptList([]);
+                setDepartment('');
+                setSearchDept('');
+            }
+            setFilteredDepts([]);
+            setFocusedIndex(-1);
+        }
+    }, [open, userProfileData]);
+
+    React.useEffect(() => {
+        if (!searchDept) {
+            setFilteredDepts([]);
+            return;
+        }
+        const results = deptList.filter(d =>
+            d.toLowerCase().includes(searchDept.toLowerCase())
+        );
+        setFilteredDepts(results);
+        setFocusedIndex(-1);
+    }, [searchDept, deptList]);
+
+    const handleDeptKeyDown = e => {
+        if (e.key === 'ArrowDown') {
+            setFocusedIndex(i => Math.min(i + 1, filteredDepts.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            setFocusedIndex(i => Math.max(i - 1, 0));
+        } else if (e.key === 'Enter' && focusedIndex >= 0) {
+            const sel = filteredDepts[focusedIndex];
+            setDepartment(sel);
+            setSearchDept(sel);
+            setFilteredDepts([]);
+            setFocusedIndex(-1);
+            e.preventDefault();
+        }
+    };
 
     const toggleMbti = (type) => {
         const groupMap = {
@@ -28,33 +94,56 @@ export default function EditProfileModal({ open, handleClose }) {
             F: ['F', 'T'],
             T: ['F', 'T'],
             P: ['P', 'J'],
-            J: ['P', 'J'],
+            J: ['P', 'J']
         };
         const group = groupMap[type];
         const updated = selectedMbti.filter((t) => !group.includes(t));
         setSelectedMbti([...updated, type]);
     };
 
-    const handleSubmit = () => {
-        handleClose();
+    const handleSubmit = async () => {
+        try {
+            const mbtiString = [
+                selectedMbti.find((t) => t === 'E' || t === 'I') || '',
+                selectedMbti.find((t) => t === 'N' || t === 'S') || '',
+                selectedMbti.find((t) => t === 'F' || t === 'T') || '',
+                selectedMbti.find((t) => t === 'P' || t === 'J') || '',
+            ].join('');
+            const genderMap = {남자: 'MALE', 여자: 'FEMALE', 비밀: 'SECRET'};
+
+            const dto = {
+                position: position.toUpperCase(),
+                ...(department && {department}),        // 학과 정보가 있을 때만
+                gender: genderMap[selectedGender],
+                mbti: mbtiString,
+                memo,
+            };
+
+            await updateRankingInfo(dto);
+            alert('정보가 성공적으로 수정되었습니다.');
+            handleClose();
+        } catch (error) {
+            console.error(error);
+            alert('수정에 실패했습니다.');
+        }
     };
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <Box sx={{ backgroundColor: '#31313D', p: 2, }}>
+            <Box sx={{backgroundColor: '#31313D', p: 2,}}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <SummonerInfo
-                        name="롤10년차고인물"
-                        tag="1234"
-                        avatarUrl="/assets/default.png"
-                    />
+                     <SummonerInfo
+                       name={userProfileData?.gameName || ''}
+                       tag={userProfileData?.tagLine || ''}
+                      avatarUrl={userProfileData?.profileIconUrl || '/assets/default.png'}
+                       />
                     <IconButton onClick={handleClose} size="small">
-                        <CloseIcon sx={{ color: '#fff' }} />
+                        <CloseIcon sx={{color: '#fff'}}/>
                     </IconButton>
                 </Box>
 
-                <Box sx={{ my: 2, height: '1px', backgroundColor: '#171717' }} />
+                <Box sx={{my: 2, height: '1px', backgroundColor: '#171717'}}/>
 
                 <Typography mb={1} color="#fff" fontSize="1rem">내 정보</Typography>
 
@@ -76,39 +165,65 @@ export default function EditProfileModal({ open, handleClose }) {
                             />
                         </Box>
 
-                        <Typography mb={0.5} color="#aaa" sx={{
-                            fontSize: '0.8rem',
-                        }}>학과</Typography>
-                        <Select
-                            value={department}
-                            onChange={(e) => setDepartment(e.target.value)}
-                            fullWidth
-                            size="small"
-                            sx={{
-                                mb: 2,
-                                backgroundColor: '#2A2B31',
-                                color: '#fff',
-                                fontSize: '0.8rem',
-                                '& .MuiSelect-icon': {
-                                    color: '#7B7B8E',
-                                },
-                            }}
-                        >
-                            <MenuItem value="컴퓨터공학과" sx={{
-                                fontSize: '0.8rem',
-                            }}>컴퓨터공학과</MenuItem>
-                            <MenuItem value="전자공학과" sx={{
-                                fontSize: '0.8rem',
-                            }}>전자공학과</MenuItem>
-                            <MenuItem value="기계공학과" sx={{
-                                fontSize: '0.8rem',
-                            }}>기계공학과</MenuItem>
-                        </Select>
+                        <Typography mb={0.5} color="#aaa" fontSize="0.8rem">학과</Typography>
+                        <Box sx={{position: 'relative', mb: 2}}>
+                            <TextField
+                                fullWidth size="small"
+                                placeholder="학과명을 입력하세요"
+                                value={searchDept}
+                                onChange={e => {
+                                    setSearchDept(e.target.value);
+                                    setDepartment('');
+                                }}
+                                onKeyDown={handleDeptKeyDown}
+                                InputProps={{
+                                    startAdornment: <SearchIcon sx={{mr: 1, color: '#888'}}/>
+                                }}
+                                sx={{
+                                    backgroundColor: '#2A2B31',
+                                    '& .MuiOutlinedInput-root fieldset': {
+                                        borderColor: '#424254', borderRadius: '6px'
+                                    },
+                                    input: {color: '#fff'}
+                                }}
+                            />
+                            {filteredDepts.length > 0 && searchDept !== department && (
+                                <Paper sx={{
+                                    position: 'absolute', top: '100%', left: 0, right: 0,
+                                    bgcolor: '#2A2B31', border: '1px solid #424254',
+                                    zIndex: 10, maxHeight: 180, overflowY: 'auto'
+                                }}>
+                                    <List dense>
+                                        {filteredDepts.map((d, i) => (
+                                            <ListItem
+                                                key={d}
+                                                selected={i === focusedIndex}
+                                                onMouseEnter={() => setFocusedIndex(i)}
+                                                onClick={() => {
+                                                    setDepartment(d);
+                                                    setSearchDept(d);
+                                                    setFilteredDepts([]);
+                                                    setFocusedIndex(-1);
+                                                }}
+                                                sx={{
+                                                    bgcolor: i === focusedIndex ? '#42E6B5' : 'inherit',
+                                                    color: i === focusedIndex ? '#000' : '#fff',
+                                                    px: 2, py: 1
+                                                }}
+                                            >
+                                                <ListItemText primary={d}/>
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </Paper>
+                            )}
+                        </Box>
 
                         <Typography mb={0.5} color="#aaa" sx={{
                             fontSize: '0.8rem',
                         }}>성별</Typography>
-                        <Box display="flex" justifyContent="space-between" p={0.5} borderRadius={1} bgcolor="#424254" mb={2}>
+                        <Box display="flex" justifyContent="space-between" p={0.5} borderRadius={1} bgcolor="#424254"
+                             mb={2}>
                             {['남자', '여자', '비밀'].map((g) => (
                                 <Box
                                     key={g}
@@ -138,7 +253,7 @@ export default function EditProfileModal({ open, handleClose }) {
                             <Box display="flex" alignItems="center">
                                 <Typography color="#aaa" fontSize="0.8rem">초기화</Typography>
                                 <IconButton size="small" onClick={() => setSelectedMbti([])}>
-                                    <RestartAltIcon sx={{ color: '#7B7B8E', fontSize: 18 }} />
+                                    <RestartAltIcon sx={{color: '#7B7B8E', fontSize: 18}}/>
                                 </IconButton>
                             </Box>
                         </Box>
@@ -197,11 +312,11 @@ export default function EditProfileModal({ open, handleClose }) {
                         >
                             {['내향', '현실', '이성', '계획'].map((label, i) => (
                                 <Typography key={i}
-                                    sx={{
-                                        fontSize: '0.7rem',
-                                        color: '#888',
-                                        lineHeight: 1.2,
-                                    }}>{label}</Typography>
+                                            sx={{
+                                                fontSize: '0.7rem',
+                                                color: '#888',
+                                                lineHeight: 1.2,
+                                            }}>{label}</Typography>
                             ))}
                         </Box>
                     </Box>
@@ -221,7 +336,7 @@ export default function EditProfileModal({ open, handleClose }) {
                         bgcolor: '#424254',
                         color: '#fff',
                         borderRadius: 1,
-                        input: { color: '#fff' },
+                        input: {color: '#fff'},
                         fontSize: '0.8rem',
                     }}
                 />
@@ -244,6 +359,6 @@ export default function EditProfileModal({ open, handleClose }) {
                     </Button>
                 </Box>
             </Box>
-        </Dialog >
+        </Dialog>
     );
 }

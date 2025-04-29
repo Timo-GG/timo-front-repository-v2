@@ -24,7 +24,6 @@ import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
-import useChatStore from '../storage/useChatStore';
 
 function getRelativeTime(dateString) {
     if (!dateString) return '방금 전';
@@ -101,7 +100,7 @@ const sampleUsers = [
             'https://opgg-static.akamaized.net/meta/images/profile_icons/profileIcon2098.jpg?image=q_auto:good,f_webp,w_200&v=1744455113',
         department: '시디과',
         queueType: '랭크',
-        message: '원딜 사장님 구합니다!! 충실한 노예 1호입니다.',
+        message: '원딜 사장님 구합니다!! 충실한 노예 1호입니다. ',
         playStyle: '즐겜',
         status: '막판',
         mic: '사용 안함',
@@ -125,7 +124,6 @@ function TabPanel({ children, value, index }) {
 
 export default function DuoPage() {
     const theme = useTheme();
-    const [tab, setTab] = useState(0);
     const [positionFilter, setPositionFilter] = useState('nothing');
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
@@ -133,15 +131,13 @@ export default function DuoPage() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [openSendDuoModal, setOpenSendDuoModal] = useState(false);
     const [duoUsers, setDuoUsers] = useState(sampleUsers);
-    const [forceRender, setForceRender] = useState(false);
-    const { isLoggedIn, userData, isEmailVerified, isSummonerVerified } = useAuthStore();
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const navigate = useNavigate();
-    const { setChatList } = useChatStore();
+    const { userData } = useAuthStore();
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setForceRender(prev => !prev);
+            setDuoUsers(prevUsers => [...prevUsers]);
         }, 1000);
         return () => clearInterval(timer);
     }, []);
@@ -149,18 +145,9 @@ export default function DuoPage() {
     const currentUser = userData;
 
     const handleRegisterDuo = () => {
-        // if (!isLoggedIn) {
-        //     alert('로그인 후 사용 가능합니다.');
-        //     return;
-        // }
-        // if (!isEmailVerified || !isSummonerVerified) {
-        //     setOpenConfirmDialog(true);
-        //     return;
-        // }
         setIsModalOpen(true);
     };
 
-    // 새로운 듀오 등록 시 리스트에 추가 (CreateDuoModal에서 호출)
     const handleAddDuo = (newDuo) => {
         setDuoUsers((prev) => [newDuo, ...prev]);
     };
@@ -174,19 +161,16 @@ export default function DuoPage() {
         setSelectedUser(userData);
     };
 
-    // 신청 버튼 클릭 시, 해당 행의 정보를 기반으로 채팅방 생성 및 이동
-    const handleApplyDuo = async (userDataRow) => {
+    const handleApplyDuo = async () => {
         try {
-            // ✅ API 호출: 상대방 ID를 담아 POST
             const response = await axiosInstance.post(
                 '/chat/rooms',
                 { opponentId: 1 },
-                { withAuth: true } // ✅ 토큰 붙이기
+                { withAuth: true }
             );
 
-            const room = response.data.data; // ChatRoomResponse(roomId, 상대 정보 포함)
+            const room = response.data.data;
 
-            // ✅ 채팅 페이지로 이동 (user 정보 state로 넘김)
             navigate(`/mypage?tab=chat&roomId=${room.roomId}`, {
                 state: {
                     user: {
@@ -279,7 +263,7 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
                         onChange={(e) => setRankType(e.target.value)}
                     >
                         <MenuItem value="solo">랭크</MenuItem>
-                        <MenuItem value="flex">일반</MenuItem>
+                        <MenuItem value="normal">일반</MenuItem>
                         <MenuItem value="aram">칼바람</MenuItem>
                     </Select>
                 </FormControl>
@@ -299,16 +283,17 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
                         onChange={(e) => setSchoolFilter(e.target.value)}
                     >
                         <MenuItem value="all">모든 티어</MenuItem>
-                        <MenuItem value="서울과기대">아이언</MenuItem>
-                        <MenuItem value="고려대">브론즈</MenuItem>
-                        <MenuItem value="홍익대">실버</MenuItem>
-                        <MenuItem value="성균관대">골드</MenuItem>
-                        <MenuItem value="성균관대">플레티넘</MenuItem>
-                        <MenuItem value="성균관대">에메랄드</MenuItem>
-                        <MenuItem value="성균관대">다이아</MenuItem>
-                        <MenuItem value="성균관대">마스터</MenuItem>
-                        <MenuItem value="성균관대">그랜드마스터</MenuItem>
-                        <MenuItem value="성균관대">챌린저</MenuItem>
+                        <MenuItem value="iron">아이언</MenuItem>
+                        <MenuItem value="bronze">브론즈</MenuItem>
+                        <MenuItem value="silver">실버</MenuItem>
+                        <MenuItem value="gold">골드</MenuItem>
+                        <MenuItem value="platinum">플레티넘</MenuItem>
+                        <MenuItem value="emerald">에메랄드</MenuItem>
+                        <MenuItem value="diamond">다이아</MenuItem>
+                        <MenuItem value="master">마스터</MenuItem>
+                        <MenuItem value="grandmaster">그랜드마스터</MenuItem>
+                        <MenuItem value="challenger">챌린저</MenuItem>
+
                     </Select>
                 </FormControl>
             </Box>
@@ -442,7 +427,7 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
 
             {/* (4) 티어 */}
             <Box sx={{ flex: columns[3], display: 'flex', justifyContent: 'center' }}>
-                <TierBadge tier={user.tier} score={user.score} />
+                <TierBadge tier={user.tier} score={user.lp} rank={user.rank} />
             </Box>
 
             {/* (5) 찾는 포지션 */}
