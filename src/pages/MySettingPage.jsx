@@ -17,6 +17,7 @@ import {
     updateUnivAccount,
 } from '../apis/univAPI';
 import {getMyInfo} from '../apis/authAPI';
+import {deleteMyRanking} from '../apis/rankAPI';
 
 export default function MySettingPage() {
     const theme = useTheme();
@@ -67,7 +68,7 @@ export default function MySettingPage() {
             setUnivEmail(univCertifiedEmail);
             setDepartment(department);
             setIsUnivEmailDisabled(true);
-            setShowVerificationBtn(false);
+            setShowVerificationBtn(true);
             setShowVerificationInput(false);
             setIsUnivEmailVerified(true);
             setUnivStatusMsg('');
@@ -81,71 +82,59 @@ export default function MySettingPage() {
         }
     }, [userData]);
 
-    // handle nickname update
-    const handleUsernameUpdate = async () => {
-        try {
-            await updateUsername(username);
-            setUserData(prev => ({...prev, username}));
-            setUsernameMessage('닉네임이 성공적으로 변경되었습니다!');
-            setUsernameError('');
-        } catch {
-            setUsernameError('이미 사용 중인 닉네임입니다.');
-            setUsernameMessage('');
-        }
-    };
-
-    // handle summoner verify or reset
-    const handleSummonerVerifyOrReset = async () => {
-        setSummonerStatusMsg('');
-        if (userData?.riotAccount) {
-            try {
-                // 서버에 해제 요청
-                await resetRiotAccount();
-                // 전체 프로필을 다시 불러와 덮어쓰기
-                const response = await getMyInfo();
-                const profile = response.data.data;
-                setUserData(profile);
-                setRiotAccountInput('');
-                setIsSummonerVerified(false);
-                setSummonerStatusMsg('소환사 계정이 해제되었습니다.');
-            } catch {
-                setSummonerStatusMsg('소환사 해제 중 오류가 발생했습니다.');
-            }
-            return;
-        }
-
-        // verify
+    async function handleSummonerRegister() {
         setSummonerStatusMsg('');
         const [accountName, accountTag] = riotAccountInput.split('#');
         if (!accountName || !accountTag) {
             setSummonerStatusMsg('형식이 올바르지 않습니다. 예: 짱아깨비#KR1');
             return;
         }
-
         try {
-            const res = await verifyAccount({accountName, tagLine: accountTag});
+            const res = await verifyAccount({ accountName, tagLine: accountTag });
             if (!res.success) {
                 setSummonerStatusMsg('소환사 정보를 찾을 수 없습니다.');
                 return;
             }
-
-            const {data: {data: profile}} = await getMyInfo();
+            // 프로필 갱신
+            const { data: profile } = await getMyInfo();
             setUserData(profile);
             setIsSummonerVerified(true);
             setSummonerStatusMsg('✔️ 소환사 이름 인증 완료');
-
-            // 랭킹 등록은 별도 try/catch
-            if (profile.certifiedUnivInfo) {
-                const puuid = profile.riotAccount?.puuid;
+            console.log("→ 프로필:", profile);                         // C
+            if (profile.riotAccount?.puuid) {
+                console.log("→ 랭킹 등록 시도, puuid =", profile.riotAccount.puuid); // D
                 try {
-                    if (puuid) await registerRanking(puuid);
+                    const rankRes = await registerRanking(profile.riotAccount.puuid);
+                    console.log("← 랭킹 등록 응답:", rankRes);               // E
                 } catch (e) {
-                    console.warn('랭킹 등록 실패:', e);
+                    console.error("⚠️ 랭킹 등록 실패", e);
+                    setSummonerStatusMsg("랭킹 등록 중 오류가 발생했습니다.");
                 }
             }
         } catch {
+            setSummonerStatusMsg('소환사 인증 중 오류가 발생했습니다.');
         }
-    };
+    }
+    async function handleSummonerReset() {
+        setSummonerStatusMsg('');
+        try {
+            await resetRiotAccount();
+            try {
+                const delRes = await deleteMyRanking();
+                console.log('← 랭킹 삭제 응답:', delRes);
+            } catch (e) {
+                console.error('⚠️ 레디스 랭킹 삭제 실패', e);
+                // (여기선 UI에는 메시지 안 띄워도 됩니다)
+            }
+            const { data: { data: profile } } = await getMyInfo();
+            setUserData(profile);                  // 로컬 프로필 갱신
+            setRiotAccountInput('');
+            setIsSummonerVerified(false);
+            setSummonerStatusMsg('소환사 계정이 해제되었습니다.');
+        } catch {
+            setSummonerStatusMsg('소환사 해제 중 오류가 발생했습니다.');
+        }
+    }
 
     // handle univ name check / reset
     const handleUniversityCheck = async () => {
@@ -160,7 +149,7 @@ export default function MySettingPage() {
                 setUnivEmail('');
                 setDepartment('');
                 setIsUnivEmailDisabled(false);
-                setShowVerificationBtn(false);
+                setShowVerificationBtn(true);
                 setShowVerificationInput(false);
                 setEmailError('');
                 setEmailSent(false);
@@ -182,7 +171,7 @@ export default function MySettingPage() {
                 return;
             }
             setUnivStatusMsg('존재하는 대학교입니다.');
-            setIsUnivEmailDisabled(true);
+            setIsUnivEmailDisabled(false);
             setShowVerificationBtn(true);
             setIsUnivLocked(true);
         } catch {
@@ -197,14 +186,42 @@ export default function MySettingPage() {
             return;
         }
         try {
-            await requestUnivVerification({univName, univEmail});
-            setEmailError('');
-            setEmailSent(true);
-            setShowVerificationInput(true);
-        } catch {
-            setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
+            const res = await requestUnivVerification({univName, univEmail});
+            console.log("res : ", res);
+
+            // ✅ 응답은 성공적으로 왔지만 인증 완료된 상태라면
+            if (res.success === false && res.errorCode === 903) {
+                // 이미 인증된 경우: 바로 업데이트
+                try {
+                    const updated = await updateUnivAccount({univName, univEmail});
+                    const refreshed = await getMyInfo();
+                    const profile = refreshed.data.data;
+                    setUserData(profile);
+                    setShowVerificationInput(false);
+                    setEmailSent(false);
+                    setIsUnivEmailVerified(true);
+                    alert('이미 인증이 완료된 학교 계정입니다.');
+
+                    // 등록된 소환사가 있다면 랭킹 등록
+                    const puuid = profile.riotAccount?.puuid;
+                    if (puuid) await registerRanking(puuid);
+                } catch {
+                    setEmailError('인증 상태 동기화 중 오류가 발생했습니다.');
+                }
+            } else if (res.success === true) {
+                // 정상적인 인증 요청
+                setEmailError('');
+                setEmailSent(true);
+                setShowVerificationInput(true);
+            } else {
+                // 예외적인 응답 처리
+                setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
+            }
+        } catch (err) {
+            setEmailError('네트워크 오류가 발생했습니다.');
         }
     };
+
 
     // handle code confirm
     const handleVerificationConfirm = async () => {
@@ -354,17 +371,14 @@ export default function MySettingPage() {
 
                     {/* 소환사 이름 */}
                     <Box>
-                        <Typography color="text.secondary" sx={{mb: 1}}>소환사 이름</Typography>
-                        <Box sx={{display: 'flex', height: '56px'}}>
+                        <Typography color="text.secondary" sx={{ mb: 1 }}>소환사 이름</Typography>
+                        <Box sx={{ display: 'flex', height: '56px' }}>
                             <TextField
                                 fullWidth
                                 placeholder="ex) 짱아깨비#KR"
                                 value={riotAccountInput}
-                                disabled={Boolean(userData?.riotAccount)}
-                                onChange={(e) => {
-                                    setRiotAccountInput(e.target.value);
-                                    setSummonerStatusMsg('');
-                                }}
+                                onChange={e => { setRiotAccountInput(e.target.value); setSummonerStatusMsg(''); }}
+                                disabled={Boolean(userData?.riotAccount)}                     // 계정이 있으면 입력 비활성화
                                 variant="outlined"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
@@ -372,27 +386,50 @@ export default function MySettingPage() {
                                         borderRadius: '12px 0 0 12px',
                                         backgroundColor: theme.palette.background.input,
                                         border: `1px solid ${theme.palette.border.main}`,
-                                        '& fieldset': {borderColor: 'transparent'},
-                                        '& input': {color: theme.palette.text.primary, padding: '12px 14px'},
+                                        '& fieldset': { borderColor: 'transparent' },
+                                        '& input': { color: theme.palette.text.primary, padding: '12px 14px' },
                                     },
                                 }}
                             />
-                            <Button
-                                onClick={handleSummonerVerifyOrReset}
-                                sx={{
-                                    height: '100%',
-                                    borderRadius: '0 12px 12px 0',
-                                    backgroundColor: theme.palette.background.input,
-                                    color: theme.palette.text.secondary,
-                                    border: `1px solid ${theme.palette.border.main}`,
-                                    borderLeft: 'none',
-                                    px: 3,
-                                    minWidth: '80px',
-                                }}
-                            >
-                                {userData?.riotAccount ? '해제' : '등록'}
-                            </Button>
+
+                            {userData?.riotAccount
+                                ? (
+                                    <Button
+                                        onClick={handleSummonerReset}
+                                        sx={{
+                                            height: '100%',
+                                            borderRadius: '0 12px 12px 0',
+                                            backgroundColor: theme.palette.background.input,
+                                            color: theme.palette.text.secondary,
+                                            border: `1px solid ${theme.palette.border.main}`,
+                                            borderLeft: 'none',
+                                            px: 3,
+                                            minWidth: '80px',
+                                        }}
+                                    >
+                                        해제
+                                    </Button>
+                                )
+                                : (
+                                    <Button
+                                        onClick={handleSummonerRegister}
+                                        sx={{
+                                            height: '100%',
+                                            borderRadius: '0 12px 12px 0',
+                                            backgroundColor: theme.palette.background.input,
+                                            color: theme.palette.text.secondary,
+                                            border: `1px solid ${theme.palette.border.main}`,
+                                            borderLeft: 'none',
+                                            px: 3,
+                                            minWidth: '80px',
+                                        }}
+                                    >
+                                        등록
+                                    </Button>
+                                )
+                            }
                         </Box>
+
                         {summonerStatusMsg && (
                             <Typography
                                 variant="caption"

@@ -59,3 +59,12 @@ export async function fetchMyRankingInfo() {
     const response = await axiosInstance.get('/ranking/me', {withAuth: true});
     return response.data.data;
 }
+
+export const deleteMyRanking = () => {
+    return axiosInstance.delete(
+        '/ranking',    // baseURL에 /api/v1 가 이미 붙어 있다고 가정
+        {
+            withAuth: true,
+        }
+    );
+};
