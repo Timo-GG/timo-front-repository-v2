@@ -53,7 +53,6 @@ export default function MySettingPage() {
     // initialize from userData
     useEffect(() => {
         if (!userData) return;
-
         setUsername(userData.username || '');
 
         if (userData.riotAccount) {
@@ -90,31 +89,29 @@ export default function MySettingPage() {
             return;
         }
         try {
-            const res = await verifyAccount({ accountName, tagLine: accountTag });
+            const res = await verifyAccount({accountName, tagLine: accountTag});
             if (!res.success) {
                 setSummonerStatusMsg('소환사 정보를 찾을 수 없습니다.');
                 return;
             }
             // 프로필 갱신
-            const { data: profile } = await getMyInfo();
+            const {data: profile} = await getMyInfo();
             setUserData(profile);
             setIsSummonerVerified(true);
             setSummonerStatusMsg('✔️ 소환사 이름 인증 완료');
-            console.log("→ 프로필:", profile);                         // C
-            if (profile.riotAccount?.puuid) {
-                console.log("→ 랭킹 등록 시도, puuid =", profile.riotAccount.puuid); // D
+
+            if (profile.certifiedUnivInfo) {
                 try {
-                    const rankRes = await registerRanking(profile.riotAccount.puuid);
-                    console.log("← 랭킹 등록 응답:", rankRes);               // E
+                    await registerRanking(profile.riotAccount.puuid);
                 } catch (e) {
-                    console.error("⚠️ 랭킹 등록 실패", e);
-                    setSummonerStatusMsg("랭킹 등록 중 오류가 발생했습니다.");
+                    console.error('⚠️ 랭킹 등록 실패', e);
                 }
             }
         } catch {
             setSummonerStatusMsg('소환사 인증 중 오류가 발생했습니다.');
         }
     }
+
     async function handleSummonerReset() {
         setSummonerStatusMsg('');
         try {
@@ -124,9 +121,8 @@ export default function MySettingPage() {
                 console.log('← 랭킹 삭제 응답:', delRes);
             } catch (e) {
                 console.error('⚠️ 레디스 랭킹 삭제 실패', e);
-                // (여기선 UI에는 메시지 안 띄워도 됩니다)
             }
-            const { data: { data: profile } } = await getMyInfo();
+            const {data: {data: profile}} = await getMyInfo();
             setUserData(profile);                  // 로컬 프로필 갱신
             setRiotAccountInput('');
             setIsSummonerVerified(false);
@@ -142,6 +138,11 @@ export default function MySettingPage() {
             // reset
             try {
                 await updateUnivAccount({univName: null, univEmail: null});
+
+                if (userData?.riotAccount?.puuid) {
+                    await deleteMyRanking();
+                }
+
                 // 전체 프로필 새로고침
                 const refreshed = await getMyInfo();
                 setUserData(refreshed.data.data);
@@ -190,12 +191,14 @@ export default function MySettingPage() {
             console.log("res : ", res);
 
             // ✅ 응답은 성공적으로 왔지만 인증 완료된 상태라면
+
             if (res.success === false && res.errorCode === 903) {
                 // 이미 인증된 경우: 바로 업데이트
                 try {
                     const updated = await updateUnivAccount({univName, univEmail});
                     const refreshed = await getMyInfo();
-                    const profile = refreshed.data.data;
+                    const profile = refreshed.data;
+                    console.log('profile', profile);
                     setUserData(profile);
                     setShowVerificationInput(false);
                     setEmailSent(false);
@@ -204,6 +207,7 @@ export default function MySettingPage() {
 
                     // 등록된 소환사가 있다면 랭킹 등록
                     const puuid = profile.riotAccount?.puuid;
+                    console.log('puuid : ', puuid);
                     if (puuid) await registerRanking(puuid);
                 } catch {
                     setEmailError('인증 상태 동기화 중 오류가 발생했습니다.');
@@ -227,7 +231,7 @@ export default function MySettingPage() {
     const handleVerificationConfirm = async () => {
         try {
             await verifyUnivCode(verificationCode, {univName, univEmail});
-            const res = await updateUnivAccount({univName, univEmail});
+            await updateUnivAccount({univName, univEmail});
 
             // refresh profile
             const refreshed = await getMyInfo();
@@ -236,11 +240,14 @@ export default function MySettingPage() {
             setShowVerificationInput(false);
             setEmailSent(false);
             setIsUnivEmailVerified(true);
-            alert('학교 계정 인증 완료');
 
-            // if summoner verified, register ranking
-            const puuid = profile.riotAccount?.puuid;
-            if (puuid) await registerRanking(puuid);
+            if (profile.riotAccount) {
+                try {
+                    await registerRanking(profile.riotAccount.puuid);
+                } catch (e) {
+                    console.error('⚠️ 랭킹 등록 실패', e);
+                }
+            }
         } catch {
             setVerificationError('인증코드가 올바르지 않거나 만료되었습니다.');
         }
@@ -371,13 +378,16 @@ export default function MySettingPage() {
 
                     {/* 소환사 이름 */}
                     <Box>
-                        <Typography color="text.secondary" sx={{ mb: 1 }}>소환사 이름</Typography>
-                        <Box sx={{ display: 'flex', height: '56px' }}>
+                        <Typography color="text.secondary" sx={{mb: 1}}>소환사 이름</Typography>
+                        <Box sx={{display: 'flex', height: '56px'}}>
                             <TextField
                                 fullWidth
                                 placeholder="ex) 짱아깨비#KR"
                                 value={riotAccountInput}
-                                onChange={e => { setRiotAccountInput(e.target.value); setSummonerStatusMsg(''); }}
+                                onChange={e => {
+                                    setRiotAccountInput(e.target.value);
+                                    setSummonerStatusMsg('');
+                                }}
                                 disabled={Boolean(userData?.riotAccount)}                     // 계정이 있으면 입력 비활성화
                                 variant="outlined"
                                 sx={{
@@ -386,8 +396,8 @@ export default function MySettingPage() {
                                         borderRadius: '12px 0 0 12px',
                                         backgroundColor: theme.palette.background.input,
                                         border: `1px solid ${theme.palette.border.main}`,
-                                        '& fieldset': { borderColor: 'transparent' },
-                                        '& input': { color: theme.palette.text.primary, padding: '12px 14px' },
+                                        '& fieldset': {borderColor: 'transparent'},
+                                        '& input': {color: theme.palette.text.primary, padding: '12px 14px'},
                                     },
                                 }}
                             />
