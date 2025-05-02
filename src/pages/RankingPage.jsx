@@ -53,7 +53,7 @@ export default function RankingPage() {
     const [requiredOpen, setRequiredOpen] = React.useState(false);
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
     const itemsPerPage = 10;
-    console.log(myProfileData);
+
     // tab(0: 전체, 1: 우리 학교) 혹은 userData 변경 시마다 목록 갱신
     React.useEffect(() => {
         const fetcher = tab === 0
@@ -70,10 +70,12 @@ export default function RankingPage() {
     }, [currentPage]);
 
     React.useEffect(() => {
-        fetchMyRankingInfo()
-            .then(setMyProfileData)
-            .catch(console.error);
-    }, []);
+        if (accessToken) {
+            fetchMyRankingInfo()
+                .then(setMyProfileData)
+                .catch(console.error);
+        }
+    }, [accessToken]);
 
     // 탭 변경 핸들러 수정
     const handleTabChange = (event, newValue) => {

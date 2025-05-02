@@ -20,11 +20,12 @@ const TIER_DISPLAY_NAME = {
 
 export default function TierBadge({ tier = 'unrank', score, rank }) {
     const validTiers = Object.keys(TIER_DISPLAY_NAME);
-    const isValidTier = validTiers.includes(tier);
-    const iconUrl = getTierIcon(isValidTier ? tier : 'unrank');
-    const displayTier = TIER_DISPLAY_NAME[tier];
+    const normalizedTier = tier.toLowerCase();
+    const isValidTier = validTiers.includes(normalizedTier);
+    const iconUrl = getTierIcon(isValidTier ? normalizedTier : 'unrank');
+    const displayTier = TIER_DISPLAY_NAME[normalizedTier];
 
-    const isMasterPlus = ['master', 'grandmaster', 'challenger'].includes(tier);
+    const isMasterPlus = ['master', 'grandmaster', 'challenger'].includes(normalizedTier);
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.2 }}>

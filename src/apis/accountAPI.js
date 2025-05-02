@@ -38,3 +38,11 @@ export const registerRanking = async (puuid) => {
   );
   return res.data;
 };
+
+export const fetchRecentMatchFull = async (gameName, tagLine) => {
+    const response = await axiosInstance.post('/riot/recent-match', {
+        gameName,
+        tagLine,
+    });
+    return response.data.data;
+};

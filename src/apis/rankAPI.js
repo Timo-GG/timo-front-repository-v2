@@ -1,7 +1,7 @@
 import axiosInstance from './axiosInstance';
 
 export const fetchRankingList = async () => {
-    const response = await axiosInstance.get('/ranking/top', {withAuth: true});
+    const response = await axiosInstance.get('/ranking/top', );
     return response.data.data.map((item, index) => ({
         ranking: index + 1,
         name: item.gameName,
