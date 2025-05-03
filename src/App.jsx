@@ -14,13 +14,15 @@ import TestPage from './pages/TestPage';
 import NotificationListener from './socket/NotificationListener';
 import AuthCallback from './pages/AuthCallback';
 import useAuthStore from './storage/useAuthStore';
-import {connectSocket, getSocket} from './socket/socket';
+import {connectSocket} from './socket/socket';
 import useOnlineStore from './storage/useOnlineStore';
 import {getMyInfo} from './apis/authAPI';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
 function App() {
     const {accessToken, userData, setUserData, logout} = useAuthStore();
     const {setOnlineCount} = useOnlineStore();
+    const queryClient = new QueryClient();
 
     useEffect(() => {
         if (accessToken && !userData) {
@@ -49,13 +51,13 @@ function App() {
 
         // 로그인 유저라면 join_online 이벤트 발생
         if (accessToken && userData?.memberId) {
-            socket.emit('join_online', { memberId: userData.memberId });
+            socket.emit('join_online', {memberId: userData.memberId});
         }
 
         return () => {
             // 떠날 때 leave_online 이벤트 발생 후 소켓 disconnect
             if (accessToken && userData?.memberId) {
-                socket.emit('leave_online', { memberId: userData.memberId });
+                socket.emit('leave_online', {memberId: userData.memberId});
             }
             socket.disconnect();
         };
@@ -70,24 +72,27 @@ function App() {
     }
 
     return (
-        <Router>
-            <Header/>
-            <NotificationListener/>
-            <Routes>
-                <Route path="/" element={<MainPage/>}/>
-                <Route path="/search" element={<SearchPage/>}/>
-                <Route path="/mysetting" element={<MySettingPage/>}/>
-                <Route path="/ranking" element={<RankingPage/>}/>
-                <Route path="/mypage" element={<MyPage/>}/>
-                <Route path="/duo" element={<DuoPage/>}/>
-                <Route path="/scrim" element={<ScrimPage/>}/>
-                <Route path="/signup" element={<SignupPage/>}/>
-                <Route path="/profile-setup" element={<ProfileSetup/>}/>
-                <Route path="/test" element={<TestPage/>}/>
-                <Route path="/auth/callback/:provider" element={<AuthCallback/>}/>
-                <Route path="/chat" element={<ChatRouteWrapper/>}/>
-            </Routes>
-        </Router>
+        <QueryClientProvider client={queryClient}>
+            <Router>
+                <Header/>
+                <NotificationListener/>
+                <Routes>
+                    <Route path="/" element={<MainPage/>}/>
+                    <Route path="/search" element={<SearchPage/>}/>
+                    <Route path="/mysetting" element={<MySettingPage/>}/>
+                    <Route path="/ranking" element={<RankingPage/>}/>
+                    <Route path="/mypage" element={<MyPage/>}/>
+                    <Route path="/duo" element={<DuoPage/>}/>
+                    <Route path="/scrim" element={<ScrimPage/>}/>
+                    <Route path="/signup" element={<SignupPage/>}/>
+                    <Route path="/profile-setup" element={<ProfileSetup/>}/>
+                    <Route path="/test" element={<TestPage/>}/>
+                    <Route path="/auth/callback/:provider" element={<AuthCallback/>}/>
+                    <Route path="/chat" element={<ChatRouteWrapper/>}/>
+                </Routes>
+            </Router>
+        </QueryClientProvider>
+
     );
 }
 
