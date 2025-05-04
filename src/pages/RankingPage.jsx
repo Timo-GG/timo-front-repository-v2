@@ -146,14 +146,6 @@ export default function RankingPage() {
         setDisplayList((prev) => prev.filter(r => `${r.name}#${r.tag}` !== key));
     };
 
-    if (isLoading) {
-        return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 5 }}>
-                <CircularProgress color="inherit" />
-            </Box>
-        );
-    }    if (isError) return <div style={{ color: 'red' }}>랭킹 데이터를 불러오는 중 오류가 발생했습니다.</div>;
-
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
             <Container maxWidth="lg" sx={{ px: 0 }}>
