@@ -5,6 +5,8 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import useAuthStore from '../storage/useAuthStore';
 import {getMyInfo} from '../apis/authAPI';
+import { useMediaQuery, useTheme } from '@mui/material';
+
 import {
     AppBar,
     Toolbar,
@@ -31,6 +33,8 @@ export default function Header() {
     const [anchorEl, setAnchorEl] = useState(null);
     const userMenuOpen = Boolean(anchorEl);
     const {onlineCount} = useOnlineStore(); // Zustand에서 가져옴
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // sm 이하 (모바일)
 
     const handleUserMenuClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -128,32 +132,41 @@ export default function Header() {
                                     </Box>
                                 </Box>
 
-                                <Box sx={{marginLeft: 'auto'}}>
+                                <Box sx={{ marginLeft: 'auto' }}>
                                     {accessToken ? (
                                         <>
                                             <Button
                                                 onClick={handleUserMenuClick}
                                                 size="large"
                                                 variant="contained"
-                                                startIcon={<PersonIcon/>}
                                                 sx={{
                                                     backgroundColor: '#3b3c4f',
                                                     color: '#fff',
                                                     fontWeight: 'bold',
-                                                    fontSize: '1rem',
-                                                    minHeight: '48px',
-                                                    padding: '8px 20px',
-                                                    ':hover': {backgroundColor: '#50516a'},
+                                                    fontSize: { xs: '0.85rem', sm: '1rem' },
+                                                    minHeight: { xs: '40px', sm: '48px' },
+                                                    padding: { xs: '3px 10px', sm: '8px 20px' },
+                                                    maxWidth: { xs: '48px', sm: 'none' },
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    ':hover': { backgroundColor: '#50516a' },
                                                 }}
                                             >
-                                                {userData?.username || '유저'}
+                                                {isMobile ? (
+                                                    <PersonIcon />
+                                                ) : (
+                                                    <>
+                                                        <PersonIcon sx={{ mr: 1 }} />
+                                                        {userData?.username || '유저'}
+                                                    </>
+                                                )}
                                             </Button>
                                             <Menu
                                                 anchorEl={anchorEl}
                                                 open={userMenuOpen}
                                                 onClose={handleUserMenuClose}
-                                                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
-                                                transformOrigin={{vertical: 'top', horizontal: 'right'}}
+                                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                                 PaperProps={{
                                                     sx: {
                                                         backgroundColor: '#2b2c3c',
@@ -170,12 +183,12 @@ export default function Header() {
                                                         fontSize: '1rem',
                                                         px: 3,
                                                         py: 1.5,
-                                                        ':hover': {backgroundColor: '#3b3c4f'},
+                                                        ':hover': { backgroundColor: '#3b3c4f' },
                                                     }}
                                                 >
                                                     내 계정
                                                 </MenuItem>
-                                                <Box sx={{height: '1px', backgroundColor: '#3b3c4f', mx: 1}}/>
+                                                <Box sx={{ height: '1px', backgroundColor: '#3b3c4f', mx: 1 }} />
                                                 <MenuItem
                                                     onClick={handleLogout}
                                                     sx={{
@@ -183,7 +196,7 @@ export default function Header() {
                                                         fontSize: '1rem',
                                                         px: 3,
                                                         py: 1.5,
-                                                        ':hover': {backgroundColor: '#3b3c4f'},
+                                                        ':hover': { backgroundColor: '#3b3c4f' },
                                                     }}
                                                 >
                                                     로그아웃
@@ -199,10 +212,10 @@ export default function Header() {
                                                 backgroundColor: '#3b3c4f',
                                                 color: '#fff',
                                                 fontWeight: 'bold',
-                                                fontSize: {xs: '0.85rem', sm: '1rem'}, // 모바일(xs), 데스크탑(sm 이상)
-                                                minHeight: {xs: '40px', sm: '48px'},   // 모바일용 높이 줄임
-                                                padding: {xs: '3px 13px', sm: '8px 20px'}, // 모바일용 패딩 줄임
-                                                ':hover': {backgroundColor: '#50516a'},
+                                                fontSize: { xs: '0.85rem', sm: '1rem' },
+                                                minHeight: { xs: '40px', sm: '48px' },
+                                                padding: { xs: '3px 13px', sm: '8px 20px' },
+                                                ':hover': { backgroundColor: '#50516a' },
                                             }}
                                         >
                                             로그인
