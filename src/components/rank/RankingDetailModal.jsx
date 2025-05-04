@@ -78,50 +78,52 @@ export default function RankingDetailModal({open, handleClose, data}) {
                 </Box>
 
                 {/* 소환사 정보 테이블 헤더 */}
-                <Box sx={{overflow: 'hidden'}}>
-                    <Box
-                        sx={{
-                            px: 0,
-                            py: 1,
-                            display: 'flex',
-                            backgroundColor: '#28282F',
-                            color: '#999',
-                            fontSize: 12,
-                            fontWeight: 500,
-                        }}
-                    >
-                        <Box width="30%" textAlign="center">소환사</Box>
-                        <Box width="20%" textAlign="center">주 포지션</Box>
-                        <Box width="20%" textAlign="center">티어</Box>
-                        <Box width="30%" textAlign="center">모스트 챔피언</Box>
-                    </Box>
-                </Box>
+                <Box sx={{ overflowX: 'auto' }}>
+                    <Box sx={{ minWidth: '500px' }}>
+                        <Box
+                            sx={{
+                                px: 0,
+                                py: 1,
+                                display: 'flex',
+                                backgroundColor: '#28282F',
+                                color: '#999',
+                                fontSize: 12,
+                                fontWeight: 500,
+                            }}
+                        >
+                            <Box width="30%" textAlign="center">소환사</Box>
+                            <Box width="20%" textAlign="center">주 포지션</Box>
+                            <Box width="20%" textAlign="center">티어</Box>
+                            <Box width="30%" textAlign="center">모스트 챔피언</Box>
+                        </Box>
 
-                {/* 소환사 정보 데이터 */}
-                <Box
-                    key={data.ranking}
-                    sx={{
-                        px: 0,
-                        py: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        backgroundColor: theme.palette.background.paper,
-                        color: '#fff',
-                        fontSize: 14,
-                        borderTop: '1px solid #3c3d4e',
-                    }}
-                >
-                    <Box width="30%" display="flex" justifyContent="center">
-                        <SummonerInfo name={data.name} tag={data.tag} avatarUrl={data.avatarUrl}/>
-                    </Box>
-                    <Box width="20%" textAlign="center">
-                        <PositionIcon position={data.position}/>
-                    </Box>
-                    <Box width="20%" textAlign="center">
-                        <TierBadge tier={data.tier} score={data.lp} rank={data.rank} />
-                    </Box>
-                    <Box width="30%" textAlign="center">
-                        <ChampionIconList championNames={data.champions}/>
+                        {/* 소환사 정보 데이터 */}
+                        <Box
+                            key={data.ranking}
+                            sx={{
+                                px: 0,
+                                py: { xs: 0.5, sm: 1.5 },
+                                display: 'flex',
+                                alignItems: 'center',
+                                backgroundColor: theme.palette.background.paper,
+                                color: '#fff',
+                                fontSize: { xs: 11, sm: 14 },
+                                borderTop: '1px solid #3c3d4e',
+                            }}
+                        >
+                            <Box sx={{ width: '30%', minWidth: 100, display: 'flex', justifyContent: 'center' }}>
+                                <SummonerInfo name={data.name} tag={data.tag} avatarUrl={data.avatarUrl} />
+                            </Box>
+                            <Box sx={{ width: '20%', minWidth: 80, textAlign: 'center' }}>
+                                <PositionIcon position={data.position} iconSize={20} />
+                            </Box>
+                            <Box sx={{ width: '20%', minWidth: 80, textAlign: 'center' }}>
+                                <TierBadge tier={data.tier} score={data.lp} rank={data.rank} size="small" />
+                            </Box>
+                            <Box sx={{ width: '30%', minWidth: 100, textAlign: 'center' }}>
+                                <ChampionIconList championNames={data.champions} iconSize={20} />
+                            </Box>
+                        </Box>
                     </Box>
                 </Box>
 

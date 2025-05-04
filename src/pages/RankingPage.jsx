@@ -12,7 +12,6 @@ import {
     Container,
     Avatar,
     Pagination,
-    CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import useAuthStore from '../storage/useAuthStore';
@@ -56,23 +55,16 @@ export default function RankingPage() {
     const itemsPerPage = 10;
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
 
-    // 랭킹 리스트 가져오기 (5초마다 refetch)
     const {
         data: rankingList = [],
-        isLoading,
-        isError,
-        refetch: refetchRanking,
     } = useQuery({
         queryKey: ['rankingList', tab, userData?.certifiedUnivInfo?.univName],
         queryFn: () => tab === 0 ? fetchRankingList() : fetchRankingByUniversity(userData.certifiedUnivInfo.univName),
         refetchInterval: 5000,
     });
 
-    // 내 프로필 정보 가져오기
     const {
         data: myProfileData,
-        isLoading: isProfileLoading,
-        isError: isProfileError,
     } = useQuery({
         queryKey: ['myProfile'],
         queryFn: fetchMyRankingInfo,
@@ -98,33 +90,8 @@ export default function RankingPage() {
     };
 
     const totalPages = Math.ceil(rankingList.length / itemsPerPage);
-    const paginatedData = rankingList.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
 
-    const handleSearch = () => {
-        if (!searchText.trim()) return;
-
-        const found = rankingList.find((item) => {
-            const fullName = `${item.name}#${item.tag}`;
-            return fullName.toLowerCase() === searchText.toLowerCase();
-        });
-
-        if (found) {
-            setSelectedData(found);
-            setDetailOpen(true);
-        } else {
-            alert('해당 소환사를 찾을 수 없습니다.');
-        }
-    };
-
-    const handleRowClick = (row) => {
-        setSelectedData(row);
-        setDetailOpen(true);
-    };
     const [displayList, setDisplayList] = React.useState([]);
-
     React.useEffect(() => {
         const currentKeys = new Set(displayList.map(r => `${r.name}#${r.tag}`));
         const newKeys = new Set(rankingList.map(r => `${r.name}#${r.tag}`));
@@ -135,7 +102,6 @@ export default function RankingPage() {
             isVisible: true,
         }));
 
-        // 삭제된 항목 감지
         const removedItems = displayList.filter(r => !newKeys.has(`${r.name}#${r.tag}`))
             .map(r => ({ ...r, isVisible: false }));
 
@@ -144,6 +110,24 @@ export default function RankingPage() {
 
     const handleExited = (key) => {
         setDisplayList((prev) => prev.filter(r => `${r.name}#${r.tag}` !== key));
+    };
+    const handleRowClick = (row) => {
+        setSelectedData(row);
+        setDetailOpen(true);
+    };
+
+    const handleSearch = () => {
+        if (!searchText.trim()) return;
+        const found = rankingList.find((item) => {
+            const fullName = `${item.name}#${item.tag}`;
+            return fullName.toLowerCase() === searchText.toLowerCase();
+        });
+        if (found) {
+            setSelectedData(found);
+            setDetailOpen(true);
+        } else {
+            alert('해당 소환사를 찾을 수 없습니다.');
+        }
     };
 
     return (
@@ -179,7 +163,14 @@ export default function RankingPage() {
 
                 {/* 헤더 */}
                 <Box sx={{ p: 2, backgroundColor: theme.palette.background.paper }}>
-                    <Box sx={{ ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{
+                        ml: 1,
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'flex-start', sm: 'center' },
+                        gap: { xs: 2, sm: 0 },
+                    }}>
                         <Box>
                             <Typography variant="h7" color="#42E6B5">콜로세움 순위표</Typography>
                             <Typography variant="h5" fontWeight="bold" color="white">
@@ -187,8 +178,7 @@ export default function RankingPage() {
                             </Typography>
                         </Box>
 
-                        {/* 검색창 + 버튼 */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
                             <Box
                                 sx={{
                                     backgroundColor: '#2B2C3C',
@@ -200,6 +190,7 @@ export default function RankingPage() {
                                     pl: 1.5,
                                     pr: 1.5,
                                     minWidth: 120,
+                                    flex: { xs: 1.8, sm: 'none' }, // 모바일: 비율 2
                                 }}
                             >
                                 <IconButton onClick={handleSearch}>
@@ -212,7 +203,7 @@ export default function RankingPage() {
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handleSearch();
                                     }}
-                                    sx={{ flex: 1, color: '#fff', fontSize: '0.9rem', fontWeight: 'bold', ml: 1, mr: 1 }}
+                                    sx={{ flex: 1, color: '#fff', fontSize: { xs: '0.8rem', sm: '0.9rem' }, fontWeight: 'bold', ml: 1, mr: 1 }}
                                 />
                             </Box>
 
@@ -225,6 +216,8 @@ export default function RankingPage() {
                                     px: 2,
                                     py: 1.4,
                                     height: 40,
+                                    width: { xs: '100%', sm: 'auto' },
+                                    flex: { xs: 1, sm: 'none' }, // 모바일: 비율 1
                                 }}
                                 onClick={handleEditClick}
                             >
@@ -234,23 +227,12 @@ export default function RankingPage() {
                             </Button>
                         </Box>
 
-                        {/* 모달들 */}
-                        <RankingDetailModal
-                            open={detailOpen}
-                            handleClose={() => setDetailOpen(false)}
-                            data={selectedData}
-                        />
-                        <EditProfileModal
-                            open={open}
-                            handleClose={() => setOpen(false)}
-                            userProfileData={myProfileData}
-                        />
                     </Box>
                 </Box>
 
                 {/* 테이블 영역 */}
-                <Box>
-                    <Box sx={{ overflow: 'hidden' }}>
+                <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' }, width: '100%' }}>
+                    <Box sx={{ minWidth: { xs: '1100px', sm: 'auto' } }}>
                         <Box
                             sx={{
                                 px: 0,
@@ -275,7 +257,7 @@ export default function RankingPage() {
 
                         {displayList
                             .filter(row => row.isVisible)
-                            .sort((a, b) => a.ranking - b.ranking) // 순위 정렬
+                            .sort((a, b) => a.ranking - b.ranking)
                             .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                             .map((row) => {
                                 const key = `${row.name}#${row.tag}`;
@@ -304,39 +286,39 @@ export default function RankingPage() {
                                                 '&:hover': { backgroundColor: '#2E2E38' },
                                             }}
                                         >
-                                <Box width="5%" textAlign="center">{row.ranking}</Box>
-                                <Box width="15%" display="flex">
-                                    <SummonerInfo
-                                        name={row.name}
-                                        tag={row.tag}
-                                        avatarUrl={row.avatarUrl}
-                                    />
-                                </Box>
-                                <Box width="10%" textAlign="center"><PositionIcon position={row.position} /></Box>
-                                <Box width="5%" textAlign="center"><TierBadge tier={row.tier} score={row.lp} rank={row.rank} /></Box>
-                                <Box width="10%" textAlign="center">{tab === 0 ? row.university : row.department}</Box>
-                                <Box width="10%" textAlign="center"><ChampionIconList championNames={row.champions} /></Box>
-                                <Box width="15%" textAlign="center"><WinRateBar wins={row.wins} losses={row.losses} /></Box>
-                                <Box width="20%" textAlign="center">
-                                    <Box sx={{
-                                        backgroundColor: '#424254',
-                                        p: 1,
-                                        borderRadius: 1,
-                                        color: '#fff',
-                                        fontSize: '0.85rem',
-                                        lineHeight: 1.4,
-                                        textAlign: 'left',
-                                        display: '-webkit-inline-box',
-                                        WebkitBoxOrient: 'vertical',
-                                        WebkitLineClamp: 2,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'normal',
-                                        maxHeight: '3.6em',
-                                    }}>
-                                        {row.message}
-                                    </Box>
-                                </Box>
+                                            <Box width="5%" textAlign="center">{row.ranking}</Box>
+                                            <Box width="15%" display="flex">
+                                                <SummonerInfo
+                                                    name={row.name}
+                                                    tag={row.tag}
+                                                    avatarUrl={row.avatarUrl}
+                                                />
+                                            </Box>
+                                            <Box width="10%" textAlign="center"><PositionIcon position={row.position} /></Box>
+                                            <Box width="5%" textAlign="center"><TierBadge tier={row.tier} score={row.lp} rank={row.rank} /></Box>
+                                            <Box width="10%" textAlign="center">{tab === 0 ? row.university : row.department}</Box>
+                                            <Box width="10%" textAlign="center"><ChampionIconList championNames={row.champions} /></Box>
+                                            <Box width="15%" textAlign="center"><WinRateBar wins={row.wins} losses={row.losses} /></Box>
+                                            <Box width="20%" textAlign="center">
+                                                <Box sx={{
+                                                    backgroundColor: '#424254',
+                                                    p: 1,
+                                                    borderRadius: 1,
+                                                    color: '#fff',
+                                                    fontSize: '0.85rem',
+                                                    lineHeight: 1.4,
+                                                    textAlign: 'left',
+                                                    display: '-webkit-inline-box',
+                                                    WebkitBoxOrient: 'vertical',
+                                                    WebkitLineClamp: 2,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'normal',
+                                                    maxHeight: '3.6em',
+                                                }}>
+                                                    {row.message}
+                                                </Box>
+                                            </Box>
                                         </Box>
                                     </Collapse>
                                 );
@@ -357,6 +339,11 @@ export default function RankingPage() {
                     </Box>
                 </Box>
             </Container>
+            <RankingDetailModal
+                open={detailOpen}
+                handleClose={() => setDetailOpen(false)}
+                data={selectedData}
+            />
             <ConfirmRequiredDialog
                 open={requiredOpen}
                 onClose={() => setRequiredOpen(false)}
