@@ -6,6 +6,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import useAuthStore from '../storage/useAuthStore';
 import {getMyInfo} from '../apis/authAPI';
 import { useMediaQuery, useTheme } from '@mui/material';
+import useNotificationStore from '../storage/useNotification';
+import { fetchUnreadNotifications, markNotificationAsRead } from '../apis/notificationAPI';
 
 import {
     AppBar,
@@ -56,12 +58,15 @@ export default function Header() {
         const socket = getSocket();
         const memberId = userData?.memberId;
         if (socket && memberId) {
-            socket.emit('leave_online', {memberId}); // 서버에 접속 종료 알림
+            socket.emit('leave_online', { memberId });
         }
         disconnectSocket();
 
         // Zustand 상태 초기화
         logout();
+
+        // 알림 상태 초기화
+        clearNotifications();
 
         // 로컬스토리지에서 토큰 제거
         localStorage.removeItem('accessToken');
@@ -81,18 +86,29 @@ export default function Header() {
     const handleNotificationClose = () => {
         setNotificationAnchorEl(null);
     };
+    const notifications = useNotificationStore((state) => state.notifications);
+    const addNotification = useNotificationStore((state) => state.addNotification);
+    const removeNotification = useNotificationStore((state) => state.removeNotification);
+    const clearNotifications = useNotificationStore((state) => state.clearNotifications);
 
-    const [notifications, setNotifications] = useState([
-        {id: 1, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '1시간 전'},
-        {id: 2, message: '짱아깨비 님으로부터 듀오 신청이 왔습니다.', time: '04/01 20:05'},
-    ]);
-
-    const handleRemoveNotification = (id) => {
-        setNotifications((prev) => prev.filter((noti) => noti.id !== id));
+    const handleRemoveNotification = async (id) => {
+        try {
+            await markNotificationAsRead(id);
+            removeNotification(id);
+        } catch (err) {
+            console.error('알림 읽음 처리 실패', err);
+        }
     };
 
-    const handleMarkAllAsRead = () => {
-        setNotifications([]);
+    const handleMarkAllAsRead = async () => {
+        try {
+            await Promise.all(
+                notifications.map((noti) => markNotificationAsRead(noti.id))
+            );
+            clearNotifications();
+        } catch (err) {
+            console.error('모두 읽음 처리 실패', err);
+        }
     };
 
     const menuItems = [
@@ -103,6 +119,27 @@ export default function Header() {
         {label: '마이페이지', path: '/mypage'},
     ];
 
+    useEffect(() => {
+        if (!accessToken) return;
+
+        async function loadUnreadNotifications() {
+            try {
+                const unreadList = await fetchUnreadNotifications();
+                unreadList.forEach((noti) => {
+                    addNotification({
+                        id: noti.id,
+                        message: noti.message,
+                        time: new Date().toLocaleTimeString(), // 서버에서 시간 안 주면 클라이언트에서 처리
+                        redirectUrl: noti.redirectUrl,
+                    });
+                });
+            } catch (err) {
+                console.error('알림 불러오기 실패', err);
+            }
+        }
+
+        loadUnreadNotifications();
+    }, [accessToken]);
     return (
         <>
             <AppBar position="sticky" sx={{backgroundColor: '#2b2c3c', padding: 0, overflow: 'visible'}}>
@@ -290,6 +327,7 @@ export default function Header() {
                                             boxShadow: 3,
                                             borderRadius: 1,
                                             overflow: 'visible',
+
                                         },
                                     }}
                                 >
@@ -330,15 +368,35 @@ export default function Header() {
                                                         mb: 1,
                                                         fontSize: {xs: '0.8rem', sm: '0.875rem'},
                                                         position: 'relative',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                    onClick={async () => {
+                                                        try {
+                                                            await markNotificationAsRead(noti.id);
+                                                            removeNotification(noti.id);
+                                                            const fullUrl = noti.redirectUrl.startsWith('http')
+                                                                ? noti.redirectUrl
+                                                                : `${window.location.origin}${noti.redirectUrl}`;
+                                                            window.location.href = fullUrl;
+                                                            handleNotificationClose();
+                                                        } catch (err) {
+                                                            console.error('알림 이동/읽음 처리 실패', err);
+                                                        }
                                                     }}
                                                 >
-                                                    <Typography variant="body2">{noti.message}</Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                    >
+                                                        {noti.message}
+                                                    </Typography>
                                                     <Typography variant="caption" sx={{color: '#aaa'}}>
                                                         {noti.time}
                                                     </Typography>
                                                     <IconButton
                                                         size="small"
-                                                        onClick={() => handleRemoveNotification(noti.id)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleRemoveNotification(noti.id);}}
                                                         sx={{
                                                             position: 'absolute',
                                                             top: 8,

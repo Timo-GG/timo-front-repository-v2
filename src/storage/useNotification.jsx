@@ -2,11 +2,23 @@ import { create } from 'zustand';
 
 const useNotificationStore = create((set) => ({
     notifications: [],
-    addNotification: (noti) =>
+    addNotification: (notification) =>
         set((state) => ({
-            notifications: [noti, ...state.notifications],
+            notifications: [
+                ...state.notifications,
+                {
+                    id: notification.id || Date.now(),  // 서버 id 우선, 없으면 로컬 id
+                    message: notification.message,
+                    redirectUrl: notification.redirectUrl || '',
+                    time: notification.time || new Date().toLocaleString(),
+                },
+            ],
         })),
     clearNotifications: () => set({ notifications: [] }),
+    removeNotification: (id) =>
+        set((state) => ({
+            notifications: state.notifications.filter((n) => n.id !== id),
+        })),
 }));
 
 export default useNotificationStore;
