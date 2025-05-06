@@ -1,4 +1,4 @@
-// CreateDuoModal
+// src/components/duo/CreateDuoModal.jsx
 import React, { useState } from 'react';
 import {
     Dialog,
@@ -12,9 +12,12 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PositionFilterBar from './PositionFilterBar';
+import { createDuoBoard } from '../../apis/redisAPI';
+import useAuthStore from '../../storage/useAuthStore';
 
-export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
-    const [formData, setFormData] = useState({
+export default function CreateDuoModal({ open, onClose }) {
+    const [
+        formData, setFormData] = useState({
         myPosition: 'nothing',
         playStyle: '즐겜',
         gameStatus: '첫판',
@@ -29,57 +32,62 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const currentUser = {
-        name: '롤10년차고인물',
-        tag: '1234',
-        avatarUrl: 'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
-        school: '서울과기대',
-        tier: 'platinum',
-        score: 2,
-    };
+    const { userData } = useAuthStore();
+    const riot = userData?.riotAccount;
+    const memberId = userData?.memberId;
 
-    const handleSubmit = () => {
-        const newDuo = {
-            id: Date.now(),
-            name: currentUser.name,
-            tag: currentUser.tag,
-            school: currentUser.school,
-            avatarUrl: currentUser.avatarUrl,
-            queueType: formData.queueType,
-            message: formData.memo,
-            playStyle: formData.playStyle,
-            status: '듀오 가능',
-            mic: formData.mic === 'on' ? '사용함' : '사용 안 함',
-            mainPosition: formData.myPosition,
-            lookingForPosition: formData.duoPosition,
-            createdAt: new Date().toISOString(),
-            type: '듀오',
-            tier: currentUser.tier,
-            score: currentUser.score,
-            wins: 0,
-            losses: 0,
-            members: [
-                {
-                    name: currentUser.name,
-                    tag: currentUser.tag,
-                    avatarUrl: currentUser.avatarUrl,
-                    tier: 'platinum',
-                    score: 2,
-                    champions: [],
-                    position: formData.myPosition,
+    const handleSubmit = async () => {
+        if (!riot || !memberId) {
+            alert('로그인 또는 라이엇 계정 연동이 필요합니다.');
+            return;
+        }
+
+        const dto = {
+            memo: formData.memo,
+            duoMapCode:
+                formData.queueType === '랭크'
+                    ? 'RANK'
+                    : formData.queueType === '일반'
+                        ? 'NORMAL'
+                        : 'HOWLING_ABYSS',
+            requestUserDto: {
+                memberId,
+                riotAccount: {
+                    accountName: riot.accountName,
+                    accountTag: riot.accountTag,
                 },
-            ],
+                userInfo: {
+                    myPosition: formData.myPosition.toUpperCase(),
+                    myStyle: formData.playStyle === '빡겜' ? 'HARD' : 'FUN',
+                    myStatus:
+                        formData.gameStatus === '첫판'
+                            ? 'FIRST'
+                            : formData.gameStatus === '계속 플레이'
+                                ? 'CONTINUE'
+                                : 'LAST',
+                    myVoice: formData.mic === 'on' ? 'ENABLED' : 'DISABLED',
+                },
+                duoInfo: {
+                    opponentPosition: formData.duoPosition.toUpperCase(),
+                    opponentStyle: formData.duoPlayStyle === '빡겜' ? 'HARD' : 'FUN',
+                },
+            },
         };
 
-        if (onCreateDuo) {
-            onCreateDuo(newDuo);
+        console.log(dto);
+
+        try {
+            await createDuoBoard(dto);
+            alert('듀오 게시글이 등록되었습니다.');
+            onClose();
+        } catch (err) {
+            console.error('등록 실패:', err);
+            alert('등록에 실패했습니다.');
         }
-        onClose();
     };
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm">
-            {/* 내부 영역에는 백드롭 이벤트에 영향 주지 않는 정도의 stopPropagation만 사용 */}
             <Box>
                 <Box sx={{ backgroundColor: '#31313D', p: 2 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -96,15 +104,15 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
 
                 <Box sx={{ backgroundColor: '#31313E', p: 3 }}>
                     <Box display="flex" justifyContent="center" gap={3} mb={3}>
-                        {/* 왼쪽: 내 정보 패널 */}
+                        {/* 내 정보 영역 */}
                         <Box sx={{ width: 280, p: 2, borderRadius: 1, backgroundColor: '#31313E' }}>
                             <Typography fontSize="1rem" fontWeight="bold" color="#fff" mb={2}>
                                 내 정보
                             </Typography>
+
+                            {/* 포지션 */}
                             <Box mb={2}>
-                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                                    포지션
-                                </Typography>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">포지션</Typography>
                                 <PositionFilterBar
                                     positionFilter={formData.myPosition}
                                     onPositionClick={(val) => updateField('myPosition', val)}
@@ -115,10 +123,10 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                     iconInvert
                                 />
                             </Box>
+
+                            {/* 플레이 스타일 */}
                             <Box mb={2}>
-                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                                    플레이 스타일
-                                </Typography>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">플레이 스타일</Typography>
                                 <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
                                     {['즐겜', '빡겜'].map((style) => (
                                         <Box
@@ -141,10 +149,10 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                     ))}
                                 </Box>
                             </Box>
+
+                            {/* 내 상태 */}
                             <Box mb={2}>
-                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                                    내 상태
-                                </Typography>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">내 상태</Typography>
                                 <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
                                     {['첫판', '계속 플레이', '마지막판'].map((status) => (
                                         <Box
@@ -167,10 +175,10 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                     ))}
                                 </Box>
                             </Box>
+
+                            {/* 마이크 */}
                             <Box mb={1}>
-                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                                    마이크
-                                </Typography>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">마이크</Typography>
                                 <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
                                     {['on', 'off'].map((m) => (
                                         <Box
@@ -195,15 +203,13 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                             </Box>
                         </Box>
 
-                        {/* 오른쪽: 듀오 정보 패널 */}
+                        {/* 듀오 정보 영역 */}
                         <Box sx={{ width: 280, p: 2, borderRadius: 1, backgroundColor: '#31313E' }}>
-                            <Typography fontSize="1rem" fontWeight="bold" color="#fff" mb={2}>
-                                듀오 정보
-                            </Typography>
+                            <Typography fontSize="1rem" fontWeight="bold" color="#fff" mb={2}>듀오 정보</Typography>
+
+                            {/* 찾는 포지션 */}
                             <Box mb={2}>
-                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                                    선호 포지션
-                                </Typography>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">선호 포지션</Typography>
                                 <PositionFilterBar
                                     positionFilter={formData.duoPosition}
                                     onPositionClick={(val) => updateField('duoPosition', val)}
@@ -214,10 +220,10 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                     iconInvert
                                 />
                             </Box>
+
+                            {/* 듀오 스타일 */}
                             <Box mb={2}>
-                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                                    선호 플레이 스타일
-                                </Typography>
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">선호 플레이 스타일</Typography>
                                 <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
                                     {['즐겜', '빡겜'].map((style) => (
                                         <Box
@@ -240,20 +246,16 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                     ))}
                                 </Box>
                             </Box>
+
+                            {/* 큐 타입 */}
                             <Box mb={2}>
-                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                                    큐 타입
-                                </Typography>
-                                <Box
-                                    display="inline-flex"
-                                    alignItems="center"
-                                    sx={{
-                                        border: '1px solid #424254',
-                                        borderRadius: 1,
-                                        p: 0.5,
-                                        justifyContent: 'center',
-                                    }}
-                                >
+                                <Typography mb={0.5} color="#aaa" fontSize="0.8rem">큐 타입</Typography>
+                                <Box display="inline-flex" alignItems="center" sx={{
+                                    border: '1px solid #424254',
+                                    borderRadius: 1,
+                                    p: 0.5,
+                                    justifyContent: 'center',
+                                }}>
                                     <Select
                                         value={formData.queueType}
                                         onChange={(e) => updateField('queueType', e.target.value)}
@@ -272,25 +274,18 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                             },
                                         }}
                                     >
-                                        <MenuItem value="랭크" sx={{ fontSize: '0.85rem' }}>
-                                            랭크
-                                        </MenuItem>
-                                        <MenuItem value="일반" sx={{ fontSize: '0.85rem' }}>
-                                            일반
-                                        </MenuItem>
-                                        <MenuItem value="칼바람" sx={{ fontSize: '0.85rem' }}>
-                                            칼바람
-                                        </MenuItem>
+                                        <MenuItem value="랭크" sx={{ fontSize: '0.85rem' }}>랭크</MenuItem>
+                                        <MenuItem value="일반" sx={{ fontSize: '0.85rem' }}>일반</MenuItem>
+                                        <MenuItem value="칼바람" sx={{ fontSize: '0.85rem' }}>칼바람</MenuItem>
                                     </Select>
                                 </Box>
                             </Box>
                         </Box>
                     </Box>
 
+                    {/* 메모 작성 */}
                     <Box mb={3}>
-                        <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
-                            메모
-                        </Typography>
+                        <Typography mb={0.5} color="#aaa" fontSize="0.8rem">메모</Typography>
                         <TextField
                             fullWidth
                             multiline
@@ -313,6 +308,7 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                         />
                     </Box>
 
+                    {/* 버튼 */}
                     <Box display="flex" gap={2}>
                         <Button
                             fullWidth
@@ -340,9 +336,7 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
                                 borderRadius: 1,
                             }}
                         >
-                            <Typography fontWeight="bold" color="#fff">
-                                등록
-                            </Typography>
+                            <Typography fontWeight="bold" color="#fff">등록</Typography>
                         </Button>
                     </Box>
                 </Box>
@@ -350,4 +344,3 @@ export default function CreateDuoModal({ open, onClose, onCreateDuo }) {
         </Dialog>
     );
 }
-

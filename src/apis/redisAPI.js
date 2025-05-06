@@ -39,3 +39,13 @@ export const fetchAllDuoBoards = async () => {
         champions: [],
     }));
 };
+
+/**
+ * Redis에 듀오 등록
+ */
+export const createDuoBoard = async (dto) => {
+    const response = await axiosInstance.post('/matching/duo', dto, {
+        withAuth: true,
+    });
+    return response.data;
+};
