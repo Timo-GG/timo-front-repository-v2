@@ -1,7 +1,6 @@
 // src/pages/DuoPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../apis/axiosInstance';
 import {
     Box,
     Container,
@@ -24,103 +23,31 @@ import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
+import { useQuery } from '@tanstack/react-query';
+import { fetchAllDuoBoards } from '../apis/redisAPI';
 
 function getRelativeTime(dateString) {
     if (!dateString) return '방금 전';
+
     const target = new Date(dateString);
     const now = new Date();
-    const diffSeconds = Math.floor((now - target) / 1000);
+    const diffMs = now - target;
+
+    if (isNaN(diffMs)) return '방금 전'; // invalid date fallback
+
+    const diffSeconds = Math.floor(diffMs / 1000);
     if (diffSeconds < 60) return `${diffSeconds}초 전`;
+
     const diffMinutes = Math.floor(diffSeconds / 60);
     if (diffMinutes < 60) return `${diffMinutes}분 전`;
+
     const diffHours = Math.floor(diffMinutes / 60);
-    return `${diffHours}시간 전`;
+    if (diffHours < 24) return `${diffHours}시간 전`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}일 전`;
 }
 
-// 초기 듀오 데이터 예시
-const sampleUsers = [
-    {
-        id: 1,
-        name: '롤10년차고인물',
-        tag: '1234',
-        school: '서울과기대',
-        avatarUrl:
-            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
-        department: '컴퓨터공학과',
-        queueType: '랭크',
-        message:
-            '정글과 서폿 듀오 구합니다! 적극적인 소통을 통해 승리를 이끌고 싶습니다.',
-        playStyle: '즐겜',
-        status: '첫판',
-        mic: '사용함',
-        gender: '남성',
-        mbti: 'ENTJ',
-        tier: 'platinum',
-        score: 2,
-        position: 'jungle',
-        lookingForPosition: 'support',
-        createdAt: new Date(new Date().getTime() - 38000).toISOString(),
-        type: '듀오',
-        wins: 7,
-        losses: 3,
-        champions: ['Amumu', 'LeeSin', 'Graves'],
-    },
-    {
-        id: 2,
-        name: '솔랭장인',
-        tag: '1111',
-        school: '성균관대',
-        avatarUrl:
-            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
-        department: '경제학과',
-        queueType: '일반',
-        message:
-            '팀운이 부족해 탑 듀오 구합니다. 꾸준한 플레이로 팀에 기여할 자신이 있습니다.',
-        playStyle: '빡겜',
-        status: '계속 플레이',
-        mic: '사용 안함',
-        gender: '여성',
-        mbti: 'ISFJ',
-        tier: 'diamond',
-        score: 1,
-        position: 'top',
-        lookingForPosition: 'jungle',
-        createdAt: new Date(new Date().getTime() - 600000).toISOString(),
-        type: '내전',
-        wins: 5,
-        losses: 5,
-        champions: ['Gnar', 'Shen', 'Malphite'],
-    },
-    {
-        id: 3,
-        name: '로랄로랄',
-        tag: '2222',
-        school: '서울과기대',
-        avatarUrl:
-            'https://opgg-static.akamaized.net/meta/images/profile_icons/profileIcon2098.jpg?image=q_auto:good,f_webp,w_200&v=1744455113',
-        department: '시디과',
-        queueType: '랭크',
-        message: '원딜 사장님 구합니다!! 충실한 노예 1호입니다. ',
-        playStyle: '즐겜',
-        status: '막판',
-        mic: '사용 안함',
-        gender: '남성',
-        mbti: 'INFP',
-        tier: 'gold',
-        score: 3,
-        position: 'support',
-        lookingForPosition: 'bottom',
-        createdAt: new Date(new Date().getTime() - 900000).toISOString(),
-        type: '듀오',
-        wins: 5,
-        losses: 5,
-        champions: ['Neeko', 'Kaisa', 'Ezreal'],
-    },
-];
-
-function TabPanel({ children, value, index }) {
-    return <div hidden={value !== index}>{value === index && <Box sx={{ pt: 0 }}>{children}</Box>}</div>;
-}
 
 export default function DuoPage() {
     const theme = useTheme();
@@ -130,30 +57,20 @@ export default function DuoPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [openSendDuoModal, setOpenSendDuoModal] = useState(false);
-    const [duoUsers, setDuoUsers] = useState(sampleUsers);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const navigate = useNavigate();
     const { userData } = useAuthStore();
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setDuoUsers(prevUsers => [...prevUsers]);
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
+    const { data: duoUsers = [] } = useQuery({
+        queryKey: ['duoUsers'],
+        queryFn: fetchAllDuoBoards,
+        refetchInterval: 5000,
+    });
 
     const currentUser = userData;
 
     const handleRegisterDuo = () => {
         setIsModalOpen(true);
-    };
-
-    const handleAddDuo = (newDuo) => {
-        setDuoUsers((prev) => [newDuo, ...prev]);
-    };
-
-    const handlePositionClick = (pos) => {
-        setPositionFilter(pos);
     };
 
     const handleUserClick = (userData) => {
@@ -170,7 +87,6 @@ export default function DuoPage() {
             );
 
             const room = response.data.data;
-
             navigate(`/mypage?tab=chat&roomId=${room.roomId}`, {
                 state: {
                     user: {
@@ -197,16 +113,14 @@ export default function DuoPage() {
             <Container maxWidth="lg">
                 <FilterBar
                     positionFilter={positionFilter}
-                    onPositionClick={handlePositionClick}
+                    onPositionClick={setPositionFilter}
                     rankType={rankType}
                     setRankType={setRankType}
                     schoolFilter={schoolFilter}
                     setSchoolFilter={setSchoolFilter}
                     onRegisterDuo={handleRegisterDuo}
                 />
-
                 <DuoHeader />
-
                 {filteredUsers.map((user, idx) => (
                     <DuoItem
                         key={idx}
@@ -218,13 +132,14 @@ export default function DuoPage() {
                 ))}
             </Container>
 
-            <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} onCreateDuo={handleAddDuo} />
+            <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
             {selectedUser && !openSendDuoModal && (
                 <DuoDetailModal
                     open={Boolean(selectedUser)}
                     handleClose={() => setSelectedUser(null)}
-                    partyData={selectedUser || {}} />
+                    partyData={selectedUser || {}}
+                />
             )}
 
             {openSendDuoModal && (
@@ -242,26 +157,28 @@ export default function DuoPage() {
     );
 }
 
+const tierOptions = [
+    { value: 'all', label: '모든 티어' },
+    { value: 'iron', label: '아이언' },
+    { value: 'bronze', label: '브론즈' },
+    { value: 'silver', label: '실버' },
+    { value: 'gold', label: '골드' },
+    { value: 'platinum', label: '플래티넘' },
+    { value: 'emerald', label: '에메랄드' },
+    { value: 'diamond', label: '다이아몬드' },
+    { value: 'master', label: '마스터' },
+    { value: 'grandmaster', label: '그랜드마스터' },
+    { value: 'challenger', label: '챌린저' },
+];
+
+
 function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, schoolFilter, setSchoolFilter, onRegisterDuo }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick} />
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                 <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
-                    <Select
-                        sx={{
-                            backgroundColor: '#2c2c3a',
-                            color: '#fff',
-                            borderRadius: 0.8,
-                            height: 48,
-                            '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#42E6B5' },
-                            '.MuiSelect-select': { display: 'flex', alignItems: 'center', padding: '0 32px 0 14px', height: '100%' },
-                            '& .MuiSelect-icon': { color: '#7B7B8E' },
-                        }}
-                        value={rankType}
-                        onChange={(e) => setRankType(e.target.value)}
-                    >
+                    <Select value={rankType} onChange={(e) => setRankType(e.target.value)} sx={selectStyle}>
                         <MenuItem value="solo">랭크</MenuItem>
                         <MenuItem value="normal">일반</MenuItem>
                         <MenuItem value="aram">칼바람</MenuItem>
@@ -269,49 +186,22 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
                 </FormControl>
                 <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
                     <Select
-                        sx={{
-                            backgroundColor: '#2c2c3a',
-                            color: '#fff',
-                            borderRadius: 0.8,
-                            height: 48,
-                            '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#42E6B5' },
-                            '.MuiSelect-select': { display: 'flex', alignItems: 'center', padding: '0 32px 0 14px', height: '100%' },
-                            '& .MuiSelect-icon': { color: '#7B7B8E' },
-                        }}
                         value={schoolFilter}
                         onChange={(e) => setSchoolFilter(e.target.value)}
+                        sx={selectStyle}
                     >
-                        <MenuItem value="all">모든 티어</MenuItem>
-                        <MenuItem value="iron">아이언</MenuItem>
-                        <MenuItem value="bronze">브론즈</MenuItem>
-                        <MenuItem value="silver">실버</MenuItem>
-                        <MenuItem value="gold">골드</MenuItem>
-                        <MenuItem value="platinum">플레티넘</MenuItem>
-                        <MenuItem value="emerald">에메랄드</MenuItem>
-                        <MenuItem value="diamond">다이아</MenuItem>
-                        <MenuItem value="master">마스터</MenuItem>
-                        <MenuItem value="grandmaster">그랜드마스터</MenuItem>
-                        <MenuItem value="challenger">챌린저</MenuItem>
-
+                        {tierOptions.map((tier) => (
+                            <MenuItem key={tier.value} value={tier.value}>
+                                {tier.label}
+                            </MenuItem>
+                        ))}
                     </Select>
                 </FormControl>
+
             </Box>
             <Button
                 variant="contained"
-                sx={{
-                    ml: 'auto',
-                    fontWeight: 'bold',
-                    height: 56,
-                    px: 3,
-                    background: 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
-                    color: '#fff',
-                    fontSize: 16,
-                    borderRadius: 0.8,
-                    '&:hover': {
-                        background: 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
-                    },
-                }}
+                sx={registerBtnStyle}
                 onClick={onRegisterDuo}
             >
                 듀오등록하기
@@ -322,36 +212,11 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
 
 function DuoHeader() {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
-    const headers = [
-        '소환사',
-        '큐 타입',
-        '주 포지션',
-        '티어',
-        '찾는 포지션',
-        '한 줄 소개',
-        '등록 일시',
-        '듀오 신청',
-        '',
-    ];
+    const headers = ['소환사', '큐 타입', '주 포지션', '티어', '찾는 포지션', '한 줄 소개', '등록 일시', '듀오 신청', ''];
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                alignItems: 'center',
-                px: 2,
-                py: 1.5,
-                fontSize: 14,
-                fontWeight: 500,
-                color: '#999',
-                backgroundColor: '#28282F',
-                borderTopLeftRadius: 10,
-                borderTopRightRadius: 10,
-            }}
-        >
+        <Box sx={headerRowStyle}>
             {headers.map((text, i) => (
-                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>
-                    {text}
-                </Box>
+                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>{text}</Box>
             ))}
         </Box>
     );
@@ -359,144 +224,35 @@ function DuoHeader() {
 
 function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
-
-    const handleApplyClick = (e) => {
-        e.stopPropagation();
-        if (onApplyDuo) onApplyDuo(user);
-    };
-
-    const [anchorEl, setAnchorEl] = useState(null);
-    const handleMenuClick = (e) => {
-        e.stopPropagation();
-        setAnchorEl(e.currentTarget);
-    };
-    const handleMenuClose = () => setAnchorEl(null);
-    const handleEdit = () => {
-        handleMenuClose();
-        alert('수정 로직 실행');
-    };
-    const handleDelete = () => {
-        handleMenuClose();
-        alert('삭제 로직 실행');
-    };
-
     const isMine = user.name === currentUser.name && user.tag === currentUser.tag;
+    const [anchorEl, setAnchorEl] = useState(null);
 
     return (
         <Box
-            onClick={() => {
-                if (!isMine) onUserClick(user);
-            }}
-            sx={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: '#2B2C3C',
-                px: 2,
-                py: 1,
-                borderBottom: '2px solid #12121a',
-                transition: 'background-color 0.2s',
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: '#2E2E38' },
-            }}
+            onClick={() => !isMine && onUserClick(user)}
+            sx={itemRowStyle}
         >
-            {/* (1) 소환사 영역 */}
-            <Box
-                sx={{
-                    flex: columns[0],
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    textAlign: 'left',
-                    gap: 0.5,
-                }}
-            >
+            <Box sx={{ flex: columns[0] }}>
                 <SummonerInfo name={user.name} avatarUrl={user.avatarUrl} tag={user.tag} school={user.school} />
             </Box>
-
-            {/* (2) 큐 타입 */}
-            <Box sx={{ flex: columns[1], display: 'flex', justifyContent: 'center' }}>
-                <Typography color="#fff" fontSize={14}>
-                    {user.queueType}
-                </Typography>
+            <Box sx={{ flex: columns[1], textAlign: 'center' }}>{user.queueType}</Box>
+            <Box sx={{ flex: columns[2], textAlign: 'center' }}><PositionIcon position={user.position} /></Box>
+            <Box sx={{ flex: columns[3], textAlign: 'center' }}><TierBadge tier={user.tier} score={user.score} /></Box>
+            <Box sx={{ flex: columns[4], textAlign: 'center' }}><PositionIcon position={user.lookingForPosition} /></Box>
+            <Box sx={{ flex: columns[5], textAlign: 'center' }}>{user.message}</Box>
+            <Box sx={{ flex: columns[6], textAlign: 'center' }}>{getRelativeTime(user.createdAt)}</Box>
+            <Box sx={{ flex: columns[7], textAlign: 'center' }}>
+                <Button variant="contained" sx={applyBtnStyle} onClick={(e) => { e.stopPropagation(); onApplyDuo(user); }}>신청</Button>
             </Box>
-
-            {/* (3) 주 포지션 */}
-            <Box sx={{ flex: columns[2], display: 'flex', justifyContent: 'center' }}>
-                <PositionIcon position={user.position} />
-            </Box>
-
-            {/* (4) 티어 */}
-            <Box sx={{ flex: columns[3], display: 'flex', justifyContent: 'center' }}>
-                <TierBadge tier={user.tier} score={user.lp} rank={user.rank} />
-            </Box>
-
-            {/* (5) 찾는 포지션 */}
-            <Box sx={{ flex: columns[4], display: 'flex', justifyContent: 'center' }}>
-                <PositionIcon position={user.lookingForPosition} />
-            </Box>
-
-            {/* (6) 한 줄 소개 */}
-            <Box sx={{ flex: columns[5], textAlign: 'center' }}>
-                <Box
-                    sx={{
-                        backgroundColor: '#424254',
-                        p: 1,
-                        borderRadius: 1,
-                        color: '#fff',
-                        fontSize: '0.85rem',
-                        lineHeight: 1.4,
-                        textAlign: 'left',
-                        display: '-webkit-inline-box',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 2,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'normal',
-                        maxHeight: '3.6em',
-                    }}
-                >
-                    {user.message}
-                </Box>
-            </Box>
-
-            {/* (7) 등록 일시 (상대 시간으로 갱신) */}
-            <Box sx={{ flex: columns[6], textAlign: 'center' }}>
-                <Typography color="#aaa" sx={{ fontSize: 14 }}>
-                    {getRelativeTime(user.createdAt)}
-                </Typography>
-            </Box>
-
-            {/* (8) 신청 버튼 */}
-            <Box sx={{ flex: columns[7], display: 'flex', justifyContent: 'center' }}>
-                <Button
-                    variant="contained"
-                    sx={{
-                        backgroundColor: '#424254',
-                        color: '#fff',
-                        borderRadius: 0.8,
-                        fontWeight: 'bold',
-                        px: 2,
-                        py: 1,
-                        border: '1px solid #71717D',
-                    }}
-                    onClick={(e) => {
-                        handleApplyClick(e);
-                    }}
-                >
-                    신청
-                </Button>
-            </Box>
-
-            {/* (9) 내 게시물 메뉴 */}
-            <Box sx={{ flex: columns[8], display: 'flex', justifyContent: 'flex-end', minWidth: 40 }}>
+            <Box sx={{ flex: columns[8], textAlign: 'right' }}>
                 {isMine && (
                     <>
-                        <IconButton onClick={handleMenuClick}>
+                        <IconButton onClick={(e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); }}>
                             <MoreVertIcon sx={{ color: '#aaa' }} />
                         </IconButton>
-                        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-                            <MenuItem onClick={handleEdit}>수정</MenuItem>
-                            <MenuItem onClick={handleDelete}>삭제</MenuItem>
+                        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+                            <MenuItem onClick={() => alert('수정')}>수정</MenuItem>
+                            <MenuItem onClick={() => alert('삭제')}>삭제</MenuItem>
                         </Menu>
                     </>
                 )}
@@ -504,3 +260,64 @@ function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
         </Box>
     );
 }
+
+// 스타일 상수
+const selectStyle = {
+    backgroundColor: '#2c2c3a',
+    color: '#fff',
+    borderRadius: 0.8,
+    height: 48,
+    '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#42E6B5' },
+    '.MuiSelect-select': { display: 'flex', alignItems: 'center', padding: '0 32px 0 14px', height: '100%' },
+    '& .MuiSelect-icon': { color: '#7B7B8E' },
+};
+
+const registerBtnStyle = {
+    ml: 'auto',
+    fontWeight: 'bold',
+    height: 56,
+    px: 3,
+    background: 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
+    color: '#fff',
+    fontSize: 16,
+    borderRadius: 0.8,
+    '&:hover': {
+        background: 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
+    },
+};
+
+const headerRowStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    px: 2,
+    py: 1.5,
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#999',
+    backgroundColor: '#28282F',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+};
+
+const itemRowStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#2B2C3C',
+    px: 2,
+    py: 1,
+    borderBottom: '2px solid #12121a',
+    cursor: 'pointer',
+    '&:hover': { backgroundColor: '#2E2E38' },
+};
+
+const applyBtnStyle = {
+    backgroundColor: '#424254',
+    color: '#fff',
+    borderRadius: 0.8,
+    fontWeight: 'bold',
+    px: 2,
+    py: 1,
+    border: '1px solid #71717D',
+};
+
