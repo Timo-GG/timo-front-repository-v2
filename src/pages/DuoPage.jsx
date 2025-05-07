@@ -28,38 +28,35 @@ import { fetchAllDuoBoards } from '../apis/redisAPI';
 
 function getRelativeTime(dateString) {
     if (!dateString) return '방금 전';
-
     const target = new Date(dateString);
     const now = new Date();
     const diffMs = now - target;
-
-    if (isNaN(diffMs)) return '방금 전'; // invalid date fallback
-
-    const diffSeconds = Math.floor(diffMs / 1000);
-    if (diffSeconds < 60) return `${diffSeconds}초 전`;
-
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    if (diffMinutes < 60) return `${diffMinutes}분 전`;
-
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours}시간 전`;
-
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}일 전`;
+    if (isNaN(diffMs)) return '방금 전';
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return `${diffSec}초 전`;
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}분 전`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH}시간 전`;
+    const diffD = Math.floor(diffH / 24);
+    return `${diffD}일 전`;
 }
-
 
 export default function DuoPage() {
     const theme = useTheme();
     const [positionFilter, setPositionFilter] = useState('nothing');
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [openSendDuoModal, setOpenSendDuoModal] = useState(false);
+    const [openSendModal, setOpenSendModal] = useState(false);
+    const [currentBoardUUID, setCurrentBoardUUID] = useState(null);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+
     const navigate = useNavigate();
     const { userData } = useAuthStore();
+    const currentUser = userData;
 
     const { data: duoUsers = [] } = useQuery({
         queryKey: ['duoUsers'],
@@ -67,46 +64,25 @@ export default function DuoPage() {
         refetchInterval: 5000,
     });
 
-    const currentUser = userData;
-
     const handleRegisterDuo = () => {
-        setIsModalOpen(true);
+        setCreateModalOpen(true);
     };
 
-    const handleUserClick = (userData) => {
-        if (userData.name === currentUser.name && userData.tag === currentUser.tag) return;
-        setSelectedUser(userData);
+    const handleUserClick = (user) => {
+        if (user.name === currentUser.name && user.tag === currentUser.tag) return;
+        setSelectedUser(user);
     };
 
-    const handleApplyDuo = async () => {
-        try {
-            const response = await axiosInstance.post(
-                '/chat/rooms',
-                { opponentId: 1 },
-                { withAuth: true }
-            );
-
-            const room = response.data.data;
-            navigate(`/mypage?tab=chat&roomId=${room.roomId}`, {
-                state: {
-                    user: {
-                        name: room.opponentName,
-                        tag: room.opponentTag,
-                        avatarUrl: room.opponentAvatarUrl,
-                    },
-                    shouldJoin: true,
-                },
-            });
-        } catch (err) {
-            console.error('[handleApplyDuo] 채팅방 생성 실패:', err);
-            alert('채팅방 생성에 실패했습니다.');
-        }
+    // “듀오 신청” 버튼 클릭 시 모달 열기
+    const handleApplyDuo = (user, boardUUID) => {
+        setSelectedUser(user);
+        setCurrentBoardUUID(boardUUID);
+        setOpenSendModal(true);
     };
 
-    const filteredUsers = duoUsers.filter((user) => {
-        if (positionFilter !== 'nothing' && user.position !== positionFilter) return false;
-        return true;
-    });
+    const filteredUsers = duoUsers.filter((user) =>
+        positionFilter === 'nothing' ? true : user.position === positionFilter
+    );
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
@@ -126,33 +102,39 @@ export default function DuoPage() {
                         key={idx}
                         user={user}
                         currentUser={currentUser}
-                        onApplyDuo={handleApplyDuo}
+                        onApplyDuo={() => handleApplyDuo(user, user.id)}
                         onUserClick={handleUserClick}
                     />
                 ))}
             </Container>
 
-            <CreateDuoModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            <CreateDuoModal open={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} />
 
-            {selectedUser && !openSendDuoModal && (
+            {selectedUser && !openSendModal && (
                 <DuoDetailModal
                     open={Boolean(selectedUser)}
                     handleClose={() => setSelectedUser(null)}
-                    partyData={selectedUser || {}}
+                    partyData={selectedUser}
                 />
             )}
 
-            {openSendDuoModal && (
+            {openSendModal && (
                 <SendDuoModal
-                    open={openSendDuoModal}
+                    open={openSendModal}
+                    boardUUID={currentBoardUUID}
+                    userData={selectedUser}
                     handleClose={() => {
-                        setOpenSendDuoModal(false);
+                        setOpenSendModal(false);
                         setSelectedUser(null);
+                        setCurrentBoardUUID(null);
                     }}
-                    userData={selectedUser || {}}
                 />
             )}
-            <ConfirmRequiredDialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)} />
+
+            <ConfirmRequiredDialog
+                open={openConfirmDialog}
+                onClose={() => setOpenConfirmDialog(false)}
+            />
         </Box>
     );
 }
@@ -171,7 +153,6 @@ const tierOptions = [
     { value: 'challenger', label: '챌린저' },
 ];
 
-
 function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, schoolFilter, setSchoolFilter, onRegisterDuo }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -185,11 +166,7 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
                     </Select>
                 </FormControl>
                 <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
-                    <Select
-                        value={schoolFilter}
-                        onChange={(e) => setSchoolFilter(e.target.value)}
-                        sx={selectStyle}
-                    >
+                    <Select value={schoolFilter} onChange={(e) => setSchoolFilter(e.target.value)} sx={selectStyle}>
                         {tierOptions.map((tier) => (
                             <MenuItem key={tier.value} value={tier.value}>
                                 {tier.label}
@@ -197,13 +174,8 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
                         ))}
                     </Select>
                 </FormControl>
-
             </Box>
-            <Button
-                variant="contained"
-                sx={registerBtnStyle}
-                onClick={onRegisterDuo}
-            >
+            <Button variant="contained" sx={registerBtnStyle} onClick={onRegisterDuo}>
                 듀오등록하기
             </Button>
         </Box>
@@ -216,33 +188,40 @@ function DuoHeader() {
     return (
         <Box sx={headerRowStyle}>
             {headers.map((text, i) => (
-                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>{text}</Box>
+                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>
+                    {text}
+                </Box>
             ))}
         </Box>
     );
 }
 
-function DuoItem({ user, currentUser, onUserClick, onApplyDuo }) {
+function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
     const isMine = user.name === currentUser.name && user.tag === currentUser.tag;
     const [anchorEl, setAnchorEl] = useState(null);
 
     return (
-        <Box
-            onClick={() => !isMine && onUserClick(user)}
-            sx={itemRowStyle}
-        >
+        <Box onClick={() => !isMine && onUserClick(user)} sx={itemRowStyle}>
             <Box sx={{ flex: columns[0] }}>
                 <SummonerInfo name={user.name} avatarUrl={user.avatarUrl} tag={user.tag} school={user.school} />
             </Box>
             <Box sx={{ flex: columns[1], textAlign: 'center' }}>{user.queueType}</Box>
-            <Box sx={{ flex: columns[2], textAlign: 'center' }}><PositionIcon position={user.position} /></Box>
-            <Box sx={{ flex: columns[3], textAlign: 'center' }}><TierBadge tier={user.tier} score={user.score} /></Box>
-            <Box sx={{ flex: columns[4], textAlign: 'center' }}><PositionIcon position={user.lookingForPosition} /></Box>
+            <Box sx={{ flex: columns[2], textAlign: 'center' }}>
+                <PositionIcon position={user.position} />
+            </Box>
+            <Box sx={{ flex: columns[3], textAlign: 'center' }}>
+                <TierBadge tier={user.tier} score={user.score} />
+            </Box>
+            <Box sx={{ flex: columns[4], textAlign: 'center' }}>
+                <PositionIcon position={user.lookingForPosition} />
+            </Box>
             <Box sx={{ flex: columns[5], textAlign: 'center' }}>{user.message}</Box>
             <Box sx={{ flex: columns[6], textAlign: 'center' }}>{getRelativeTime(user.createdAt)}</Box>
             <Box sx={{ flex: columns[7], textAlign: 'center' }}>
-                <Button variant="contained" sx={applyBtnStyle} onClick={(e) => { e.stopPropagation(); onApplyDuo(user); }}>신청</Button>
+                <Button variant="contained" sx={applyBtnStyle} onClick={(e) => { e.stopPropagation(); onApplyDuo(); }}>
+                    신청
+                </Button>
             </Box>
             <Box sx={{ flex: columns[8], textAlign: 'right' }}>
                 {isMine && (
@@ -320,4 +299,3 @@ const applyBtnStyle = {
     py: 1,
     border: '1px solid #71717D',
 };
-
