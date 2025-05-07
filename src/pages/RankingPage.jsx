@@ -16,6 +16,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import useAuthStore from '../storage/useAuthStore';
 import { Collapse } from '@mui/material';
+import LoginModal from '../components/login/LoginModal';
 
 import TierBadge from '../components/TierBadge';
 import ChampionIconList from '/src/components/champion/ChampionIconList';
@@ -24,7 +25,6 @@ import EditProfileModal from '../components/rank/EditProfileModal';
 import RankingDetailModal from '../components/rank/RankingDetailModal';
 import WinRateBar from '../components/WinRateBar';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
-
 import { fetchRankingList, fetchRankingByUniversity, fetchMyRankingInfo } from '../apis/rankAPI';
 
 function SummonerInfo({ name, tag, avatarUrl }) {
@@ -51,7 +51,7 @@ export default function RankingPage() {
     const [searchText, setSearchText] = React.useState('');
     const [currentPage, setCurrentPage] = React.useState(1);
     const [requiredOpen, setRequiredOpen] = React.useState(false);
-
+    const [loginOpen, setLoginOpen] = React.useState(false);
     const itemsPerPage = 10;
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
 
@@ -72,6 +72,11 @@ export default function RankingPage() {
     });
 
     const handleTabChange = (event, newValue) => {
+        if (!accessToken) {
+            setLoginOpen(true);
+            return;
+        }
+
         if (newValue === 1 && !userData?.certifiedUnivInfo) {
             setRequiredOpen(true);
             return;
@@ -80,6 +85,10 @@ export default function RankingPage() {
     };
 
     const handleEditClick = () => {
+        if (!accessToken) {
+            setLoginOpen(true);
+            return;
+        }
         const hasRiot = Boolean(userData?.riotAccount);
         const hasUniv = Boolean(userData?.certifiedUnivInfo);
         if (!hasRiot || !hasUniv) {
@@ -347,6 +356,15 @@ export default function RankingPage() {
             <ConfirmRequiredDialog
                 open={requiredOpen}
                 onClose={() => setRequiredOpen(false)}
+            />
+            <EditProfileModal
+                open={open}
+                handleClose={() => setOpen(false)}
+                userProfileData={myProfileData}
+            />
+            <LoginModal
+                open={loginOpen}
+                onClose={() => setLoginOpen(false)}
             />
         </Box>
     );
