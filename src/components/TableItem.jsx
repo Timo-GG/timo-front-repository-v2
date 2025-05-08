@@ -65,94 +65,59 @@ export default function TableItem({ received, user, status, onEvaluate }) {
             {/* 상태별 버튼 영역 */}
             <Box sx={{ flex: columns[7], display: 'flex', gap: 1, justifyContent: 'center' }}>
                 {received ? (
-                    // 받은 요청인 경우
-                    status === '평가' ? (
-                        <Button
-                            variant="text"
-                            sx={{ color: '#42E6B5', fontWeight: 'bold' }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onEvaluate?.(user);
-                            }}
-                        >
-                            평가하기
-                        </Button>
-                    ) : status === '완료' ? (
-                        <Typography color="#666" sx={{ fontSize: 13 }}>
-                            듀오 완료
-                        </Typography>
-                    ) : (
-                        // 대기 상태 (수락/거절)
-                        <>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    backgroundColor: '#424254',
-                                    color: '#fff',
-                                    borderRadius: '8px',
-                                    fontWeight: 'bold',
-                                    px: 2,
-                                    py: 1,
-                                    border: '1px solid #71717D',
-                                }}
-                            >
-                                수락
-                            </Button>
-                            <Button
-                                variant="contained"
-                                sx={{
-                                    backgroundColor: '#F96568',
-                                    color: '#fff',
-                                    borderRadius: '8px',
-                                    fontWeight: 'bold',
-                                    px: 2,
-                                    py: 1,
-                                    border: '1px solid #F96568',
-                                }}
-                            >
-                                거절
-                            </Button>
-                        </>
-                    )
-                ) : (
-                    // 보낸 요청인 경우
-                    status === '평가' ? (
-                        <Button
-                            variant="text"
-                            sx={{ color: '#42E6B5', fontWeight: 'bold' }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onEvaluate?.(user);
-                            }}
-                        >
-                            평가하기
-                        </Button>
-                    ) : status === '완료' ? (
-                        <Typography color="#666" sx={{ fontSize: 13 }}>
-                            듀오 완료
-                        </Typography>
-                    ) : (
+                    // 받은 요청 → 수락 / 거절
+                    <>
                         <Button
                             variant="contained"
                             sx={{
-                                backgroundColor: '#39394C',
+                                backgroundColor: '#424254',
                                 color: '#fff',
                                 borderRadius: '8px',
                                 fontWeight: 'bold',
                                 px: 2,
                                 py: 1,
-                                border: '1px solid #56566A',
-                                boxShadow: 'none',
-                                '&:hover': {
-                                    backgroundColor: '#4A4A5C',
-                                    borderColor: '#56566A',
-                                    boxShadow: 'none',
-                                },
+                                border: '1px solid #71717D',
                             }}
                         >
-                            취소하기
+                            수락
                         </Button>
-                    )
+                        <Button
+                            variant="contained"
+                            sx={{
+                                backgroundColor: '#F96568',
+                                color: '#fff',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                px: 2,
+                                py: 1,
+                                border: '1px solid #F96568',
+                            }}
+                        >
+                            거절
+                        </Button>
+                    </>
+                ) : (
+                    // 보낸 요청 → 취소하기
+                    <Button
+                        variant="contained"
+                        sx={{
+                            backgroundColor: '#39394C',
+                            color: '#fff',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            px: 2,
+                            py: 1,
+                            border: '1px solid #56566A',
+                            boxShadow: 'none',
+                            '&:hover': {
+                                backgroundColor: '#4A4A5C',
+                                borderColor: '#56566A',
+                                boxShadow: 'none',
+                            },
+                        }}
+                    >
+                        취소하기
+                    </Button>
                 )}
             </Box>
         </Box>

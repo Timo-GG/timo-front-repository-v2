@@ -4,12 +4,12 @@ import React from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
 
 export default function TabHeader({
-    tab,
-    onTabChange,
-    firstLabel = '보낸 요청',
-    secondLabel = '받은 요청',
-    thirdLabel = '채팅',
-}) {
+                                      tab,
+                                      onTabChange,
+                                      firstLabel = '보낸 요청',
+                                      secondLabel = '받은 요청',
+                                      thirdLabel = '채팅',
+                                  }) {
     return (
         <>
             <Box
@@ -26,7 +26,14 @@ export default function TabHeader({
                     value={tab}
                     onChange={onTabChange}
                     textColor="inherit"
-                    TabIndicatorProps={{ style: { backgroundColor: '#ffffff' } }}
+                    TabIndicatorProps={{
+                        style: {
+                            backgroundColor: '#ffffff',
+                        },
+                    }}
+                    sx={{
+                        borderBottom: '1px solid #171717', // ✅ 내부 검은선 추가
+                    }}
                 >
                     <Tab
                         label={firstLabel}
@@ -54,7 +61,6 @@ export default function TabHeader({
                     />
                 </Tabs>
             </Box>
-            <Box sx={{ height: '1px', backgroundColor: '#171717', width: '100%' }} />
         </>
     );
 }

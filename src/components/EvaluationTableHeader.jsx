@@ -1,11 +1,9 @@
-/** 마이페이지 요청 탭의 헤더 */
-
 import React from 'react';
 import { Box } from '@mui/material';
 
-export default function TableHeader() {
-    const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];
-    const headers = ['소환사', '티어', '승률(최근 10게임)', '모스트 챔피언', '한 줄 소개', '분류', '등록 일시', '듀오 신청'];
+export default function EvaluationTableHeader() {
+    const columns = [1.5, 1, 1, 1.5, 1.5, 1, 1.5, 1]; // 각 컬럼 flex 비율
+    const headers = ['소환사', '포지션', '맵', '대학교', '학과', '분류', '등록 일시', '평가 상태'];
 
     return (
         <Box sx={{
