@@ -49,3 +49,21 @@ export const createDuoBoard = async (dto) => {
     });
     return response.data;
 };
+
+/**
+ * Redis에 듀오 신청
+ *
+ * @param {string} boardUUID          - 신청할 게시글 UUID
+ * @param {object} duoRequestorDto    - UserDTO.RequestDuo 형태의 요청자 DTO
+ * @returns 신청 결과 데이터
+ */
+export const sendDuoRequest = async (boardUUID, duoRequestorDto) => {
+    const payload = {
+        boardUUID,
+        duoRequestorDto,
+    };
+    const response = await axiosInstance.post('/matching/myPage', payload, {
+        withAuth: true,
+    });
+    return response.data;
+};

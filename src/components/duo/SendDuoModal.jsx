@@ -1,5 +1,4 @@
 // src/components/duo/SendDuoModal.jsx
-
 import React, { useState } from 'react';
 import {
     Dialog,
@@ -13,65 +12,87 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import SummonerInfo from '../SummonerInfo';
 import PositionFilterBar from './PositionFilterBar';
-import PositionIcon from '../PositionIcon';
+import { sendDuoRequest } from '../../apis/redisAPI';
+import useAuthStore from '../../storage/useAuthStore';
 
-/**
- * 듀오 신청 모달
- *
- * @param {boolean} open - 모달 열림 여부
- * @param {function} handleClose - 닫기 버튼 이벤트
- * @param {object} userData - 신청 대상 소환사(또는 내 정보)
- *   {
- *     name, tag, school, avatarUrl, ...
- *   }
- */
-export default function SendDuoModal({ open, handleClose, userData = {} }) {
-    // 포지션 선택
-    const [position, setPosition] = useState('top');
-    // 플레이스타일 (즐겜/빡겜)
+export default function SendDuoModal({ open, handleClose, boardUUID, userData = {} }) {
+    const [position, setPosition] = useState('nothing');
     const [playStyle, setPlayStyle] = useState('즐겜');
-    // 내 상태 (첫판/계속 플레이/마지막판)
     const [gameStatus, setGameStatus] = useState('첫판');
-    // 마이크 여부
     const [mic, setMic] = useState('off');
-    // 메모
     const [memo, setMemo] = useState('');
 
-    const handleSubmit = () => {
-        // 실제로 듀오 신청 로직을 처리한 뒤 모달 닫기
-        // 예: API 호출 등을 수행
-        handleClose();
+    const { userData: me } = useAuthStore();
+    const riot = me?.riotAccount;
+    const memberId = me?.memberId;
+
+    const handleSubmit = async () => {
+        if (!riot || !memberId) {
+            alert('로그인 또는 라이엇 계정 연동이 필요합니다.');
+            return;
+        }
+
+        const dto = {
+            memo: memo,
+            duoMapCode: 'RANK', // 기본값으로 고정
+            requestUserDto: {
+                memberId,
+                riotAccount: {
+                    accountName: riot.accountName,
+                    accountTag: riot.accountTag,
+                },
+                userInfo: {
+                    myPosition: position.toUpperCase(),
+                    myStyle: playStyle === '빡겜' ? 'HARD' : 'FUN',
+                    myStatus:
+                        gameStatus === '첫판'
+                            ? 'FIRST'
+                            : gameStatus === '계속 플레이'
+                                ? 'CONTINUE'
+                                : 'LAST',
+                    myVoice: mic === 'on' ? 'ENABLED' : 'DISABLED',
+                },
+                duoInfo: {
+                    opponentPosition: 'NOTHING',
+                    opponentStyle: 'FUN',
+                },
+            },
+        };
+
+        try {
+            await sendDuoRequest(boardUUID, dto.requestUserDto);
+            alert('듀오 신청이 전송되었습니다.');
+            handleClose();
+        } catch (err) {
+            console.error('신청 실패:', err);
+            alert('신청에 실패했습니다.');
+        }
     };
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm">
             <Box sx={{ backgroundColor: '#31313D', p: 3 }}>
-                {/* 헤더 영역 */}
+                {/* Header */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                    {/* 소환사 정보 (상단 왼쪽) */}
                     <SummonerInfo
                         name={userData.name || '소환사명'}
-                        // 예: "#{userData.tag} | {userData.school}"
                         tag={`${userData.tag || '0000'} | ${userData.school || '학교명'}`}
                         avatarUrl={userData.avatarUrl || '/assets/default.png'}
                     />
-                    {/* 닫기 버튼 (상단 오른쪽) */}
                     <IconButton onClick={handleClose} size="small">
                         <CloseIcon sx={{ color: '#fff' }} />
                     </IconButton>
                 </Box>
 
-                {/* 구분선 */}
                 <Box sx={{ my: 2, height: '1px', backgroundColor: '#171717' }} />
 
-                {/* 본문 타이틀 */}
                 <Typography mb={1} color="#fff" fontSize="1rem">
                     내정보
                 </Typography>
 
                 {/* 포지션 */}
                 <Box mb={2}>
-                    <Typography mb={0.5} color="#aaa" sx={{ fontSize: '0.8rem' }}>
+                    <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                         포지션
                     </Typography>
                     <PositionFilterBar
@@ -81,22 +102,16 @@ export default function SendDuoModal({ open, handleClose, userData = {} }) {
                         unselectedColor="#31313D"
                         hoverColor="#42E6B5"
                         iconSize={26}
-                        iconInvert={true}
+                        iconInvert
                     />
                 </Box>
 
-                {/* 플레이스타일 (즐겜/빡겜) */}
+                {/* 플레이스타일 */}
                 <Box mb={2}>
-                    <Typography mb={0.5} color="#aaa" sx={{ fontSize: '0.8rem' }}>
+                    <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                         플레이스타일
                     </Typography>
-                    <Box
-                        display="flex"
-                        gap={1}
-                        p={0.5}
-                        bgcolor="#424254"
-                        borderRadius={1}
-                    >
+                    <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
                         {['즐겜', '빡겜'].map((style) => (
                             <Box
                                 key={style}
@@ -119,18 +134,12 @@ export default function SendDuoModal({ open, handleClose, userData = {} }) {
                     </Box>
                 </Box>
 
-                {/* 내 상태 (첫판/계속 플레이/마지막판) */}
+                {/* 내 상태 */}
                 <Box mb={2}>
-                    <Typography mb={0.5} color="#aaa" sx={{ fontSize: '0.8rem' }}>
+                    <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                         내 상태
                     </Typography>
-                    <Box
-                        display="flex"
-                        gap={1}
-                        p={0.5}
-                        bgcolor="#424254"
-                        borderRadius={1}
-                    >
+                    <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
                         {['첫판', '계속 플레이', '마지막판'].map((status) => (
                             <Box
                                 key={status}
@@ -155,16 +164,10 @@ export default function SendDuoModal({ open, handleClose, userData = {} }) {
 
                 {/* 마이크 */}
                 <Box mb={2}>
-                    <Typography mb={0.5} color="#aaa" sx={{ fontSize: '0.8rem' }}>
+                    <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                         마이크
                     </Typography>
-                    <Box
-                        display="flex"
-                        gap={1}
-                        p={0.5}
-                        bgcolor="#424254"
-                        borderRadius={1}
-                    >
+                    <Box display="flex" gap={1} p={0.5} bgcolor="#424254" borderRadius={1}>
                         {['on', 'off'].map((m) => (
                             <Box
                                 key={m}
@@ -189,7 +192,7 @@ export default function SendDuoModal({ open, handleClose, userData = {} }) {
 
                 {/* 메모 */}
                 <Box mb={3}>
-                    <Typography mb={0.5} color="#aaa" sx={{ fontSize: '0.8rem' }}>
+                    <Typography mb={0.5} color="#aaa" fontSize="0.8rem">
                         메모
                     </Typography>
                     <TextField
@@ -205,9 +208,7 @@ export default function SendDuoModal({ open, handleClose, userData = {} }) {
                             color: '#fff',
                             borderRadius: 1,
                             '& .MuiOutlinedInput-root': {
-                                '& fieldset': {
-                                    border: 'none',
-                                },
+                                '& fieldset': { border: 'none' },
                             },
                             '& .MuiInputBase-input': {
                                 fontSize: '0.85rem',
@@ -217,7 +218,7 @@ export default function SendDuoModal({ open, handleClose, userData = {} }) {
                     />
                 </Box>
 
-                {/* 듀오 신청 버튼 */}
+                {/* 버튼 */}
                 <Box display="flex" gap={1.5}>
                     <Button
                         fullWidth
