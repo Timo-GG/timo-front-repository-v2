@@ -80,9 +80,9 @@ export default function DuoPage() {
         setOpenSendModal(true);
     };
 
-    const filteredUsers = duoUsers.filter((user) =>
-        positionFilter === 'nothing' ? true : user.position === positionFilter
-    );
+    const filteredUsers = duoUsers
+        .filter(u => positionFilter === 'nothing' || u.position.toLowerCase() === positionFilter)
+
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
@@ -97,9 +97,9 @@ export default function DuoPage() {
                     onRegisterDuo={handleRegisterDuo}
                 />
                 <DuoHeader />
-                {filteredUsers.map((user, idx) => (
+                {filteredUsers.map((user) => (
                     <DuoItem
-                        key={idx}
+                        key={user.id}
                         user={user}
                         currentUser={currentUser}
                         onApplyDuo={() => handleApplyDuo(user, user.id)}

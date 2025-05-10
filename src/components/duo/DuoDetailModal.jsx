@@ -26,6 +26,23 @@ export default function DuoDetailModal({
 }) {
     if (!partyData) return null;
 
+    const genderDisplay = {
+        MALE: '남자',
+        FEMALE: '여자',
+        SECRET: '비밀',
+    };
+
+    const playStyleDisplay = {
+        fun: '즐겜',
+        hardcore: '빡겜',
+        none: '상관없음'
+    }
+
+    const statusDisplay = {
+        first: "첫판",
+        continue: "계속 플레이",
+        last: "마지막판"
+    }
 
     const {
         queueType,
@@ -152,23 +169,23 @@ export default function DuoDetailModal({
                         >
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>플레이스타일</Typography>
-                                <Typography>{playStyle || '정보 없음'}</Typography>
+                                <Typography>{playStyleDisplay[playStyle] || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>내 상태</Typography>
-                                <Typography>{status || '정보 없음'}</Typography>
+                                <Typography>{statusDisplay[status] || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>마이크</Typography>
-                                <Typography>{mic || '정보 없음'}</Typography>
+                                <Typography>{mic || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>성별</Typography>
-                                <Typography>{gender || '정보 없음'}</Typography>
+                                <Typography>{genderDisplay[gender] || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>MBTI</Typography>
-                                <Typography>{mbti || '정보 없음'}</Typography>
+                                <Typography>{mbti || '-'}</Typography>
                             </Box>
                         </Box>
                     </Box>
