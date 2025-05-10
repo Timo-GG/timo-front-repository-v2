@@ -211,7 +211,7 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
                 <PositionIcon position={user.position} />
             </Box>
             <Box sx={{ flex: columns[3], textAlign: 'center' }}>
-                <TierBadge tier={user.tier} score={user.score} />
+                <TierBadge tier={user.tier} rank={user.score} />
             </Box>
             <Box sx={{ flex: columns[4], textAlign: 'center' }}>
                 <PositionIcon position={user.lookingForPosition} />
