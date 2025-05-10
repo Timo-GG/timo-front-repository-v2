@@ -26,6 +26,23 @@ export default function DuoDetailModal({
 }) {
     if (!partyData) return null;
 
+    const genderDisplay = {
+        MALE: '남자',
+        FEMALE: '여자',
+        SECRET: '비밀',
+    };
+
+    const playStyleDisplay = {
+        fun: '즐겜',
+        hardcore: '빡겜',
+        none: '상관없음'
+    }
+
+    const statusDisplay = {
+        first: "첫판",
+        continue: "계속 플레이",
+        last: "마지막판"
+    }
 
     const {
         queueType,
@@ -41,10 +58,27 @@ export default function DuoDetailModal({
         tag,
         avatarUrl,
         tier,
-        score,
+        leaguePoint,
+        rank,
         position,
         champions,
+        last10Match = [],
     } = partyData;
+
+    const matches = last10Match.map(m => ({
+        result: m.win ? '승리' : '패배',
+        resultColor: m.win ? '#3F6E8C' : '#8C4949',
+        kda: `${m.kills} / ${m.deaths} / ${m.assists}`,
+        champion: m.championIconUrl,
+        level: m.championLevel,
+        items: m.items,
+        spells: m.summonerSpells,
+        perks: m.runes,
+        time: m.gameDuration,
+        queueType: m.gameMode,
+        date: m.playedAt,
+
+    }));
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
@@ -152,23 +186,23 @@ export default function DuoDetailModal({
                         >
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>플레이스타일</Typography>
-                                <Typography>{playStyle || '정보 없음'}</Typography>
+                                <Typography>{playStyleDisplay[playStyle] || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>내 상태</Typography>
-                                <Typography>{status || '정보 없음'}</Typography>
+                                <Typography>{statusDisplay[status] || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>마이크</Typography>
-                                <Typography>{mic || '정보 없음'}</Typography>
+                                <Typography>{mic || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>성별</Typography>
-                                <Typography>{gender || '정보 없음'}</Typography>
+                                <Typography>{genderDisplay[gender] || '-'}</Typography>
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>MBTI</Typography>
-                                <Typography>{mbti || '정보 없음'}</Typography>
+                                <Typography>{mbti || '-'}</Typography>
                             </Box>
                         </Box>
                     </Box>
@@ -215,7 +249,7 @@ export default function DuoDetailModal({
                         {/* (3) 티어 */}
                         <Box width="15%" textAlign="center">
                             {tier ? (
-                                <TierBadge tier={tier} score={score} />
+                                <TierBadge tier={tier} score={leaguePoint} rank={rank} />
                             ) : (
                                 <TierBadge tier="unrank" />
                             )}

@@ -14,8 +14,38 @@ import CloseIcon from '@mui/icons-material/Close';
 import PositionFilterBar from './PositionFilterBar';
 import { createDuoBoard } from '../../apis/redisAPI';
 import useAuthStore from '../../storage/useAuthStore';
+import {fetchMyRankingInfo} from "../../apis/rankAPI.js";
+import {useQuery} from "@tanstack/react-query";
+import {fetchCompactPlayerHistory} from "../../apis/compactPlayerHistory.js";
 
 export default function CreateDuoModal({ open, onClose }) {
+
+    const { accessToken, userData } = useAuthStore();
+    const certifiedUnivInfo = userData?.certifiedUnivInfo;
+    const riot = userData?.riotAccount;
+    const memberId = userData?.memberId;
+
+    const {
+        data: myProfileData,
+    } = useQuery({
+        queryKey: ['myProfile'],
+        queryFn: fetchMyRankingInfo,
+        enabled: !!accessToken,
+    });
+
+    const {
+        data: compactData
+    } = useQuery({
+        queryKey: ['compactHistory'],
+        queryFn: () =>
+            fetchCompactPlayerHistory({
+                gameName: riot.accountName,
+                tagLine: riot.accountTag,
+                region: "KR"
+            }),
+        enabled: !!riot,
+    });
+
     const [
         formData, setFormData] = useState({
         myPosition: 'nothing',
@@ -31,10 +61,6 @@ export default function CreateDuoModal({ open, onClose }) {
     const updateField = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
-
-    const { userData } = useAuthStore();
-    const riot = userData?.riotAccount;
-    const memberId = userData?.memberId;
 
     const handleSubmit = async () => {
         if (!riot || !memberId) {
@@ -52,9 +78,23 @@ export default function CreateDuoModal({ open, onClose }) {
                         : 'HOWLING_ABYSS',
             requestUserDto: {
                 memberId,
+                certifiedUnivInfo: {
+                    univCertifiedEmail: certifiedUnivInfo.univCertifiedEmail,
+                    univName: certifiedUnivInfo.univName,
+                    department: certifiedUnivInfo.department,
+                },
+                gender: myProfileData.gender,
+                mbti: myProfileData.mbti,
                 riotAccount: {
+                    puuid: riot.puuid,
                     accountName: riot.accountName,
                     accountTag: riot.accountTag,
+                    profileUrl: riot.profileUrl,
+                },
+                compactPlayerHistory: {
+                    rankInfo: compactData.rankInfo,
+                    most3Champ: compactData.most3Champ,
+                    last10Match: compactData.last10Match
                 },
                 userInfo: {
                     myPosition: formData.myPosition.toUpperCase(),
@@ -73,8 +113,6 @@ export default function CreateDuoModal({ open, onClose }) {
                 },
             },
         };
-
-        console.log(dto);
 
         try {
             await createDuoBoard(dto);
