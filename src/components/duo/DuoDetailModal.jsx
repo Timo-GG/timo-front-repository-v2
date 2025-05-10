@@ -58,7 +58,8 @@ export default function DuoDetailModal({
         tag,
         avatarUrl,
         tier,
-        score,
+        leaguePoint,
+        rank,
         position,
         champions,
         last10Match = [],
@@ -248,7 +249,7 @@ export default function DuoDetailModal({
                         {/* (3) 티어 */}
                         <Box width="15%" textAlign="center">
                             {tier ? (
-                                <TierBadge tier={tier} score={score} />
+                                <TierBadge tier={tier} score={leaguePoint} rank={rank} />
                             ) : (
                                 <TierBadge tier="unrank" />
                             )}
