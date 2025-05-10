@@ -61,7 +61,23 @@ export default function DuoDetailModal({
         score,
         position,
         champions,
+        last10Match = [],
     } = partyData;
+
+    const matches = last10Match.map(m => ({
+        result: m.win ? '승리' : '패배',
+        resultColor: m.win ? '#3F6E8C' : '#8C4949',
+        kda: `${m.kills} / ${m.deaths} / ${m.assists}`,
+        champion: m.championIconUrl,
+        level: m.championLevel,
+        items: m.items,
+        spells: m.summonerSpells,
+        perks: m.runes,
+        time: m.gameDuration,
+        queueType: m.gameMode,
+        date: m.playedAt,
+
+    }));
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">

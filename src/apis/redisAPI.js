@@ -36,7 +36,8 @@ export const fetchAllDuoBoards = async () => {
         type: '듀오',
         wins: 0,
         losses: 0,
-        champions: item.responseUserDto.compactPlayerHistory.most3Champ
+        champions: item.responseUserDto.compactPlayerHistory.most3Champ,
+        last10Match: item.responseUserDto.compactPlayerHistory.last10Match
     }));
 };
 
