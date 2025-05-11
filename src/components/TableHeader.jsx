@@ -1,5 +1,3 @@
-/** 마이페이지 요청 탭의 헤더 */
-
 import React from 'react';
 import { Box } from '@mui/material';
 
@@ -13,12 +11,13 @@ export default function TableHeader() {
             alignItems: 'center',
             px: 2,
             py: 1,
-            borderTopLeftRadius: 10,
-            borderTopRightRadius: 10,
-            fontSize: 14,
+            borderTopLeftRadius: 2,
+            borderTopRightRadius: 2,
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
             fontWeight: 500,
             color: '#999',
             backgroundColor: '#28282F',
+            minWidth: { xs: '900px', sm: 'auto' },
         }}>
             {headers.map((text, i) => (
                 <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>{text}</Box>

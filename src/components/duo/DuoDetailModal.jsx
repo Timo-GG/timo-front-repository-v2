@@ -106,6 +106,7 @@ export default function DuoDetailModal({
             <Box
                 sx={{
                     display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
                     alignItems: 'flex-start',
                     gap: 3,
                     px: 3,

@@ -116,7 +116,7 @@ export default function ReviewModal({ open, handleClose, user }) {
 
                 <Box sx={{ mb: 2, height: '1px', backgroundColor: '#171717' }} />
 
-                <Box display="flex" gap={3} alignItems="stretch" mt={3} mb={3}>
+                <Box display="flex" gap={3} alignItems="stretch" mt={3} mb={3} flexDirection={{ xs: 'column', sm: 'row' }}>
                     <Box flex={1} display="flex" flexDirection="column" alignItems="center" justifyContent="center">
                         <Typography color="#fff" textAlign="center" sx={{ fontSize: '1rem' }}>
                             소환사의 태도는 어떤가요?
@@ -146,7 +146,7 @@ export default function ReviewModal({ open, handleClose, user }) {
                             sx={{
                                 mt: 1,
                                 '& .MuiRating-icon': {
-                                    fontSize: '5rem',
+                                    fontSize: { xs: '3rem', sm: '5rem' },
                                 },
                             }}
                         />

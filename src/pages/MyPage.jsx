@@ -26,6 +26,7 @@ const sampleUsers = [
         queueType: '랭크',
         map: '소환사 협곡',
         tier: 'platinum',
+        rank: 'I',
         score: 2,
         reviewScore: 5,
         position: 'jungle',
@@ -53,6 +54,7 @@ const sampleUsers = [
         queueType: '일반',
         map: '소환사 협곡',
         tier: 'diamond',
+        rank: 'I',
         score: 1,
         reviewScore: 3,
         position: 'top',
@@ -80,6 +82,7 @@ const sampleUsers = [
         queueType: '랭크',
         map: '소환사 협곡',
         tier: 'gold',
+        rank: 'II',
         score: 3,
         reviewScore: 4,
         position: 'support',
@@ -120,7 +123,7 @@ const evaluationUsers = [
     {
         id: 2,
         name: '솔랭장인',
-        tag: '1111',
+        tag: '111122',
         school: '성균관대',
         avatarUrl:
             'https://opgg-static.akamaized.net/meta/images/profile_icons/profileIcon2098.jpg?image=q_auto:good,f_webp,w_200&v=1744455113',        department: '경제학과',
@@ -226,8 +229,7 @@ export default function MyPage({ defaultTab, initialRoomId }) {
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
-            <Container maxWidth="lg">
-                {/* ✅ 메인 탭 */}
+            <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 } }}>
                 <TabHeader
                     tab={mainTab}
                     onTabChange={(_, newValue) => setMainTab(newValue)}
@@ -236,27 +238,33 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                     thirdLabel="채팅"
                 />
 
-                {/* ✅ 요청 탭 */}
                 {mainTab === 0 && (
                     <>
                         {renderSubTabs(requestSubTab, setRequestSubTab, ['받은 요청', '보낸 요청'])}
-
                         <TabPanel value={requestSubTab} index={0}>
-                            <TableHeader />
-                            {sampleUsers.map((user) => (
-                                <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
-                                    <TableItem received user={user} onEvaluate={handleEvaluate} />
+                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
+                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
+                                    <TableHeader />
+                                    {sampleUsers.map(user => (
+                                        <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
+                                            <TableItem received user={user} onEvaluate={handleEvaluate} />
+                                        </Box>
+                                    ))}
                                 </Box>
-                            ))}
+                            </Box>
                         </TabPanel>
 
                         <TabPanel value={requestSubTab} index={1}>
-                            <TableHeader />
-                            {sampleUsers.map((user) => (
-                                <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
-                                    <TableItem user={user} onEvaluate={handleEvaluate} />
+                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
+                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
+                                    <TableHeader />
+                                    {sampleUsers.map(user => (
+                                        <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
+                                            <TableItem user={user} onEvaluate={handleEvaluate} />
+                                        </Box>
+                                    ))}
                                 </Box>
-                            ))}
+                            </Box>
                         </TabPanel>
                     </>
                 )}
@@ -264,32 +272,33 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                 {mainTab === 1 && (
                     <>
                         {renderSubTabs(evaluationSubTab, setEvaluationSubTab, ['받은 평가', '보낸 평가'])}
-
                         <TabPanel value={evaluationSubTab} index={0}>
-                            <EvaluationTableHeader />
-                            {evaluationUsers
-                                .filter(u => u.mode === 'received')
-                                .map((user) => (
-                                    <Box key={user.id} onClick={() => handleEvaluate(user)} sx={{ cursor: 'pointer' }}>
-                                        <EvaluationTableItem user={user} status="받은 평가" />
-                                    </Box>
-                                ))}
+                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
+                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
+                                    <EvaluationTableHeader />
+                                    {evaluationUsers.filter(u => u.mode === 'received').map(user => (
+                                        <Box key={user.id} onClick={() => handleEvaluate(user)} sx={{ cursor: 'pointer' }}>
+                                            <EvaluationTableItem user={user} status="받은 평가" />
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
                         </TabPanel>
-
                         <TabPanel value={evaluationSubTab} index={1}>
-                            <EvaluationTableHeader />
-                            {evaluationUsers
-                                .filter(u => u.mode === 'sent')
-                                .map((user) => (
-                                    <Box key={user.id} onClick={() => handleEvaluate(user)} sx={{ cursor: 'pointer' }}>
-                                        <EvaluationTableItem user={user} status="보낸 평가" />
-                                    </Box>
-                                ))}
+                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
+                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
+                                    <EvaluationTableHeader />
+                                    {evaluationUsers.filter(u => u.mode === 'sent').map(user => (
+                                        <Box key={user.id} onClick={() => handleEvaluate(user)} sx={{ cursor: 'pointer' }}>
+                                            <EvaluationTableItem user={user} status="보낸 평가" />
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
                         </TabPanel>
                     </>
                 )}
 
-                {/* ✅ 채팅 탭 */}
                 {mainTab === 2 && (
                     <TabPanel value={mainTab} index={2}>
                         <ChatPage initialRoomId={roomIdFromProps} />
@@ -297,7 +306,6 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                 )}
             </Container>
 
-            {/* ✅ 모달들 */}
             {selectedUser && (
                 <DuoDetailModal open handleClose={() => setSelectedUser(null)} partyData={selectedUser} />
             )}
