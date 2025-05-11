@@ -13,9 +13,9 @@ export const fetchAllDuoBoards = async () => {
         id: item.boardUUID,
         name: item.responseUserDto.riotAccount.accountName,
         tag: item.responseUserDto.riotAccount.accountTag,
-        school: '알 수 없음', // 추후 백엔드 확장
-        department: '알 수 없음',
-        avatarUrl: '/assets/default.png',
+        school: item.responseUserDto.certifiedUnivInfo.univName,
+        department: item.responseUserDto.certifiedUnivInfo.department,
+        avatarUrl: item.responseUserDto.riotAccount.profileUrl,
         queueType:
             item.duoMapCode === 'RANK'
                 ? '랭크'
@@ -26,17 +26,19 @@ export const fetchAllDuoBoards = async () => {
         playStyle: item.responseUserDto.userInfo.myStyle.toLowerCase(),
         status: item.responseUserDto.userInfo.myStatus.toLowerCase(),
         mic: item.responseUserDto.userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
-        gender: '알 수 없음',
-        mbti: item.responseUserDto.mbti || '알 수 없음',
-        tier: 'unranked', // 추후 확장
-        score: 0,
+        gender: item.responseUserDto.gender,
+        mbti: item.responseUserDto.mbti,
+        tier: item.responseUserDto.compactPlayerHistory.rankInfo.tier,
+        leaguePoint: item.responseUserDto.compactPlayerHistory.rankInfo.lp,
+        rank: item.responseUserDto.compactPlayerHistory.rankInfo.rank,
         position: item.responseUserDto.userInfo.myPosition.toLowerCase(),
         lookingForPosition: item.responseUserDto.duoInfo.opponentPosition.toLowerCase(),
-        createdAt: new Date().toISOString(), // 실제 값 필요 시 백엔드 추가
+        createdAt: new Date().toISOString(),
         type: '듀오',
         wins: 0,
         losses: 0,
-        champions: [],
+        champions: item.responseUserDto.compactPlayerHistory.most3Champ,
+        last10Match: item.responseUserDto.compactPlayerHistory.last10Match
     }));
 };
 
