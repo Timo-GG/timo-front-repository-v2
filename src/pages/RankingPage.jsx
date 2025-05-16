@@ -26,19 +26,7 @@ import RankingDetailModal from '../components/rank/RankingDetailModal';
 import WinRateBar from '../components/WinRateBar';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import { fetchRankingList, fetchRankingByUniversity, fetchMyRankingInfo } from '../apis/rankAPI';
-
-function SummonerInfo({ name, tag, avatarUrl }) {
-    return (
-        <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar src={avatarUrl} alt={name} sx={{ width: 32, height: 32 }} />
-            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography fontSize="0.95rem" lineHeight={1.2} noWrap
-                            sx={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</Typography>
-                <Typography fontSize="0.8rem" color="#B7B7C9" lineHeight={1.2}>{`#${tag}`}</Typography>
-            </Box>
-        </Box>
-    );
-}
+import SummonerInfo from '../components/SummonerInfo';
 
 export default function RankingPage() {
     const theme = useTheme();
@@ -52,16 +40,27 @@ export default function RankingPage() {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [requiredOpen, setRequiredOpen] = React.useState(false);
     const [loginOpen, setLoginOpen] = React.useState(false);
-    const itemsPerPage = 10;
+    const itemsPerPage = 3;
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
 
     const {
-        data: rankingList = [],
+        data: responseData = {},
     } = useQuery({
-        queryKey: ['rankingList', tab, userData?.certifiedUnivInfo?.univName],
-        queryFn: () => tab === 0 ? fetchRankingList() : fetchRankingByUniversity(userData.certifiedUnivInfo.univName),
+        queryKey: ['rankingList', tab, userData?.certifiedUnivInfo?.univName, currentPage],
+        queryFn: () =>
+            tab === 0
+                ? fetchRankingList(currentPage, itemsPerPage)
+                : fetchRankingByUniversity(userData.certifiedUnivInfo.univName, currentPage, itemsPerPage),
+        enabled: tab === 0 || !!userData?.certifiedUnivInfo,
         refetchInterval: 5000,
     });
+
+    const rankingData = {
+        list: responseData?.list || [],
+        totalCount: responseData?.totalCount || 0,
+    };
+
+    const totalPages = Math.ceil(rankingData.totalCount / itemsPerPage);
 
     const {
         data: myProfileData,
@@ -72,54 +71,18 @@ export default function RankingPage() {
     });
 
     const handleTabChange = (event, newValue) => {
-        if (!accessToken) {
-            setLoginOpen(true);
-            return;
-        }
-
-        if (newValue === 1 && !userData?.certifiedUnivInfo) {
-            setRequiredOpen(true);
-            return;
-        }
+        if (!accessToken) return setLoginOpen(true);
+        if (newValue === 1 && !userData?.certifiedUnivInfo) return setRequiredOpen(true);
         setTab(newValue);
+        setCurrentPage(1);
     };
 
     const handleEditClick = () => {
-        if (!accessToken) {
-            setLoginOpen(true);
-            return;
-        }
-        const hasRiot = Boolean(userData?.riotAccount);
-        const hasUniv = Boolean(userData?.certifiedUnivInfo);
-        if (!hasRiot || !hasUniv) {
-            setRequiredOpen(true);
-        } else {
-            setOpen(true);
-        }
+        if (!accessToken) return setLoginOpen(true);
+        if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
+        setOpen(true);
     };
 
-    const totalPages = Math.ceil(rankingList.length / itemsPerPage);
-
-    const [displayList, setDisplayList] = React.useState([]);
-    React.useEffect(() => {
-        const currentKeys = new Set(displayList.map(r => `${r.name}#${r.tag}`));
-        const newKeys = new Set(rankingList.map(r => `${r.name}#${r.tag}`));
-
-        const updatedList = rankingList.map(r => ({
-            ...r,
-            isNew: !currentKeys.has(`${r.name}#${r.tag}`),
-            isVisible: true,
-        }));
-
-        const removedItems = displayList.filter(r => !newKeys.has(`${r.name}#${r.tag}`))
-            .map(r => ({ ...r, isVisible: false }));
-
-        setDisplayList([...updatedList, ...removedItems]);
-    }, [rankingList]);
-
-    const handleExited = (key) => {
-        setDisplayList((prev) => prev.filter(r => `${r.name}#${r.tag}` !== key));
-    };
     const handleRowClick = (row) => {
         setSelectedData(row);
         setDetailOpen(true);
@@ -127,10 +90,7 @@ export default function RankingPage() {
 
     const handleSearch = () => {
         if (!searchText.trim()) return;
-        const found = rankingList.find((item) => {
-            const fullName = `${item.name}#${item.tag}`;
-            return fullName.toLowerCase() === searchText.toLowerCase();
-        });
+        const found = rankingData.list.find(item => `${item.name}#${item.tag}`.toLowerCase() === searchText.toLowerCase());
         if (found) {
             setSelectedData(found);
             setDetailOpen(true);
@@ -138,6 +98,7 @@ export default function RankingPage() {
             alert('해당 소환사를 찾을 수 없습니다.');
         }
     };
+
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
@@ -240,132 +201,51 @@ export default function RankingPage() {
                 </Box>
 
                 {/* 테이블 영역 */}
-                <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' }, width: '100%' }}>
-                    <Box sx={{ minWidth: { xs: '1100px', sm: 'auto' } }}>
-                        <Box
-                            sx={{
-                                px: 0,
-                                py: 1.5,
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                backgroundColor: '#28282F',
-                                color: '#999',
-                                fontSize: 14,
-                                fontWeight: 500,
-                            }}
-                        >
-                            <Box width="5%" textAlign="center">순위</Box>
-                            <Box width="15%" textAlign="center">소환사</Box>
-                            <Box width="10%" textAlign="center">주 포지션</Box>
-                            <Box width="5%" textAlign="center">티어</Box>
-                            <Box width="10%" textAlign="center">{tab === 0 ? '대학교' : '학과'}</Box>
-                            <Box width="10%" textAlign="center">모스트 챔피언</Box>
-                            <Box width="15%" textAlign="center">승률(최근 10게임)</Box>
-                            <Box width="20%" textAlign="center">한 줄 소개</Box>
-                        </Box>
+                <Box sx={{ minWidth: { xs: '1100px', sm: 'auto' } }}>
+                    <Box sx={{ px: 0, py: 1.5, display: 'flex', justifyContent: 'space-between', backgroundColor: '#28282F', color: '#999', fontSize: 14, fontWeight: 500 }}>
+                        <Box width="5%" textAlign="center">순위</Box>
+                        <Box width="15%" textAlign="center">소환사</Box>
+                        <Box width="10%" textAlign="center">주 포지션</Box>
+                        <Box width="5%" textAlign="center">티어</Box>
+                        <Box width="10%" textAlign="center">{tab === 0 ? '대학교' : '학과'}</Box>
+                        <Box width="10%" textAlign="center">모스트 챔피언</Box>
+                        <Box width="15%" textAlign="center">승률</Box>
+                        <Box width="20%" textAlign="center">한 줄 소개</Box>
+                    </Box>
 
-                        {displayList
-                            .filter(row => row.isVisible)
-                            .sort((a, b) => a.ranking - b.ranking)
-                            .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                            .map((row) => {
-                                const key = `${row.name}#${row.tag}`;
-                                return (
-                                    <Collapse
-                                        key={key}
-                                        in={row.isVisible}
-                                        timeout={500}
-                                        onExited={() => handleExited(key)}
-                                    >
-                                        <Box
-                                            onClick={() => handleRowClick(row)}
-                                            sx={{
-                                                px: 0,
-                                                py: 1,
-                                                pr: 1,
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                backgroundColor: theme.palette.background.paper,
-                                                color: '#fff',
-                                                fontSize: 14,
-                                                borderBottom: '2px solid #12121a',
-                                                cursor: 'pointer',
-                                                transition: 'background-color 0.2s',
-                                                '&:hover': { backgroundColor: '#2E2E38' },
-                                            }}
-                                        >
-                                            <Box width="5%" textAlign="center">{row.ranking}</Box>
-                                            <Box width="15%" display="flex">
-                                                <SummonerInfo
-                                                    name={row.name}
-                                                    tag={row.tag}
-                                                    avatarUrl={row.avatarUrl}
-                                                />
-                                            </Box>
-                                            <Box width="10%" textAlign="center"><PositionIcon position={row.position} /></Box>
-                                            <Box width="5%" textAlign="center"><TierBadge tier={row.tier} score={row.lp} rank={row.rank} /></Box>
-                                            <Box width="10%" textAlign="center">{tab === 0 ? row.university : row.department}</Box>
-                                            <Box width="10%" textAlign="center"><ChampionIconList championNames={row.champions} /></Box>
-                                            <Box width="15%" textAlign="center"><WinRateBar wins={row.wins} losses={row.losses} /></Box>
-                                            <Box width="20%" textAlign="center">
-                                                <Box sx={{
-                                                    backgroundColor: '#424254',
-                                                    p: 1,
-                                                    borderRadius: 1,
-                                                    color: '#fff',
-                                                    fontSize: '0.85rem',
-                                                    lineHeight: 1.4,
-                                                    textAlign: 'left',
-                                                    display: '-webkit-inline-box',
-                                                    WebkitBoxOrient: 'vertical',
-                                                    WebkitLineClamp: 2,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'normal',
-                                                    maxHeight: '3.6em',
-                                                }}>
-                                                    {row.message}
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                    </Collapse>
-                                );
-                            })}
-                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                            <Pagination
-                                count={totalPages}
-                                page={currentPage}
-                                onChange={(e, value) => setCurrentPage(value)}
-                                shape="rounded"
-                                color="primary"
-                                sx={{
-                                    '& .MuiPaginationItem-root': { color: '#fff' },
-                                    '& .Mui-selected': { backgroundColor: '#42E6B5', color: '#000' },
-                                }}
-                            />
-                        </Box>
+                    {rankingData.list.map(row => (
+                        <Collapse key={`${row.name}#${row.tag}`} in={true}>
+                            <Box onClick={() => handleRowClick(row)} sx={{ px: 0, py: 1, pr: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.palette.background.paper, color: '#fff', fontSize: 14, borderBottom: '2px solid #12121a', cursor: 'pointer', '&:hover': { backgroundColor: '#2E2E38' } }}>
+                                <Box width="5%" textAlign="center">{row.ranking}</Box>
+                                <Box width="15%" display="flex"><SummonerInfo name={row.name} tag={row.tag} avatarUrl={row.avatarUrl} /></Box>
+                                <Box width="10%" textAlign="center"><PositionIcon position={row.position} /></Box>
+                                <Box width="5%" textAlign="center"><TierBadge tier={row.tier} score={row.lp} rank={row.rank} /></Box>
+                                <Box width="10%" textAlign="center">{tab === 0 ? row.university : row.department}</Box>
+                                <Box width="10%" textAlign="center"><ChampionIconList championNames={row.champions} /></Box>
+                                <Box width="15%" textAlign="center"><WinRateBar wins={row.wins} losses={row.losses} /></Box>
+                                <Box width="20%" textAlign="center">
+                                    <Box sx={{ backgroundColor: '#424254', p: 1, borderRadius: 1, color: '#fff', fontSize: '0.85rem', lineHeight: 1.4, textAlign: 'left', display: '-webkit-inline-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', maxHeight: '3.6em' }}>{row.message}</Box>
+                                </Box>
+                            </Box>
+                        </Collapse>
+                    ))}
+
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                        <Pagination
+                            count={totalPages}
+                            page={currentPage}
+                            onChange={(e, value) => setCurrentPage(value)}
+                            shape="rounded"
+                            color="primary"
+                            sx={{ '& .MuiPaginationItem-root': { color: '#fff' }, '& .Mui-selected': { backgroundColor: '#42E6B5', color: '#000' } }}
+                        />
                     </Box>
                 </Box>
             </Container>
-            <RankingDetailModal
-                open={detailOpen}
-                handleClose={() => setDetailOpen(false)}
-                data={selectedData}
-            />
-            <ConfirmRequiredDialog
-                open={requiredOpen}
-                onClose={() => setRequiredOpen(false)}
-            />
-            <EditProfileModal
-                open={open}
-                handleClose={() => setOpen(false)}
-                userProfileData={myProfileData}
-            />
-            <LoginModal
-                open={loginOpen}
-                onClose={() => setLoginOpen(false)}
-            />
+            <RankingDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} data={selectedData} />
+            <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)} />
+            <EditProfileModal open={open} handleClose={() => setOpen(false)} userProfileData={myProfileData} />
+            <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
         </Box>
     );
 }
