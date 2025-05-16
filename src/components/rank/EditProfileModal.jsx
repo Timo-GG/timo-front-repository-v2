@@ -12,6 +12,8 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PositionFilterBar from '../duo/PositionFilterBar';
 import {updateRankingInfo} from '/src/apis/rankAPI';
 import {schoolDepartmentsJson} from '../../data/schoolDepartmentsJson.cleaned';
+import useAuthStore from '/src/storage/useAuthStore';
+import {getMyInfo} from '/src/apis/authAPI';
 
 
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
@@ -27,6 +29,8 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
     const [selectedGender, setSelectedGender] = useState('비밀');
     const [selectedMbti, setSelectedMbti] = useState([]);
     const [memo, setMemo] = useState('');
+    const { setUserData } = useAuthStore();
+
 
     React.useEffect(() => {
         if (open && userProfileData) {
@@ -120,6 +124,9 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
             };
 
             await updateRankingInfo(dto);
+            const updated = await getMyInfo(); // 서버에서 최신 정보 불러오기
+            setUserData(updated);
+
             alert('정보가 성공적으로 수정되었습니다.');
             handleClose();
         } catch (error) {

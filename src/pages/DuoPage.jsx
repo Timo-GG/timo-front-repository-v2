@@ -1,5 +1,5 @@
 // src/pages/DuoPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -25,6 +25,7 @@ import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAllDuoBoards } from '../apis/redisAPI';
+import { getMyInfo } from '../apis/authAPI';
 
 function getRelativeTime(dateString) {
     if (!dateString) return '방금 전';
@@ -55,9 +56,16 @@ export default function DuoPage() {
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
     const navigate = useNavigate();
-    const { userData } = useAuthStore();
-    const currentUser = userData;
-
+    const userData = useAuthStore(state => state.userData);
+    const { setUserData } = useAuthStore();
+    const currentUser = useAuthStore(state => state.userData);
+    useEffect(() => {
+        const fetchAndUpdateUser = async () => {
+            const updated = await getMyInfo();
+            setUserData(updated.data);
+        };
+        fetchAndUpdateUser();
+    }, []);
     const { data: duoUsers = [] } = useQuery({
         queryKey: ['duoUsers'],
         queryFn: fetchAllDuoBoards,
@@ -82,7 +90,6 @@ export default function DuoPage() {
 
     const filteredUsers = duoUsers
         .filter(u => positionFilter === 'nothing' || u.position.toLowerCase() === positionFilter)
-
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>

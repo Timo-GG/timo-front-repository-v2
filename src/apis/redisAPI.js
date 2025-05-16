@@ -6,40 +6,48 @@ import axiosInstance from './axiosInstance';
  */
 export const fetchAllDuoBoards = async () => {
     const response = await axiosInstance.get('/matching/duo', {
-        withAuth: true,
     });
 
-    return response.data.map((item) => ({
-        id: item.boardUUID,
-        name: item.responseUserDto.riotAccount.accountName,
-        tag: item.responseUserDto.riotAccount.accountTag,
-        school: item.responseUserDto.certifiedUnivInfo.univName,
-        department: item.responseUserDto.certifiedUnivInfo.department,
-        avatarUrl: item.responseUserDto.riotAccount.profileUrl,
-        queueType:
-            item.duoMapCode === 'RANK'
-                ? '랭크'
-                : item.duoMapCode === 'NORMAL'
-                    ? '일반'
-                    : '칼바람',
-        message: item.memo,
-        playStyle: item.responseUserDto.userInfo.myStyle.toLowerCase(),
-        status: item.responseUserDto.userInfo.myStatus.toLowerCase(),
-        mic: item.responseUserDto.userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
-        gender: item.responseUserDto.gender,
-        mbti: item.responseUserDto.mbti,
-        tier: item.responseUserDto.compactPlayerHistory.rankInfo.tier,
-        leaguePoint: item.responseUserDto.compactPlayerHistory.rankInfo.lp,
-        rank: item.responseUserDto.compactPlayerHistory.rankInfo.rank,
-        position: item.responseUserDto.userInfo.myPosition.toLowerCase(),
-        lookingForPosition: item.responseUserDto.duoInfo.opponentPosition.toLowerCase(),
-        createdAt: new Date().toISOString(),
-        type: '듀오',
-        wins: 0,
-        losses: 0,
-        champions: item.responseUserDto.compactPlayerHistory.most3Champ,
-        last10Match: item.responseUserDto.compactPlayerHistory.last10Match
-    }));
+    return response.data.map((item) => {
+        const user = item.responseUserDto;
+        const riot = user.riotAccount || {};
+        const info = user.userInfo || {};
+        const history = user.compactPlayerHistory?.rankInfo || {};
+        const duo = user.duoInfo || {};
+        const univ = user.certifiedUnivInfo || {};
+
+        return {
+            id: item.boardUUID,
+            name: riot.accountName,
+            tag: riot.accountTag,
+            school: univ.univName || '미인증',
+            department: univ.department || '',
+            avatarUrl: riot.profileUrl,
+            queueType:
+                item.duoMapCode === 'RANK'
+                    ? '랭크'
+                    : item.duoMapCode === 'NORMAL'
+                        ? '일반'
+                        : '칼바람',
+            message: item.memo,
+            playStyle: info.myStyle?.toLowerCase() || '',
+            status: info.myStatus?.toLowerCase() || '',
+            mic: info.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
+            gender: user.gender,
+            mbti: user.mbti,
+            tier: history.tier || 'Unranked',
+            leaguePoint: history.lp || 0,
+            rank: history.rank || '',
+            position: info.myPosition?.toLowerCase() || '',
+            lookingForPosition: duo.opponentPosition?.toLowerCase() || '',
+            createdAt: new Date().toISOString(),
+            type: '듀오',
+            wins: 0,
+            losses: 0,
+            champions: user.compactPlayerHistory?.most3Champ || [],
+            last10Match: user.compactPlayerHistory?.last10Match || []
+        };
+    });
 };
 
 /**

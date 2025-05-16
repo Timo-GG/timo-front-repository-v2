@@ -92,9 +92,9 @@ export default function CreateDuoModal({ open, onClose }) {
                     profileUrl: riot.profileUrl,
                 },
                 compactPlayerHistory: {
-                    rankInfo: compactData.rankInfo,
-                    most3Champ: compactData.most3Champ,
-                    last10Match: compactData.last10Match
+                    rankInfo: compactData?.rankInfo,
+                    most3Champ: compactData?.most3Champ || [],
+                    last10Match: compactData?.last10Match || [],
                 },
                 userInfo: {
                     myPosition: formData.myPosition.toUpperCase(),
