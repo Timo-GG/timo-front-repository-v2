@@ -85,3 +85,11 @@ export const deleteMyRanking = () => {
         }
     );
 };
+
+export const fetchRankingPosition = async (name, tag) => {
+    const response = await axiosInstance.get('/ranking/position', {
+        params: { name, tag },
+    });
+
+    return response.data.data; // 실제 순위 (int)
+};
