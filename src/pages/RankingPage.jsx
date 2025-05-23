@@ -43,6 +43,7 @@ export default function RankingPage() {
     const itemsPerPage = 3;
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
     const [searchTarget, setSearchTarget] = React.useState(null);
+    const rowRefs = React.useRef({}); // 각 행의 ref를 저장할 객체
 
     const {
         data: responseData = {},
@@ -90,7 +91,6 @@ export default function RankingPage() {
     };
 
     React.useEffect(() => {
-        // 단순히 초기화만, 모달은 열지 않음
         if (!searchTarget || !rankingData.list.length) return;
 
         const exists = rankingData.list.some(item => {
@@ -99,10 +99,22 @@ export default function RankingPage() {
         });
 
         if (!exists) {
-            setSearchTarget(null); // 존재하지 않으면 초기화
+            setSearchTarget(null);
+        } else {
+            // 해당 행으로 스크롤
+            const targetElement = rowRefs.current[searchTarget];
+            if (targetElement) {
+                setTimeout(() => {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center', // 화면 중앙에 위치
+                        inline: 'nearest'
+                    });
+                }, 100); // 페이지 변경 후 약간의 지연
+            }
         }
-
     }, [rankingData.list, searchTarget, currentPage]);
+
 
     const handleSearch = async () => {
         if (!searchText.trim() || !searchText.includes('#')) return;
@@ -257,6 +269,11 @@ export default function RankingPage() {
                         return (
                             <Collapse key={full} in={true}>
                                 <Box
+                                    ref={(el) => {
+                                        if (el) {
+                                            rowRefs.current[full] = el; // 각 행의 ref 저장
+                                        }
+                                    }}
                                     onClick={() => handleRowClick(row)}
                                     sx={{
                                         px: 0,

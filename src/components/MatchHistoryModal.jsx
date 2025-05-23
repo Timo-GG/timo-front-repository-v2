@@ -212,23 +212,23 @@ export default function MatchHistoryModal({ open, onClose, matchData }) {
             </DialogContent>
 
             {/* 갱신 버튼 */}
-            <Box sx={{ backgroundColor: '#31313C' }}>
-                <Button
-                    variant="contained"
-                    startIcon={<RefreshIcon sx={{ color: '#fff' }} />}
-                    fullWidth
-                    sx={{
-                        backgroundColor: '#65c7a3',
-                        borderRadius: '0 0 8px 8px',
-                        py: 1.2,
-                        '&:hover': { backgroundColor: '#57b294' },
-                    }}
-                >
-                    <Typography fontSize={16} fontWeight="bold" color="#fff">
-                        전적 갱신
-                    </Typography>
-                </Button>
-            </Box>
+            {/*<Box sx={{ backgroundColor: '#31313C' }}>*/}
+            {/*    <Button*/}
+            {/*        variant="contained"*/}
+            {/*        startIcon={<RefreshIcon sx={{ color: '#fff' }} />}*/}
+            {/*        fullWidth*/}
+            {/*        sx={{*/}
+            {/*            backgroundColor: '#65c7a3',*/}
+            {/*            borderRadius: '0 0 8px 8px',*/}
+            {/*            py: 1.2,*/}
+            {/*            '&:hover': { backgroundColor: '#57b294' },*/}
+            {/*        }}*/}
+            {/*    >*/}
+            {/*        <Typography fontSize={16} fontWeight="bold" color="#fff">*/}
+            {/*            전적 갱신*/}
+            {/*        </Typography>*/}
+            {/*    </Button>*/}
+            {/*</Box>*/}
         </Dialog>
     );
 }
