@@ -124,8 +124,8 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
             };
 
             await updateRankingInfo(dto);
-            const updated = await getMyInfo(); // 서버에서 최신 정보 불러오기
-            setUserData(updated);
+            const updated = await getMyInfo();
+            setUserData(updated.data);
 
             alert('정보가 성공적으로 수정되었습니다.');
             handleClose();
