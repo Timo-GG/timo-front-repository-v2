@@ -26,6 +26,7 @@ import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAllDuoBoards } from '../apis/redisAPI';
 import { getMyInfo } from '../apis/authAPI';
+import { useQueryClient } from '@tanstack/react-query';
 
 function getRelativeTime(dateString) {
     if (!dateString) return '방금 전';
@@ -59,6 +60,9 @@ export default function DuoPage() {
     const userData = useAuthStore(state => state.userData);
     const { setUserData } = useAuthStore();
     const currentUser = useAuthStore(state => state.userData);
+
+    const queryClient = useQueryClient();
+
     useEffect(() => {
         const fetchAndUpdateUser = async () => {
             const updated = await getMyInfo();
@@ -66,6 +70,7 @@ export default function DuoPage() {
         };
         fetchAndUpdateUser();
     }, []);
+
     const { data: duoUsers = [] } = useQuery({
         queryKey: ['duoUsers'],
         queryFn: fetchAllDuoBoards,
@@ -115,7 +120,11 @@ export default function DuoPage() {
                 ))}
             </Container>
 
-            <CreateDuoModal open={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} />
+            <CreateDuoModal
+                open={isCreateModalOpen}
+                onClose={() => setCreateModalOpen(false)}
+                onSuccess={() => queryClient.invalidateQueries(['duoUsers'])}
+            />
 
             {selectedUser && !openSendModal && (
                 <DuoDetailModal
