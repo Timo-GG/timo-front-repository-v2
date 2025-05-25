@@ -232,7 +232,26 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
             <Box sx={{ flex: columns[4], textAlign: 'center' }}>
                 <PositionIcon position={user.lookingForPosition} />
             </Box>
-            <Box sx={{ flex: columns[5], textAlign: 'center' }}>{user.message}</Box>
+            <Box sx={{ flex: columns[5], textAlign: 'center' }}>
+                <Box sx={{
+                    backgroundColor: '#424254',
+                    p: 1,
+                    borderRadius: 1,
+                    color: '#fff',
+                    fontSize: '0.85rem',
+                    lineHeight: 1.4,
+                    textAlign: 'left',
+                    display: '-webkit-inline-box',
+                    WebkitBoxOrient: 'vertical',
+                    WebkitLineClamp: 2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'normal',
+                    maxHeight: '3.6em'
+                }}>
+                    {user.message}
+                </Box>
+            </Box>
             <Box sx={{ flex: columns[6], textAlign: 'center' }}>{getRelativeTime(user.createdAt)}</Box>
             <Box sx={{ flex: columns[7], textAlign: 'center' }}>
                 <Button variant="contained" sx={applyBtnStyle} onClick={(e) => { e.stopPropagation(); onApplyDuo(); }}>
