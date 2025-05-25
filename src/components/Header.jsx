@@ -153,8 +153,15 @@ export default function Header() {
                                 width: '100%'
                             }}>
                                 <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                                    <img src={logo} alt="TIMO.GG logo" style={{height: 42}}/>
-                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                    <img
+                                        src={logo}
+                                        alt="TIMO.GG logo"
+                                        style={{
+                                            height: 42,
+                                            cursor: 'pointer'  // 마우스 커서를 포인터로 변경
+                                        }}
+                                        onClick={() => navigate('/')}  // 클릭 시 메인 페이지로 이동
+                                    />                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                                         <BarChartIcon sx={{fontSize: 20, color: '#aaa'}}/>
                                         <Typography
                                             variant="body2"
