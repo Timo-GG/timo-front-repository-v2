@@ -13,12 +13,17 @@ import SocialButton from './SocialButton';
 import { useNavigate } from 'react-router-dom';
 
 
-export default function LoginModal({ open, onClose, onSocialLogin }) {
+export default function LoginModal({ open, onClose, redirectTo}) {
   const theme = useTheme();
   const navigate = useNavigate(); // 페이지 이동 훅
 
   // 소셜 로그인 버튼 클릭 시 호출되는 핸들러
   const handleSocialClick = (provider) => {
+
+      if (redirectTo) {
+          localStorage.setItem('redirectAfterLogin', redirectTo);
+      }
+
     switch (provider) {
       case 'kakao':
         window.location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${import.meta.env.VITE_KAKAO_REST_API_KEY}&redirect_uri=${import.meta.env.VITE_KAKAO_REDIRECT_URI}&response_type=code`;

@@ -12,9 +12,7 @@ export default function AuthCallback() {
     const { provider } = useParams();
     const navigate = useNavigate();
     const query = useQuery();
-    const { login, setUserData } = useAuthStore(); // ✅ setUserData도 구조 분해
-
-
+    const { login, setUserData } = useAuthStore();
 
     useEffect(() => {
         const handleLogin = async () => {
@@ -38,12 +36,23 @@ export default function AuthCallback() {
                 if (newUser) {
                     navigate('/signup');
                 } else {
-                    navigate('/');
                     console.log('로그인 성공');
-                    // 로그인 성공 후 추가 작업 (예: 사용자 정보 가져오기 등)
+
+                    // 사용자 정보 가져오기
                     const userInfo = await getMyInfo();
                     console.log('내 정보:', userInfo);
-                    setUserData(userInfo.data); 
+                    setUserData(userInfo.data);
+
+                    // 저장된 리다이렉트 경로 확인
+                    const redirectPath = localStorage.getItem('redirectAfterLogin');
+
+                    if (redirectPath) {
+                        console.log('리다이렉트 경로:', redirectPath);
+                        localStorage.removeItem('redirectAfterLogin'); // 사용 후 제거
+                        navigate(redirectPath);
+                    } else {
+                        navigate('/'); // 기본값: 메인페이지
+                    }
                 }
 
             } catch (err) {

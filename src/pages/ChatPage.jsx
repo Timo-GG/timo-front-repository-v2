@@ -41,7 +41,6 @@ export default function ChatPage() {
 
   // 채팅방 클릭 시 선택된 채팅방 ID (shouldJoin일 경우 URL roomId 사용)
   const [selectedChatId, setSelectedChatId] = useState(shouldJoin ? roomIdFromUrl : null);
-
   const [chatInput, setChatInput] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const [anchorEls, setAnchorEls] = useState({});

@@ -10,7 +10,9 @@ export const fetchAllDuoBoards = async () => {
     // 실제 게시글 배열은 response.data.data 에 위치
     const boards = response.data.data;
 
-    return boards.map((item) => {
+    return boards
+        .filter(item => item !== null && item !== undefined) // null 값 제거
+        .map((item) => {
         const user = item.memberInfo;
         const riot = user.riotAccount || {};
         const userInfo = item.userInfo || {};
