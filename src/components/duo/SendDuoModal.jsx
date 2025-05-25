@@ -33,34 +33,23 @@ export default function SendDuoModal({ open, handleClose, boardUUID, userData = 
         }
 
         const dto = {
-            memo: memo,
-            duoMapCode: 'RANK', // 기본값으로 고정
-            requestUserDto: {
-                memberId,
-                riotAccount: {
-                    accountName: riot.accountName,
-                    accountTag: riot.accountTag,
-                },
-                userInfo: {
-                    myPosition: position.toUpperCase(),
-                    myStyle: playStyle === '빡겜' ? 'HARD' : 'FUN',
-                    myStatus:
-                        gameStatus === '첫판'
-                            ? 'FIRST'
-                            : gameStatus === '계속 플레이'
-                                ? 'CONTINUE'
-                                : 'LAST',
-                    myVoice: mic === 'on' ? 'ENABLED' : 'DISABLED',
-                },
-                duoInfo: {
-                    opponentPosition: 'NOTHING',
-                    opponentStyle: 'FUN',
-                },
+            boardUUID,        // 직접 props로 받은 값
+            requestorId: memberId,
+            userInfo: {
+                myPosition: position.toUpperCase(),
+                myStyle: playStyle === '빡겜' ? 'HARD' : 'FUN',
+                myStatus:
+                    gameStatus === '첫판'
+                        ? 'FIRST'
+                        : gameStatus === '계속 플레이'
+                            ? 'CONTINUE'
+                            : 'LAST',
+                myVoice: mic === 'on' ? 'ENABLED' : 'DISABLED',
             },
         };
 
         try {
-            await sendDuoRequest(boardUUID, dto.requestUserDto);
+            await sendDuoRequest(dto);
             alert('듀오 신청이 전송되었습니다.');
             handleClose();
         } catch (err) {
