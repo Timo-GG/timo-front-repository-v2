@@ -16,9 +16,6 @@ import TierBadge from '../TierBadge';
 import ChampionIconList from '../champion/ChampionIconList';
 import PositionIcon from '../PositionIcon';
 
-// 전적 기록 (searchDummy) 활용
-import matches from '/src/data/searchDummy';
-
 export default function DuoDetailModal({
     open,
     handleClose,
@@ -62,26 +59,10 @@ export default function DuoDetailModal({
         rank,
         position,
         champions,
-        last10Match = [],
     } = partyData;
 
-    const matches = last10Match.map(m => ({
-        result: m.win ? '승리' : '패배',
-        resultColor: m.win ? '#3F6E8C' : '#8C4949',
-        kda: `${m.kills} / ${m.deaths} / ${m.assists}`,
-        champion: m.championIconUrl,
-        level: m.championLevel,
-        items: m.items,
-        spells: m.summonerSpells,
-        perks: m.runes,
-        time: m.gameDuration,
-        queueType: m.gameMode,
-        date: m.playedAt,
-
-    }));
-
     return (
-        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
+        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
             {/* 상단 헤더 */}
             <Box sx={{ backgroundColor: '#2B2C3C', px: 3, py: 2 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -129,7 +110,6 @@ export default function DuoDetailModal({
                             backgroundColor: '#AAAAAA',
                             borderRadius: '4px',
                         },
-                        pr: 2,
                     }}
                 >
                     {/* 대학교 / 학과 제목 */}
@@ -261,150 +241,6 @@ export default function DuoDetailModal({
                             <ChampionIconList championNames={champions || []} />
                         </Box>
                     </Box>
-                </Box>
-
-                {/* 오른쪽 패널 */}
-                <Box
-                    sx={{
-                        flex: 1,
-                        maxHeight: '49vh',
-                        overflowY: 'auto',
-                        '&::-webkit-scrollbar': { width: '8px' },
-                        '&::-webkit-scrollbar-track': {
-                            backgroundColor: '#2B2C3C',
-                            borderRadius: '4px',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: '#AAAAAA',
-                            borderRadius: '4px',
-                        },
-                        pr: 1,
-                    }}
-                >
-                    {/* 최근 전적 제목 */}
-                    <Box
-                        sx={{
-                            textAlign: 'center',
-                            minHeight: 30,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            mb: 2,
-                        }}
-                    >
-                        <Typography fontSize="1rem" color="#A5A5A5">
-                            최근 전적
-                        </Typography>
-                    </Box>
-
-                    {matches.map((match, idx) => (
-                        <Box
-                            key={idx}
-                            sx={{
-                                p: 1.5,
-                                mb: 1,
-                                borderRadius: 0.8,
-                                backgroundColor: match.resultColor,
-                                display: 'grid',
-                                gridTemplateColumns: '13% 15% 15% 17% 10% 1fr',
-                                alignItems: 'center',
-                                columnGap: 1,
-                            }}
-                        >
-                            <Box>
-                                <Typography
-                                    fontWeight="bold"
-                                    fontSize={16}
-                                    color={match.result === '승리' ? '#66CCFF' : '#FF8888'}
-                                >
-                                    {match.result}
-                                </Typography>
-                                <Typography fontSize={11}>{match.queueType}</Typography>
-                                <Typography fontSize={11} color="#ccc">
-                                    {match.time}
-                                </Typography>
-                                <Typography fontSize={11} color="#ccc">
-                                    {match.date}
-                                </Typography>
-                            </Box>
-                            <Box position="relative">
-                                <Avatar src={match.champion} sx={{ width: 56, height: 56 }} />
-                                <Box
-                                    position="absolute"
-                                    bottom={-5}
-                                    right={-5}
-                                    bgcolor="#000"
-                                    borderRadius={1}
-                                    px={1}
-                                >
-                                    <Typography fontSize={12} color="#fff">
-                                        {match.level}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                            <Typography fontSize={14} fontWeight="bold">
-                                {match.kda.split(' / ').map((val, i, arr) => (
-                                    <span key={i}>
-                                        <span style={{ color: i === 1 ? 'red' : 'white' }}>
-                                            {val}
-                                        </span>
-                                        {i < arr.length - 1 && (
-                                            <span style={{ color: 'white' }}> / </span>
-                                        )}
-                                    </span>
-                                ))}
-                            </Typography>
-                            <Box display="flex" flexDirection="column" gap={0.5}>
-                                <Box display="flex">
-                                    {match.spells.map((url, i) => (
-                                        <Avatar
-                                            key={i}
-                                            src={url}
-                                            sx={{
-                                                width: 24,
-                                                height: 24,
-                                                mr: 0.5,
-                                                borderRadius: 0.5,
-                                            }}
-                                        />
-                                    ))}
-                                </Box>
-                                <Box display="flex">
-                                    {match.perks.map((url, i) => (
-                                        <Avatar
-                                            key={i}
-                                            src={url}
-                                            sx={{
-                                                width: 24,
-                                                height: 24,
-                                                mr: 0.5,
-                                                borderRadius: 0.5,
-                                            }}
-                                        />
-                                    ))}
-                                </Box>
-                            </Box>
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(4, 24px)',
-                                    gap: '4px',
-                                }}
-                            >
-                                {match.items.map((url, i) => (
-                                    <Avatar
-                                        key={i}
-                                        src={url}
-                                        sx={{
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: 0.5,
-                                        }}
-                                    />
-                                ))}
-                            </Box>
-                        </Box>
-                    ))}
                 </Box>
             </Box>
         </Dialog>
