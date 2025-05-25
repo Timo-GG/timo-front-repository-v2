@@ -5,47 +5,58 @@ import axiosInstance from './axiosInstance';
  * Redis에 저장된 모든 듀오 게시글 조회
  */
 export const fetchAllDuoBoards = async () => {
-    const response = await axiosInstance.get('/matching/duo', {
-    });
+    const response = await axiosInstance.get('/matching/duo');
 
-    return response.data.map((item) => {
-        const user = item.responseUserDto;
+    // 실제 게시글 배열은 response.data.data 에 위치
+    const boards = response.data.data;
+
+    return boards.map((item) => {
+        const user = item.memberInfo;
         const riot = user.riotAccount || {};
-        const info = user.userInfo || {};
-        const history = user.compactPlayerHistory?.rankInfo || {};
-        const duo = user.duoInfo || {};
-        const univ = user.certifiedUnivInfo || {};
+        const userInfo = item.userInfo || {};
+        const duoInfo = item.duoInfo || {};
 
         return {
             id: item.boardUUID,
-            name: riot.accountName,
-            tag: riot.accountTag,
-            school: univ.univName || '미인증',
-            department: univ.department || '',
+
+            name: riot.gameName,
+            tag: riot.tagLine,
             avatarUrl: riot.profileUrl,
+
+            school: user.univName || '미인증',
+            department: user.department || '',
+
             queueType:
-                item.duoMapCode === 'RANK'
+                item.mapCode === 'RANK'
                     ? '랭크'
-                    : item.duoMapCode === 'NORMAL'
+                    : item.mapCode === 'NORMAL'
                         ? '일반'
                         : '칼바람',
+
             message: item.memo,
-            playStyle: info.myStyle?.toLowerCase() || '',
-            status: info.myStatus?.toLowerCase() || '',
-            mic: info.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
+
+            position: userInfo.myPosition?.toLowerCase() || '',
+            playStyle: userInfo.myStyle?.toLowerCase() || '',
+            status: userInfo.myStatus?.toLowerCase() || '',
+            mic: userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
+
             gender: user.gender,
             mbti: user.mbti,
-            tier: history.tier || 'Unranked',
-            leaguePoint: history.lp || 0,
-            rank: history.rank || '',
-            position: info.myPosition?.toLowerCase() || '',
-            lookingForPosition: duo.opponentPosition?.toLowerCase() || '',
+
+            tier: user.rankInfo.tier || 'Unranked',
+            leaguePoint: user.rankInfo.lp || 0,
+            rank: user.rankInfo.rank || '',
+
+            lookingForPosition: duoInfo.opponentPosition?.toLowerCase() || '',
+            lookingForStyle: duoInfo.opponentStyle?.toLowerCase() || '',
+
             createdAt: new Date().toISOString(),
+
             type: '듀오',
+            champions: user.most3Champ || [],
+
             wins: 0,
             losses: 0,
-            champions: user.compactPlayerHistory?.most3Champ || [],
-            last10Match: user.compactPlayerHistory?.last10Match || []
         };
     });
 };

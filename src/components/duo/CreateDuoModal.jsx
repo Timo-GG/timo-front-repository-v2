@@ -14,37 +14,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import PositionFilterBar from './PositionFilterBar';
 import { createDuoBoard } from '../../apis/redisAPI';
 import useAuthStore from '../../storage/useAuthStore';
-import {fetchMyRankingInfo} from "../../apis/rankAPI.js";
-import {useQuery} from "@tanstack/react-query";
-import {fetchCompactPlayerHistory} from "../../apis/compactPlayerHistory.js";
 
-export default function CreateDuoModal({ open, onClose }) {
+export default function CreateDuoModal({ open, onClose, onSuccess  }) {
 
-    const { accessToken, userData } = useAuthStore();
-    const certifiedUnivInfo = userData?.certifiedUnivInfo;
+    const { userData } = useAuthStore();
     const riot = userData?.riotAccount;
     const memberId = userData?.memberId;
-
-    const {
-        data: myProfileData,
-    } = useQuery({
-        queryKey: ['myProfile'],
-        queryFn: fetchMyRankingInfo,
-        enabled: !!accessToken,
-    });
-
-    const {
-        data: compactData
-    } = useQuery({
-        queryKey: ['compactHistory'],
-        queryFn: () =>
-            fetchCompactPlayerHistory({
-                gameName: riot.accountName,
-                tagLine: riot.accountTag,
-                region: "KR"
-            }),
-        enabled: !!riot,
-    });
 
     const [
         formData, setFormData] = useState({
@@ -69,48 +44,28 @@ export default function CreateDuoModal({ open, onClose }) {
         }
 
         const dto = {
-            memo: formData.memo,
-            duoMapCode:
+            memberId: memberId,
+            mapCode:
                 formData.queueType === '랭크'
                     ? 'RANK'
                     : formData.queueType === '일반'
                         ? 'NORMAL'
                         : 'HOWLING_ABYSS',
-            requestUserDto: {
-                memberId,
-                certifiedUnivInfo: {
-                    univCertifiedEmail: certifiedUnivInfo.univCertifiedEmail,
-                    univName: certifiedUnivInfo.univName,
-                    department: certifiedUnivInfo.department,
-                },
-                gender: myProfileData.gender,
-                mbti: myProfileData.mbti,
-                riotAccount: {
-                    puuid: riot.puuid,
-                    accountName: riot.accountName,
-                    accountTag: riot.accountTag,
-                    profileUrl: riot.profileUrl,
-                },
-                compactPlayerHistory: {
-                    rankInfo: compactData?.rankInfo,
-                    most3Champ: compactData?.most3Champ || [],
-                    last10Match: compactData?.last10Match || [],
-                },
-                userInfo: {
-                    myPosition: formData.myPosition.toUpperCase(),
-                    myStyle: formData.playStyle === '빡겜' ? 'HARD' : 'FUN',
-                    myStatus:
-                        formData.gameStatus === '첫판'
-                            ? 'FIRST'
-                            : formData.gameStatus === '계속 플레이'
-                                ? 'CONTINUE'
-                                : 'LAST',
-                    myVoice: formData.mic === 'on' ? 'ENABLED' : 'DISABLED',
-                },
-                duoInfo: {
-                    opponentPosition: formData.duoPosition.toUpperCase(),
-                    opponentStyle: formData.duoPlayStyle === '빡겜' ? 'HARD' : 'FUN',
-                },
+            memo: formData.memo,
+            userInfo: {
+                myPosition: formData.myPosition.toUpperCase(),
+                myStyle: formData.playStyle === '빡겜' ? 'HARD' : 'FUN',
+                myStatus:
+                    formData.gameStatus === '첫판'
+                        ? 'FIRST'
+                        : formData.gameStatus === '계속 플레이'
+                            ? 'CONTINUE'
+                            : 'LAST',
+                myVoice: formData.mic === 'on' ? 'ENABLED' : 'DISABLED',
+            },
+            duoInfo: {
+                opponentPosition: formData.duoPosition.toUpperCase(),
+                opponentStyle: formData.duoPlayStyle === '빡겜' ? 'HARD' : 'FUN',
             },
         };
 
@@ -118,6 +73,7 @@ export default function CreateDuoModal({ open, onClose }) {
             await createDuoBoard(dto);
             alert('듀오 게시글이 등록되었습니다.');
             onClose();
+            onSuccess?.();
         } catch (err) {
             console.error('등록 실패:', err);
             alert('등록에 실패했습니다.');
