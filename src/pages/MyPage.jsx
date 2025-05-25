@@ -11,95 +11,10 @@ import ScrimRequestModal from '../components/scrim/ScrimRequestModal';
 import ReviewModal from '../components/ReviewModal';
 import useAuthStore from '../storage/useAuthStore';
 import EvaluationTableHeader from '../components/EvaluationTableHeader.jsx'; // ✅ 추가
-import EvaluationTableItem from '../components/EvaluationTableItem.jsx'; // ✅ 추가
+import EvaluationTableItem from '../components/EvaluationTableItem.jsx';
+import {fetchReceivedRequests, fetchSentRequests} from "../apis/redisAPI.js";
+import {useQuery} from "@tanstack/react-query"; // ✅ 추가
 
-// 예시 데이터 (sampleUsers) - 받은 요청과 보낸 요청 모두 동일 데이터를 활용 (status에 따라 조건 처리)
-const sampleUsers = [
-    {
-        id: 1,
-        name: '롤10년차고인물',
-        tag: '1234',
-        school: '서울과기대',
-        avatarUrl:
-            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/1111.png',
-        department: '컴퓨터공학과',
-        queueType: '랭크',
-        map: '소환사 협곡',
-        tier: 'platinum',
-        rank: 'I',
-        score: 2,
-        reviewScore: 5,
-        position: 'jungle',
-        message: '현 멀티 2층 최소 다이아 상위듀오 구합니다.',
-        playStyle: '즐겜',
-        status: '첫판',
-        mic: '사용함',
-        gender: '남성',
-        mbti: 'ENTJ',
-        type: '듀오',
-        createdAt: '38초 전',
-        matchStatus: '대기', // 빈 상태: 기본적으로 수락/거절 (받은 요청) 또는 취소하기 (보낸 요청) 처리
-        wins: 7,
-        losses: 3,
-        champions: ['Amumu', 'LeeSin', 'Graves'],
-    },
-    {
-        id: 2,
-        name: '솔랭장인',
-        tag: '1111',
-        school: '성균관대',
-        avatarUrl:
-            'https://ddragon.leagueoflegends.com/cdn/13.6.1/img/profileicon/4567.png',
-        department: '경제학과',
-        queueType: '일반',
-        map: '소환사 협곡',
-        tier: 'diamond',
-        rank: 'I',
-        score: 1,
-        reviewScore: 3,
-        position: 'top',
-        message: '팀운이 부족해 탑 듀오 구합니다.',
-        playStyle: '빡겜',
-        status: '계속 플레이',
-        mic: '사용 안함',
-        gender: '여성',
-        mbti: 'ISFJ',
-        type: '내전',
-        createdAt: '10분 전',
-        matchStatus: '대기', // 평가 상태: 평가하기 버튼 노출
-        wins: 6,
-        losses: 4,
-        champions: ['Gnar', 'Shen', 'Malphite'],
-    },
-    {
-        id: 3,
-        name: '로랄로랄',
-        tag: '2222',
-        school: '서울과기대',
-        avatarUrl:
-            'https://opgg-static.akamaized.net/meta/images/profile_icons/profileIcon2098.jpg?image=q_auto:good,f_webp,w_200&v=1744455113',
-        department: '시디과',
-        queueType: '랭크',
-        map: '소환사 협곡',
-        tier: 'gold',
-        rank: 'II',
-        score: 3,
-        reviewScore: 4,
-        position: 'support',
-        message: '원딜 사장님 구합니다!! 충실한 노예 1호입니다.',
-        playStyle: '즐겜',
-        status: '막판',
-        mic: '사용 안함',
-        gender: '남성',
-        mbti: 'INFP',
-        type: '듀오',
-        createdAt: '1시간 전',
-        matchStatus: '대기', // 완료 상태: 듀오 완료 텍스트 노출
-        wins: 5,
-        losses: 5,
-        champions: ['Neeko', 'Kaisa', 'Ezreal'],
-    },
-];
 const evaluationUsers = [
     {
         id: 1,
@@ -170,12 +85,25 @@ export default function MyPage({ defaultTab, initialRoomId }) {
     const [selectedScrim, setSelectedScrim] = useState(null);
     const [reviewUser, setReviewUser] = useState(null);
     const { userData } = useAuthStore();
+    const memberId = userData?.memberId;
     const [mainTab, setMainTab] = useState(defaultTab || 0);
     const [requestSubTab, setRequestSubTab] = useState(0); // 0: 받은 요청, 1: 보낸 요청
     const [evaluationSubTab, setEvaluationSubTab] = useState(0); // 0: 받은 평가, 1: 보낸 평가
     const [searchParams] = useSearchParams();
     const roomIdFromURL = searchParams.get('roomId') ? parseInt(searchParams.get('roomId'), 10) : null;
     const roomIdFromProps = typeof initialRoomId === 'number' ? initialRoomId : roomIdFromURL;
+
+    const { data: receivedUsers = []} = useQuery({
+        queryKey: ['receivedRequests', memberId],
+        queryFn: () => fetchReceivedRequests(memberId),
+        enabled: !!memberId,
+    });
+
+    const { data: sentUsers = []} = useQuery({
+        queryKey: ['sentRequests', memberId],
+        queryFn: () => fetchSentRequests(memberId),
+        enabled: !!memberId,
+    });
 
     useEffect(() => {
         if (searchParams.get('tab') === 'chat') {
@@ -245,7 +173,7 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                             <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
                                 <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
                                     <TableHeader />
-                                    {sampleUsers.map(user => (
+                                    {receivedUsers.map(user => (
                                         <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
                                             <TableItem received user={user} onEvaluate={handleEvaluate} />
                                         </Box>
@@ -258,7 +186,7 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                             <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
                                 <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
                                     <TableHeader />
-                                    {sampleUsers.map(user => (
+                                    {sentUsers.map(user => (
                                         <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
                                             <TableItem user={user} onEvaluate={handleEvaluate} />
                                         </Box>
