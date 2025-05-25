@@ -11,7 +11,7 @@ export const fetchAllDuoBoards = async () => {
     const boards = response.data.data;
 
     return boards
-        .filter(item => item !== null && item !== undefined)
+        .filter(item => item !== null && item !== undefined) 
         .map((item) => {
         const user = item.memberInfo;
         const riot = user.riotAccount || {};

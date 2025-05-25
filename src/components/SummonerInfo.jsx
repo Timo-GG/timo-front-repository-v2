@@ -3,8 +3,8 @@ import {Box, Avatar, Typography, IconButton, Tooltip} from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 export default function SummonerInfo({
-                                         name,
-                                         tag,
+                                         name = '',
+                                         tag = '',
                                          avatarUrl,
                                          school = '',
                                          copyable = false,

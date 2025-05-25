@@ -1,10 +1,9 @@
 // src/pages/DuoPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
     Box,
     Container,
-    Typography,
     Button,
     IconButton,
     useTheme,
@@ -18,6 +17,7 @@ import CreateDuoModal from '/src/components/duo/CreateDuoModal';
 import DuoDetailModal from '/src/components/duo/DuoDetailModal';
 import SendDuoModal from '/src/components/duo/SendDuoModal';
 import SummonerInfo from '/src/components/SummonerInfo';
+import LoginModal from '../components/login/LoginModal';
 import TierBadge from '/src/components/TierBadge';
 import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
@@ -55,21 +55,30 @@ export default function DuoPage() {
     const [openSendModal, setOpenSendModal] = useState(false);
     const [currentBoardUUID, setCurrentBoardUUID] = useState(null);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-
-    const navigate = useNavigate();
+    const location = useLocation();
     const userData = useAuthStore(state => state.userData);
     const { setUserData } = useAuthStore();
     const currentUser = useAuthStore(state => state.userData);
+    const [loginModalOpen, setLoginModalOpen] = useState(false); // 로그인 모달 상태 추가
 
     const queryClient = useQueryClient();
-
+    const isLoggedIn = () => {
+        return userData && (userData.accessToken || userData.memberId);
+    };
     useEffect(() => {
         const fetchAndUpdateUser = async () => {
-            const updated = await getMyInfo();
-            setUserData(updated.data);
+            if (isLoggedIn()) {
+                try {
+                    const updated = await getMyInfo();
+                    setUserData(updated.data);
+                    console.log('사용자 정보 업데이트 성공:', updated.data);
+                } catch (error) {
+                    console.log('사용자 정보 업데이트 실패:', error);
+                }
+            }
         };
         fetchAndUpdateUser();
-    }, []);
+    }, []); // 빈 의존성 배열로 한 번만 실행
 
     const { data: duoUsers = [] } = useQuery({
         queryKey: ['duoUsers'],
@@ -78,6 +87,11 @@ export default function DuoPage() {
     });
 
     const handleRegisterDuo = () => {
+        console.log('듀오 등록 클릭 - 로그인 상태:', isLoggedIn(), userData);
+        if (!isLoggedIn()) {
+            setLoginModalOpen(true);
+            return;
+        }
         setCreateModalOpen(true);
     };
 
@@ -88,9 +102,22 @@ export default function DuoPage() {
 
     // “듀오 신청” 버튼 클릭 시 모달 열기
     const handleApplyDuo = (user, boardUUID) => {
+        console.log('듀오 신청 클릭 - 로그인 상태:', isLoggedIn(), userData);
+        if (!isLoggedIn()) {
+            setLoginModalOpen(true);
+            return;
+        }
         setSelectedUser(user);
         setCurrentBoardUUID(boardUUID);
         setOpenSendModal(true);
+    };
+
+    const handleLoginModalClose = () => {
+        setLoginModalOpen(false);
+        // 로그인 성공 후 상태를 다시 확인
+        setTimeout(() => {
+            console.log('로그인 모달 닫힌 후 상태:', userData);
+        }, 100);
     };
 
     const filteredUsers = duoUsers
@@ -146,6 +173,13 @@ export default function DuoPage() {
                     }}
                 />
             )}
+
+            {/* 로그인 모달 */}
+            <LoginModal
+                open={loginModalOpen}
+                onClose={handleLoginModalClose}
+                redirectTo={location.pathname} // 현재 페이지 경로 전달
+            />
 
             <ConfirmRequiredDialog
                 open={openConfirmDialog}
@@ -271,6 +305,8 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
                     </>
                 )}
             </Box>
+
+
         </Box>
     );
 }
