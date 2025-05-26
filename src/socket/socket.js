@@ -4,18 +4,33 @@ import { io } from 'socket.io-client';
 let socket = null;
 
 export const connectSocket = (accessToken) => {
-    console.log('🚀 connectSocket()', accessToken);
+    console.log('🚀 connectSocket() 호출됨, accessToken:', accessToken);
+
     if (socket) {
         socket.disconnect();
         socket = null;
     }
+
     const query = accessToken
-        ? { token: accessToken }      // 로그인 유저
-        : { guest: 'true' };          // 게스트
+        ? { token: accessToken }
+        : { guest: 'true' };
 
     socket = io('ws://localhost:8085', {
         transports: ['websocket'],
         query,
+    });
+
+    // ✅ 연결 이벤트 리스너 추가
+    socket.on('connect', () => {
+        console.log('✅ Socket 연결 성공! ID:', socket.id);
+    });
+
+    socket.on('disconnect', (reason) => {
+        console.log('❌ Socket 연결 해제:', reason);
+    });
+
+    socket.on('connect_error', (error) => {
+        console.error('❌ Socket 연결 오류:', error);
     });
 
     return socket;
@@ -23,12 +38,15 @@ export const connectSocket = (accessToken) => {
 
 export const getSocket = () => socket;
 
+// ✅ disconnectSocket 함수 추가
 export const disconnectSocket = () => {
     if (socket) {
+        console.log('🔌 소켓 연결 해제 중...');
         socket.disconnect();
         socket = null;
     }
 };
+
 export const listenOnlineCount = (callback) => {
     if (!socket) return;
 
