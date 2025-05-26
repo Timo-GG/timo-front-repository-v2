@@ -93,13 +93,13 @@ export default function MyPage({ defaultTab, initialRoomId }) {
     const roomIdFromURL = searchParams.get('roomId') ? parseInt(searchParams.get('roomId'), 10) : null;
     const roomIdFromProps = typeof initialRoomId === 'number' ? initialRoomId : roomIdFromURL;
 
-    const { data: receivedUsers = []} = useQuery({
+    const { data: receivedUsers = [], refetch: refetchReceived } = useQuery({
         queryKey: ['receivedRequests', memberId],
         queryFn: () => fetchReceivedRequests(memberId),
         enabled: !!memberId,
     });
 
-    const { data: sentUsers = []} = useQuery({
+    const { data: sentUsers = [], refetch: refetchSent } = useQuery({
         queryKey: ['sentRequests', memberId],
         queryFn: () => fetchSentRequests(memberId),
         enabled: !!memberId,
@@ -175,7 +175,53 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                                     <TableHeader />
                                     {receivedUsers.map(user => (
                                         <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
-                                            <TableItem received user={user} onEvaluate={handleEvaluate} />
+                                            <TableItem
+                                                received={true}
+                                                user={user}
+                                                onEvaluate={handleEvaluate}
+                                                onRequestUpdate={refetchReceived}
+                                            />
+                                            {/* 중복된 TableItem 제거 */}
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
+                        </TabPanel>
+                        <TabPanel value={requestSubTab} index={1}>
+                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
+                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
+                                    <TableHeader />
+                                    {sentUsers.map(user => (
+                                        <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
+                                            <TableItem
+                                                received={false}
+                                                user={user}
+                                                onEvaluate={handleEvaluate}
+                                                onRequestUpdate={refetchSent}
+                                            />
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
+                        </TabPanel>
+                    </>
+                )}
+
+                {mainTab === 1 && (
+                    <>
+                        {renderSubTabs(evaluationSubTab, setEvaluationSubTab, ['받은 평가', '보낸 평가'])}
+                        <TabPanel value={requestSubTab} index={0}>
+                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
+                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
+                                    <TableHeader />
+                                    {receivedUsers.map(user => (
+                                        <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
+                                            <TableItem
+                                                received={true}  // ✅ 받은 요청임을 명시
+                                                user={user}
+                                                onEvaluate={handleEvaluate}
+                                                onRequestUpdate={refetchReceived}  // ✅ 올바른 refetch 함수
+                                            />
                                         </Box>
                                     ))}
                                 </Box>
@@ -188,37 +234,12 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                                     <TableHeader />
                                     {sentUsers.map(user => (
                                         <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
-                                            <TableItem user={user} onEvaluate={handleEvaluate} />
-                                        </Box>
-                                    ))}
-                                </Box>
-                            </Box>
-                        </TabPanel>
-                    </>
-                )}
-
-                {mainTab === 1 && (
-                    <>
-                        {renderSubTabs(evaluationSubTab, setEvaluationSubTab, ['받은 평가', '보낸 평가'])}
-                        <TabPanel value={evaluationSubTab} index={0}>
-                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
-                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
-                                    <EvaluationTableHeader />
-                                    {evaluationUsers.filter(u => u.mode === 'received').map(user => (
-                                        <Box key={user.id} onClick={() => handleEvaluate(user)} sx={{ cursor: 'pointer' }}>
-                                            <EvaluationTableItem user={user} status="받은 평가" />
-                                        </Box>
-                                    ))}
-                                </Box>
-                            </Box>
-                        </TabPanel>
-                        <TabPanel value={evaluationSubTab} index={1}>
-                            <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
-                                <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
-                                    <EvaluationTableHeader />
-                                    {evaluationUsers.filter(u => u.mode === 'sent').map(user => (
-                                        <Box key={user.id} onClick={() => handleEvaluate(user)} sx={{ cursor: 'pointer' }}>
-                                            <EvaluationTableItem user={user} status="보낸 평가" />
+                                            <TableItem
+                                                received={false}  // ✅ 보낸 요청임을 명시 (또는 생략 가능)
+                                                user={user}
+                                                onEvaluate={handleEvaluate}
+                                                onRequestUpdate={refetchSent}  // ✅ 올바른 refetch 함수
+                                            />
                                         </Box>
                                     ))}
                                 </Box>

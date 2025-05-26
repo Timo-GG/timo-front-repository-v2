@@ -1,13 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import SummonerInfo from './SummonerInfo';
 import TierBadge from './TierBadge';
 import WinRateBar from './WinRateBar';
 import ChampionIconList from './champion/ChampionIconList';
 import TruncatedMessageBox from './TruncatedMessageBox';
+import { acceptMatchingRequest, rejectMatchingRequest } from '../apis/redisAPI';
 
-export default function TableItem({ received, user }) {
+export default function TableItem({ received, user, onRequestUpdate }) {
+    const [isLoading, setIsLoading] = useState(false);
     const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];
+
+    const handleAccept = async (event) => {
+        event.stopPropagation();
+        if (isLoading) return;
+
+        setIsLoading(true);
+        try {
+            await acceptMatchingRequest(user.id);
+            console.log('요청이 수락되었습니다.');
+            if (onRequestUpdate) {
+                onRequestUpdate();
+            }
+        } catch (error) {
+            console.error('수락 중 오류가 발생했습니다:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleReject = async (event) => {
+        event.stopPropagation();
+        if (isLoading) return;
+
+        setIsLoading(true);
+        try {
+            await rejectMatchingRequest(user.id);
+            console.log('요청이 거절되었습니다.');
+            if (onRequestUpdate) {
+                onRequestUpdate();
+            }
+        } catch (error) {
+            console.error('거절 중 오류가 발생했습니다:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        if (isLoading) return;
+
+        setIsLoading(true);
+        try {
+            await rejectMatchingRequest(user.id);
+            console.log('요청이 취소되었습니다.');
+            if (onRequestUpdate) {
+                onRequestUpdate();
+            }
+        } catch (error) {
+            console.error('취소 중 오류가 발생했습니다:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <Box
@@ -49,6 +104,8 @@ export default function TableItem({ received, user }) {
                     <>
                         <Button
                             variant="contained"
+                            onClick={handleAccept}
+                            disabled={isLoading}
                             sx={{
                                 backgroundColor: '#424254',
                                 color: '#fff',
@@ -57,12 +114,18 @@ export default function TableItem({ received, user }) {
                                 px: { xs: 1, sm: 2 },
                                 py: { xs: 0.5, sm: 1 },
                                 fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                '&:disabled': {
+                                    backgroundColor: '#333',
+                                    color: '#666',
+                                },
                             }}
                         >
-                            수락
+                            {isLoading ? '처리중...' : '수락'}
                         </Button>
                         <Button
                             variant="contained"
+                            onClick={handleReject}
+                            disabled={isLoading}
                             sx={{
                                 backgroundColor: '#F96568',
                                 color: '#fff',
@@ -71,14 +134,20 @@ export default function TableItem({ received, user }) {
                                 px: { xs: 1, sm: 2 },
                                 py: { xs: 0.5, sm: 1 },
                                 fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                '&:disabled': {
+                                    backgroundColor: '#333',
+                                    color: '#666',
+                                },
                             }}
                         >
-                            거절
+                            {isLoading ? '처리중...' : '거절'}
                         </Button>
                     </>
                 ) : (
                     <Button
                         variant="contained"
+                        onClick={handleCancel}
+                        disabled={isLoading}
                         sx={{
                             backgroundColor: '#39394C',
                             color: '#fff',
@@ -87,13 +156,16 @@ export default function TableItem({ received, user }) {
                             px: { xs: 1, sm: 2 },
                             py: { xs: 0.5, sm: 1 },
                             fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                            '&:disabled': {
+                                backgroundColor: '#333',
+                                color: '#666',
+                            },
                         }}
                     >
-                        취소하기
+                        {isLoading ? '처리중...' : '취소하기'}
                     </Button>
                 )}
             </Box>
         </Box>
     );
 }
-

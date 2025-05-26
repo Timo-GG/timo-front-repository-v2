@@ -11,56 +11,56 @@ export const fetchAllDuoBoards = async () => {
     const boards = response.data.data;
 
     return boards
-        .filter(item => item !== null && item !== undefined) 
+        .filter(item => item !== null && item !== undefined)
         .map((item) => {
-        const user = item.memberInfo;
-        const riot = user.riotAccount || {};
-        const userInfo = item.userInfo || {};
-        const duoInfo = item.duoInfo || {};
+            const user = item.memberInfo;
+            const riot = user.riotAccount || {};
+            const userInfo = item.userInfo || {};
+            const duoInfo = item.duoInfo || {};
 
-        return {
-            id: item.boardUUID,
+            return {
+                id: item.boardUUID,
 
-            name: riot.gameName,
-            tag: riot.tagLine,
-            avatarUrl: riot.profileUrl,
+                name: riot.gameName,
+                tag: riot.tagLine,
+                avatarUrl: riot.profileUrl,
 
-            school: user.univName || '미인증',
-            department: user.department || '',
+                school: user.univName || '미인증',
+                department: user.department || '',
 
-            queueType:
-                item.mapCode === 'RANK'
-                    ? '랭크'
-                    : item.mapCode === 'NORMAL'
-                        ? '일반'
-                        : '칼바람',
+                queueType:
+                    item.mapCode === 'RANK'
+                        ? '랭크'
+                        : item.mapCode === 'NORMAL'
+                            ? '일반'
+                            : '칼바람',
 
-            message: item.memo,
+                message: item.memo,
 
-            position: userInfo.myPosition?.toLowerCase() || '',
-            playStyle: userInfo.myStyle?.toLowerCase() || '',
-            status: userInfo.myStatus?.toLowerCase() || '',
-            mic: userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
+                position: userInfo.myPosition?.toLowerCase() || '',
+                playStyle: userInfo.myStyle?.toLowerCase() || '',
+                status: userInfo.myStatus?.toLowerCase() || '',
+                mic: userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
 
-            gender: user.gender,
-            mbti: user.mbti,
+                gender: user.gender,
+                mbti: user.mbti,
 
-            tier: user.rankInfo.tier || 'Unranked',
-            leaguePoint: user.rankInfo.lp || 0,
-            rank: user.rankInfo.rank || '',
+                tier: user.rankInfo.tier || 'Unranked',
+                leaguePoint: user.rankInfo.lp || 0,
+                rank: user.rankInfo.rank || '',
 
-            lookingForPosition: duoInfo.opponentPosition?.toLowerCase() || '',
-            lookingForStyle: duoInfo.opponentStyle?.toLowerCase() || '',
+                lookingForPosition: duoInfo.opponentPosition?.toLowerCase() || '',
+                lookingForStyle: duoInfo.opponentStyle?.toLowerCase() || '',
 
-            createdAt: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
 
-            type: '듀오',
-            champions: user.most3Champ || [],
+                type: '듀오',
+                champions: user.most3Champ || [],
 
-            wins: 0,
-            losses: 0,
-        };
-    });
+                wins: 0,
+                losses: 0,
+            };
+        });
 };
 
 /**
@@ -88,7 +88,9 @@ export const sendDuoRequest = async (dto) => {
  */
 export const
     fetchReceivedRequests = async (acceptorId) => {
-        const res = await axiosInstance.get(`/matching/mypage/acceptor/${acceptorId}`);
+        const res = await axiosInstance.get(`/matching/mypage/acceptor/${acceptorId}`,
+            {withAuth: true}
+        );
         const data = res.data.data;
 
         return data.map(item => transformRequestorToFrontend(item));
@@ -98,14 +100,15 @@ export const
  * MyPage 조회 - 보낸 요청
  */
 export const fetchSentRequests = async (requestorId) => {
-    const res = await axiosInstance.get(`/matching/mypage/requestor/${requestorId}`);
+    const res = await axiosInstance.get(`/matching/mypage/requestor/${requestorId}`,
+        {withAuth: true});
     const data = res.data.data;
 
     return data.map(item => transformAcceptorToFrontend(item));
 };
 
 const transformRequestorToFrontend = (item) => {
-    const { requestor, mapCode, matchingCategory, myPageUUID } = item;
+    const {requestor, mapCode, matchingCategory, myPageUUID} = item;
     const riot = requestor?.memberInfo?.riotAccount || {};
     const memberInfo = requestor?.memberInfo || {};
     const userInfo = requestor?.userInfo || {};
@@ -151,7 +154,7 @@ const transformRequestorToFrontend = (item) => {
 };
 
 const transformAcceptorToFrontend = (item) => {
-    const { acceptor, mapCode, matchingCategory, myPageUUID } = item;
+    const {acceptor, mapCode, matchingCategory, myPageUUID} = item;
     const riot = acceptor?.memberInfo?.riotAccount || {};
     const memberInfo = acceptor?.memberInfo || {};
     const userInfo = acceptor?.userInfo || {};
@@ -194,4 +197,24 @@ const transformAcceptorToFrontend = (item) => {
         wins: memberInfo.rankInfo?.wins || 0,
         losses: memberInfo.rankInfo?.losses || 0,
     };
+};
+
+/**
+ * 매칭 요청 수락
+ */
+export const acceptMatchingRequest = async (myPageUUID) => {
+    const response = await axiosInstance.get(`/matching/event/accept/${myPageUUID}`, {
+        withAuth: true,
+    });
+    return response.data;
+};
+
+/**
+ * 매칭 요청 거절
+ */
+export const rejectMatchingRequest = async (myPageUUID) => {
+    const response = await axiosInstance.get(`/matching/event/reject/${myPageUUID}`, {
+        withAuth: true,
+    });
+    return response.data;
 };
