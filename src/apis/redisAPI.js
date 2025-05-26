@@ -151,10 +151,10 @@ const transformRequestorToFrontend = (item) => {
 };
 
 const transformAcceptorToFrontend = (item) => {
-    const { requestor, mapCode, matchingCategory, myPageUUID } = item;
-    const riot = requestor?.memberInfo?.riotAccount || {};
-    const memberInfo = requestor?.memberInfo || {};
-    const userInfo = requestor?.userInfo || {};
+    const { acceptor, mapCode, matchingCategory, myPageUUID } = item;
+    const riot = acceptor?.memberInfo?.riotAccount || {};
+    const memberInfo = acceptor?.memberInfo || {};
+    const userInfo = acceptor?.userInfo || {};
 
     return {
         id: myPageUUID,
