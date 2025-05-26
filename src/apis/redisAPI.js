@@ -84,15 +84,15 @@ export const sendDuoRequest = async (dto) => {
 };
 
 /**
-* MyPage 조회 - 받은 요청
-*/
+ * MyPage 조회 - 받은 요청
+ */
 export const
     fetchReceivedRequests = async (acceptorId) => {
-    const res = await axiosInstance.get(`/matching/mypage/acceptor/${acceptorId}`);
-    const data = res.data.data;
+        const res = await axiosInstance.get(`/matching/mypage/acceptor/${acceptorId}`);
+        const data = res.data.data;
 
-    return data.map(item => transformMatchingToFrontend(item));
-};
+        return data.map(item => transformRequestorToFrontend(item));
+    };
 
 /**
  * MyPage 조회 - 보낸 요청
@@ -101,10 +101,56 @@ export const fetchSentRequests = async (requestorId) => {
     const res = await axiosInstance.get(`/matching/mypage/requestor/${requestorId}`);
     const data = res.data.data;
 
-    return data.map(item => transformMatchingToFrontend(item));
+    return data.map(item => transformAcceptorToFrontend(item));
 };
 
-const transformMatchingToFrontend = (item) => {
+const transformRequestorToFrontend = (item) => {
+    const { requestor, mapCode, matchingCategory, myPageUUID } = item;
+    const riot = requestor?.memberInfo?.riotAccount || {};
+    const memberInfo = requestor?.memberInfo || {};
+    const userInfo = requestor?.userInfo || {};
+
+    return {
+        id: myPageUUID,
+        name: riot.gameName,
+        tag: riot.tagLine,
+        avatarUrl: riot.profileUrl,
+        school: memberInfo.univName || '미인증',
+        department: memberInfo.department || '',
+
+        queueType:
+            mapCode === 'RANK'
+                ? '랭크'
+                : mapCode === 'NORMAL'
+                    ? '일반'
+                    : '칼바람',
+
+        message: userInfo.memo || '',
+        position: (userInfo.myPosition || '').toLowerCase(),
+        playStyle: (userInfo.myStyle || '').toLowerCase(),
+        status: (userInfo.myStatus || '').toLowerCase(),
+        mic: userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
+
+        gender: memberInfo.gender,
+        mbti: memberInfo.mbti,
+
+        tier: memberInfo.rankInfo?.tier || 'Unranked',
+        leaguePoint: memberInfo.rankInfo?.lp || 0,
+        rank: memberInfo.rankInfo?.rank || '',
+
+        lookingForPosition: '', // optional: 상대방 포지션 관련 정보 없으면 빈 문자열
+        lookingForStyle: '',
+
+        createdAt: new Date().toISOString(),
+        type: matchingCategory === 'DUO' ? '듀오' : '내전',
+        champions: memberInfo.most3Champ || [],
+
+        wins: memberInfo.rankInfo?.wins || 0,
+        losses: memberInfo.rankInfo?.losses || 0,
+    };
+};
+
+const transformAcceptorToFrontend = (item) => {
     const { requestor, mapCode, matchingCategory, myPageUUID } = item;
     const riot = requestor?.memberInfo?.riotAccount || {};
     const memberInfo = requestor?.memberInfo || {};
