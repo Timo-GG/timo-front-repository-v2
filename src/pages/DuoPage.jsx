@@ -266,7 +266,7 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
             <Box sx={{ flex: columns[4], textAlign: 'center' }}>
                 <PositionIcon position={user.lookingForPosition} />
             </Box>
-            <Box sx={{ flex: columns[5], textAlign: 'center' }}>
+            <Box sx={{ flex: columns[5], textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Box sx={{
                     backgroundColor: '#424254',
                     p: 1,

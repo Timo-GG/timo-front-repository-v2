@@ -24,10 +24,10 @@ export default function TableItem({ received, user }) {
             }}
         >
             <Box sx={{ flex: columns[0], display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                <SummonerInfo name={user.name} tag={user.tag} school={user.school} avatarUrl={user.avatarUrl} />
+                <SummonerInfo name={user.name} tag={user.tag} avatarUrl={user.avatarUrl} />
             </Box>
             <Box sx={{ flex: columns[1], display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
-                <TierBadge tier={user.tier} score={user.lp} rank={user.rank} />
+                <TierBadge tier={user.tier} score={user.leaguePoint} rank={user.rank} />
             </Box>
             <Box sx={{ flex: columns[3], textAlign: 'center', minWidth: 0 }}>
                 <WinRateBar wins={user.wins || 0} losses={user.losses || 0} />
@@ -96,3 +96,4 @@ export default function TableItem({ received, user }) {
         </Box>
     );
 }
+
