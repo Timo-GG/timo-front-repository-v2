@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import SummonerInfo from './SummonerInfo';
+import { useNavigate } from 'react-router-dom'; // 추가
 import TierBadge from './TierBadge';
 import WinRateBar from './WinRateBar';
 import ChampionIconList from './champion/ChampionIconList';
@@ -9,6 +10,7 @@ import { acceptMatchingRequest, rejectMatchingRequest } from '../apis/redisAPI';
 
 export default function TableItem({ received, user, onRequestUpdate }) {
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate(); // 추가
     const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];
 
     const handleAccept = async (event) => {
@@ -17,11 +19,14 @@ export default function TableItem({ received, user, onRequestUpdate }) {
 
         setIsLoading(true);
         try {
-            await acceptMatchingRequest(user.id);
+            const response = await acceptMatchingRequest(user.id);
             console.log('요청이 수락되었습니다.');
+
+            const roomId = response.data.roomId;
             if (onRequestUpdate) {
                 onRequestUpdate();
             }
+            navigate(`/chat?tab=chat&roomId=${roomId}`);
         } catch (error) {
             console.error('수락 중 오류가 발생했습니다:', error);
         } finally {
