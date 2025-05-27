@@ -3,8 +3,14 @@ import { Box, Typography, Button } from '@mui/material';
 import SummonerInfo from './SummonerInfo';
 import PositionIcon from './PositionIcon';
 import Rating from '@mui/material/Rating';
-export default function EvaluationTableItem({ user, status, onEvaluate }) {
+
+export default function EvaluationTableItem({ user, evaluation, status, onEvaluate }) {
     const columns = [1.5, 1, 1, 1.5, 1.5, 1, 1.5, 1];
+
+    const handleEvaluateClick = (event) => {
+        event.stopPropagation();
+        onEvaluate({ ...user, evaluationId: evaluation.id, mode: evaluation.mode });
+    };
 
     return (
         <Box
@@ -36,7 +42,7 @@ export default function EvaluationTableItem({ user, status, onEvaluate }) {
             {/* 맵 */}
             <Box sx={{ flex: columns[2], textAlign: 'center' }}>
                 <Typography color="#aaa" sx={{ fontSize: 12 }}>
-                    {user.map}
+                    {evaluation.map}
                 </Typography>
             </Box>
             {/* 대학교 */}
@@ -54,20 +60,20 @@ export default function EvaluationTableItem({ user, status, onEvaluate }) {
             {/* 분류 (ex. 듀오/내전) */}
             <Box sx={{ flex: columns[5], textAlign: 'center' }}>
                 <Typography color="#aaa" sx={{ fontSize: 12 }}>
-                    {user.type}
+                    {evaluation.type}
                 </Typography>
             </Box>
             {/* 등록 일시 */}
             <Box sx={{ flex: columns[6], textAlign: 'center' }}>
                 <Typography color="#aaa" sx={{ fontSize: 12 }}>
-                    {user.createdAt}
+                    {evaluation.createdAt}
                 </Typography>
             </Box>
             {/* 평가 상태 버튼 */}
             <Box sx={{ flex: columns[7], display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {status === '받은 평가' ? (
                     <Rating
-                        value={user.score || 0}
+                        value={evaluation.score || 0}
                         readOnly
                         size="small"
                         sx={{
@@ -78,9 +84,10 @@ export default function EvaluationTableItem({ user, status, onEvaluate }) {
                         }}
                     />
                 ) : (
-                    user.reviewStatus === 'pending' ? (
+                    evaluation.reviewStatus === 'pending' ? (
                         <Button
                             variant="text"
+                            onClick={handleEvaluateClick}
                             sx={{ color: '#42E6B5', fontWeight: 'bold' }}
                         >
                             평가하기
