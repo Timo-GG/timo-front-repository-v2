@@ -125,34 +125,61 @@ export default function MyPage({ defaultTab, initialRoomId }) {
                             <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
                                 <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
                                     <TableHeader />
-                                    {receivedUsers.map(user => (
-                                        <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
-                                            <TableItem
-                                                received={true}
-                                                user={user}
-                                                onEvaluate={handleEvaluate}
-                                                onRequestUpdate={refetchReceived}
-                                            />
-                                            {/* 중복된 TableItem 제거 */}
+                                    {receivedUsers.length === 0 ? (
+                                        <Box sx={{
+                                            textAlign: 'center',
+                                            py: 4,
+                                            color: '#666',
+                                            backgroundColor: '#2B2C3C',
+                                            borderBottomLeftRadius: 10,
+                                            borderBottomRightRadius: 10
+                                        }}>
+                                            <Typography>받은 요청이 없습니다.</Typography>
                                         </Box>
-                                    ))}
+                                    ) : (
+                                        receivedUsers.map(user => (
+                                            <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
+                                                <TableItem
+                                                    received={true}
+                                                    user={user}
+                                                    onEvaluate={handleEvaluate}
+                                                    onRequestUpdate={refetchReceived}
+                                                />
+                                            </Box>
+                                        ))
+                                    )}
                                 </Box>
                             </Box>
                         </TabPanel>
+
+                        {/* 보낸 요청 탭 */}
                         <TabPanel value={requestSubTab} index={1}>
                             <Box sx={{ overflowX: { xs: 'auto', sm: 'visible' } }}>
                                 <Box sx={{ minWidth: { xs: '900px', sm: 'auto' } }}>
                                     <TableHeader />
-                                    {sentUsers.map(user => (
-                                        <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
-                                            <TableItem
-                                                received={false}
-                                                user={user}
-                                                onEvaluate={handleEvaluate}
-                                                onRequestUpdate={refetchSent}
-                                            />
+                                    {sentUsers.length === 0 ? (
+                                        <Box sx={{
+                                            textAlign: 'center',
+                                            py: 4,
+                                            color: '#666',
+                                            backgroundColor: '#2B2C3C',
+                                            borderBottomLeftRadius: 10,
+                                            borderBottomRightRadius: 10
+                                        }}>
+                                            <Typography>보낸 요청이 없습니다.</Typography>
                                         </Box>
-                                    ))}
+                                    ) : (
+                                        sentUsers.map(user => (
+                                            <Box key={user.id} onClick={() => handleRowClick(user)} sx={{ cursor: 'pointer' }}>
+                                                <TableItem
+                                                    received={false}
+                                                    user={user}
+                                                    onEvaluate={handleEvaluate}
+                                                    onRequestUpdate={refetchSent}
+                                                />
+                                            </Box>
+                                        ))
+                                    )}
                                 </Box>
                             </Box>
                         </TabPanel>
