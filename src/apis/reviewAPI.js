@@ -10,32 +10,38 @@ export const fetchEvaluationData = async (currentUserPuuid) => {
     const data = response.data.data;
     console.log('API Response:', data);
     console.log('Current User PUUID:', currentUserPuuid);
+    console.log('Current User PUUID Type:', typeof currentUserPuuid);
 
     const sentEvaluations = [];
 
-    // data는 배열이고, 각 요소는 { size, filteredBy, dtoList } 구조
     data.forEach(group => {
-        // 각 그룹의 dtoList를 처리
         group.dtoList.forEach(item => {
             const transformedItem = transformEvaluationToFrontend(item);
             const acceptorPuuid = item.acceptor?.memberInfo?.riotAccount?.puuid;
             const requestorPuuid = item.requestor?.memberInfo?.riotAccount?.puuid;
 
-            console.log('Item:', item.mypageId, 'Acceptor PUUID:', acceptorPuuid, 'Requestor PUUID:', requestorPuuid);
+            console.log('=== 매칭 아이템 분석 ===');
+            console.log('Item ID:', item.mypageId);
+            console.log('Acceptor PUUID:', acceptorPuuid);
+            console.log('Requestor PUUID:', requestorPuuid);
+            console.log('Current User PUUID:', currentUserPuuid);
+            console.log('Acceptor 일치:', acceptorPuuid === currentUserPuuid);
+            console.log('Requestor 일치:', requestorPuuid === currentUserPuuid);
 
-            // 내 puuid와 일치하는 경우, 상대방 정보를 보낸 평가에 추가
             let otherUser = null;
 
             if (acceptorPuuid === currentUserPuuid) {
-                // 내가 acceptor면 상대방은 requestor
+                console.log('내가 acceptor - 상대방은 requestor');
                 otherUser = transformUserInfo(item.requestor);
             } else if (requestorPuuid === currentUserPuuid) {
-                // 내가 requestor면 상대방은 acceptor
+                console.log('내가 requestor - 상대방은 acceptor');
                 otherUser = transformUserInfo(item.acceptor);
+            } else {
+                console.log('내가 관련되지 않은 매칭');
             }
 
-            // 내가 관련된 매칭이면 보낸 평가에 상대방 정보 추가
             if (otherUser) {
+                console.log('보낸 평가에 추가:', otherUser);
                 sentEvaluations.push({
                     ...transformedItem,
                     mode: 'sent',
@@ -45,10 +51,10 @@ export const fetchEvaluationData = async (currentUserPuuid) => {
         });
     });
 
-    console.log('Sent Evaluations:', sentEvaluations);
+    console.log('최종 Sent Evaluations:', sentEvaluations);
 
     return {
-        received: [], // 받은 평가는 빈 배열
+        received: [],
         sent: sentEvaluations
     };
 };
