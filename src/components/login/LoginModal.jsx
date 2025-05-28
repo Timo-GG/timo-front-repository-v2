@@ -124,20 +124,6 @@ export default function LoginModal({ open, onClose, redirectTo}) {
             onClick={() => handleSocialClick('discord')}
           />
         </Box>
-        <Typography variant="body2" color="text.secondary" mt={4}>
-          아직 TIMO.GG Member가 아니신가요?{' '}
-          <Typography
-            component="span"
-            color="primary"
-            sx={{ cursor: 'pointer', fontSize: '0.9rem' }}
-            onClick={() => {
-              navigate('/signup');
-              onClose(); // 모달도 닫기
-            }}
-          >
-            회원가입
-          </Typography>
-        </Typography>
       </Box>
     </Modal>
   );
