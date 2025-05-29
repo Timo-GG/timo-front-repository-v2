@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import SummonerInfo from './SummonerInfo';
 import { useNavigate } from 'react-router-dom'; // 추가
@@ -7,12 +7,12 @@ import WinRateBar from './WinRateBar';
 import ChampionIconList from './champion/ChampionIconList';
 import TruncatedMessageBox from './TruncatedMessageBox';
 import { acceptMatchingRequest, rejectMatchingRequest } from '../apis/redisAPI';
-
+import {formatRelativeTime} from '../utils/timeUtils';
 export default function TableItem({ received, user, onRequestUpdate }) {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate(); // 추가
     const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];
-
+    console.log("user", user);
     const handleAccept = async (event) => {
         event.stopPropagation();
         if (isLoading) return;
@@ -69,6 +69,16 @@ export default function TableItem({ received, user, onRequestUpdate }) {
         }
     };
 
+    const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(user.updatedAt));
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setRelativeTime(formatRelativeTime(user.updatedAt));
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [user.updatedAt]);
+
     return (
         <Box
             sx={{
@@ -102,7 +112,7 @@ export default function TableItem({ received, user, onRequestUpdate }) {
                 <Typography color="#aaa" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{user.type}</Typography>
             </Box>
             <Box sx={{ flex: columns[6], textAlign: 'center', minWidth: 0 }}>
-                <Typography color="#aaa" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{user.createdAt}</Typography>
+                <Typography color="#aaa" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{relativeTime}</Typography>
             </Box>
             <Box sx={{ flex: columns[7], display: 'flex', gap: 0.5, justifyContent: 'center', minWidth: 0 }}>
                 {received ? (

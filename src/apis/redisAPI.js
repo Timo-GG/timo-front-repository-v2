@@ -144,7 +144,7 @@ const transformRequestorToFrontend = (item) => {
         lookingForPosition: '', // optional: 상대방 포지션 관련 정보 없으면 빈 문자열
         lookingForStyle: '',
 
-        createdAt: new Date().toISOString(),
+        updatedAt: item.updatedAt,
         type: matchingCategory === 'DUO' ? '듀오' : '내전',
         champions: memberInfo.most3Champ || [],
 
@@ -190,7 +190,7 @@ const transformAcceptorToFrontend = (item) => {
         lookingForPosition: '', // optional: 상대방 포지션 관련 정보 없으면 빈 문자열
         lookingForStyle: '',
 
-        createdAt: new Date().toISOString(),
+        updatedAt: item.updatedAt,
         type: matchingCategory === 'DUO' ? '듀오' : '내전',
         champions: memberInfo.most3Champ || [],
 

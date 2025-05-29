@@ -237,14 +237,6 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
     const isMine = currentUser &&
         user.name === currentUser.riotAccount?.accountName &&
         user.tag === currentUser.riotAccount?.accountTag;
-    console.log("비교 결과:", {
-        userName: user.name,
-        currentUserName: currentUser?.riotAccount?.accountName,
-        userTag: user.tag,
-        currentUserTag: currentUser?.riotAccount?.accountTag,
-        isMine: isMine,
-        currentUserExists: !!currentUser
-    });
 
     const [anchorEl, setAnchorEl] = useState(null);
 
@@ -258,7 +250,7 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
         return () => clearInterval(interval);
     }, [user.updatedAt]);
     return (
-        <Box onClick={() => !isMine && onUserClick(user)} sx={itemRowStyle}>
+        <Box onClick={() => onUserClick(user)} sx={itemRowStyle}>
             <Box sx={{ flex: columns[0] }}>
                 <SummonerInfo name={user.name} avatarUrl={user.avatarUrl} tag={user.tag} school={user.school} />
             </Box>
@@ -292,7 +284,7 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
                     {user.message}
                 </Box>
             </Box>
-            <Box sx={{ flex: columns[6], textAlign: 'center' }}>{relativeTime}</Box>
+            <Box sx={{ flex: columns[6], textAlign: 'center', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{relativeTime}</Box>
             <Box sx={{ flex: columns[7], textAlign: 'center' }}>
                 <Button variant="contained" sx={applyBtnStyle} onClick={(e) => { e.stopPropagation(); onApplyDuo(); }}>
                     신청
