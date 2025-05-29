@@ -52,7 +52,7 @@ export const fetchAllDuoBoards = async () => {
                 lookingForPosition: duoInfo.opponentPosition?.toLowerCase() || '',
                 lookingForStyle: duoInfo.opponentStyle?.toLowerCase() || '',
 
-                createdAt: new Date().toISOString(),
+                updatedAt: item.updatedAt,
 
                 type: '듀오',
                 champions: user.most3Champ || [],

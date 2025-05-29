@@ -54,7 +54,7 @@ export default function CreateDuoModal({ open, onClose, onSuccess  }) {
             memo: formData.memo,
             userInfo: {
                 myPosition: formData.myPosition.toUpperCase(),
-                myStyle: formData.playStyle === '빡겜' ? 'HARD' : 'FUN',
+                myStyle: formData.playStyle === '빡겜' ? 'HARDCORE' : 'FUN',
                 myStatus:
                     formData.gameStatus === '첫판'
                         ? 'FIRST'
@@ -65,7 +65,7 @@ export default function CreateDuoModal({ open, onClose, onSuccess  }) {
             },
             duoInfo: {
                 opponentPosition: formData.duoPosition.toUpperCase(),
-                opponentStyle: formData.duoPlayStyle === '빡겜' ? 'HARD' : 'FUN',
+                opponentStyle: formData.duoPlayStyle === '빡겜' ? 'HARDCORE' : 'FUN',
             },
         };
 

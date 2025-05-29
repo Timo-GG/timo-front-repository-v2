@@ -27,22 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchAllDuoBoards } from '../apis/redisAPI';
 import { getMyInfo } from '../apis/authAPI';
 import { useQueryClient } from '@tanstack/react-query';
-
-function getRelativeTime(dateString) {
-    if (!dateString) return '방금 전';
-    const target = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - target;
-    if (isNaN(diffMs)) return '방금 전';
-    const diffSec = Math.floor(diffMs / 1000);
-    if (diffSec < 60) return `${diffSec}초 전`;
-    const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin}분 전`;
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `${diffH}시간 전`;
-    const diffD = Math.floor(diffH / 24);
-    return `${diffD}일 전`;
-}
+import { formatRelativeTime } from '../utils/timeUtils'; // 추가
 
 export default function DuoPage() {
     const theme = useTheme();
@@ -85,6 +70,7 @@ export default function DuoPage() {
         queryFn: fetchAllDuoBoards,
         refetchInterval: 5000,
     });
+
 
     const handleRegisterDuo = () => {
         console.log('듀오 등록 클릭 - 로그인 상태:', isLoggedIn(), userData);
@@ -248,9 +234,29 @@ function DuoHeader() {
 
 function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
-    const isMine = user.name === currentUser.name && user.tag === currentUser.tag;
+    const isMine = currentUser &&
+        user.name === currentUser.riotAccount?.accountName &&
+        user.tag === currentUser.riotAccount?.accountTag;
+    console.log("비교 결과:", {
+        userName: user.name,
+        currentUserName: currentUser?.riotAccount?.accountName,
+        userTag: user.tag,
+        currentUserTag: currentUser?.riotAccount?.accountTag,
+        isMine: isMine,
+        currentUserExists: !!currentUser
+    });
+
     const [anchorEl, setAnchorEl] = useState(null);
 
+    const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(user.updatedAt));
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setRelativeTime(formatRelativeTime(user.updatedAt));
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [user.updatedAt]);
     return (
         <Box onClick={() => !isMine && onUserClick(user)} sx={itemRowStyle}>
             <Box sx={{ flex: columns[0] }}>
@@ -286,7 +292,7 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
                     {user.message}
                 </Box>
             </Box>
-            <Box sx={{ flex: columns[6], textAlign: 'center' }}>{getRelativeTime(user.createdAt)}</Box>
+            <Box sx={{ flex: columns[6], textAlign: 'center' }}>{relativeTime}</Box>
             <Box sx={{ flex: columns[7], textAlign: 'center' }}>
                 <Button variant="contained" sx={applyBtnStyle} onClick={(e) => { e.stopPropagation(); onApplyDuo(); }}>
                     신청
