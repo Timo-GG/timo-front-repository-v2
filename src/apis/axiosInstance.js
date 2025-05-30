@@ -11,8 +11,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use((config) => {
     const token = useAuthStore.getState().accessToken;
-    console.log('[axiosInterceptor]', { withAuth: config.withAuth, token });
-
+    console.log("token", token);
     const customConfig = config; // 타입 안정성 고려 시 config as any 또는 config as CustomConfig
 
     if (customConfig.withAuth && token) {

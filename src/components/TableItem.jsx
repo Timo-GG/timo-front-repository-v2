@@ -12,7 +12,7 @@ export default function TableItem({ received, user, onRequestUpdate }) {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate(); // 추가
     const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];
-    console.log("user", user);
+    console.log("user : ", user);
     const handleAccept = async (event) => {
         event.stopPropagation();
         if (isLoading) return;
@@ -106,7 +106,7 @@ export default function TableItem({ received, user, onRequestUpdate }) {
                 <ChampionIconList championNames={user.champions} />
             </Box>
             <Box sx={{ flex: columns[4], display: 'flex', justifyContent: 'center', minWidth: 0 }}>
-                <TruncatedMessageBox message={user.message} />
+                <TruncatedMessageBox message={user.memo} />
             </Box>
             <Box sx={{ flex: columns[5], textAlign: 'center', minWidth: 0 }}>
                 <Typography color="#aaa" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{user.type}</Typography>

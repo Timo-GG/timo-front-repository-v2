@@ -46,6 +46,7 @@ export default function SendDuoModal({ open, handleClose, boardUUID, userData = 
                             : 'LAST',
                 myVoice: mic === 'on' ? 'ENABLED' : 'DISABLED',
             },
+            requestorMemo: memo,
         };
 
         try {

@@ -10,18 +10,19 @@ import {
     Rating,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { submitEvaluation } from '../apis/reviewAPI'; // 상단에 추가
 
 const ATTITUDE_OPTIONS = ['성실하게 임해요', '노력해요', '집중하지 않아요'];
 const MANNER_OPTIONS = ['매너있는 소환사', '평범한 소환사', '공격적인 소환사'];
 const SKILL_OPTIONS = ['한 수 배우고 갑니다', '무난한 플레이', '고의 트롤을 해요'];
 
-export default function ReviewModal({ open, handleClose, user }) {
+export default function ReviewModal({ open, handleClose, user, onSubmitSuccess }) {
     const [attitude, setAttitude] = useState('');
     const [manner, setManner] = useState('');
     const [skill, setSkill] = useState('');
     const [score, setScore] = useState(0);
     const [comment, setComment] = useState('');
-
+    console.log("user : ", user);
     useEffect(() => {
         if (user) {
             setAttitude(user.attitude || '');
@@ -35,18 +36,51 @@ export default function ReviewModal({ open, handleClose, user }) {
     const isReadOnly = user?.reviewStatus === 'completed';
 
     if (!user) return null;
+    const mapAttitude = (label) => {
+        switch (label) {
+            case '성실하게 임해요': return 'POSITIVE';
+            case '노력해요': return 'NORMAL';
+            case '집중하지 않아요': return 'NEGATIVE';
+            default: return null;
+        }
+    };
 
-    const handleSubmit = () => {
-        console.log('[리뷰 등록]', {
-            name: user.name,
-            tag: user.tag,
-            attitude,
-            manner,
-            skill,
-            score,
-            comment,
-        });
-        handleClose();
+    const mapManner = (label) => {
+        switch (label) {
+            case '매너있는 소환사': return 'POLITE';
+            case '평범한 소환사': return 'NORMAL';
+            case '공격적인 소환사': return 'RUDE';
+            default: return null;
+        }
+    };
+
+    const mapSkill = (label) => {
+        switch (label) {
+            case '한 수 배우고 갑니다': return 'HIGH';
+            case '무난한 플레이': return 'NORMAL';
+            case '고의 트롤을 해요': return 'LOW';
+            default: return null;
+        }
+    };
+    const handleSubmit = async () => {
+        try {
+            const response = await submitEvaluation({
+                revieweeId: user.memberId,
+                mypageId: user.mypageId,
+                attitudeScore: mapAttitude(attitude),
+                conversationScore: mapManner(manner),
+                talentScore: mapSkill(skill),
+                evaluationScore: score,
+                memo: comment,
+            });
+
+            console.log('[리뷰 등록 성공]', response);
+            onSubmitSuccess?.(); // ✅ 추가
+            handleClose();
+        } catch (error) {
+            console.error('[리뷰 등록 실패]', error);
+            alert('리뷰 등록 중 오류가 발생했습니다.');
+        }
     };
 
     const renderThreeChoices = (options, selectedValue, setValue) => (

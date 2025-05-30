@@ -112,7 +112,6 @@ const transformRequestorToFrontend = (item) => {
     const riot = requestor?.memberInfo?.riotAccount || {};
     const memberInfo = requestor?.memberInfo || {};
     const userInfo = requestor?.userInfo || {};
-
     return {
         id: myPageUUID,
         name: riot.gameName,
@@ -120,7 +119,7 @@ const transformRequestorToFrontend = (item) => {
         avatarUrl: riot.profileUrl,
         school: memberInfo.univName || '미인증',
         department: memberInfo.department || '',
-
+        memo : item.requestorMemo,
         queueType:
             mapCode === 'RANK'
                 ? '랭크'
@@ -166,7 +165,7 @@ const transformAcceptorToFrontend = (item) => {
         avatarUrl: riot.profileUrl,
         school: memberInfo.univName || '미인증',
         department: memberInfo.department || '',
-
+        memo : item.acceptorMemo,
         queueType:
             mapCode === 'RANK'
                 ? '랭크'

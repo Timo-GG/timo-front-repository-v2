@@ -45,7 +45,7 @@ export default function DuoDetailModal({
         queueType,
         school = 'XX대학교',
         department = 'XX학과',
-        message,
+        memo,
         playStyle,
         status,
         mic,
@@ -143,7 +143,7 @@ export default function DuoDetailModal({
                             whiteSpace: 'pre-line',
                         }}
                     >
-                        {message || ''}
+                        {memo || ''}
                     </Box>
 
                     {/* 추가 정보 영역 */}

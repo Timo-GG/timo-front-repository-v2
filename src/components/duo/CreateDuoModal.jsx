@@ -51,7 +51,6 @@ export default function CreateDuoModal({ open, onClose, onSuccess  }) {
                     : formData.queueType === '일반'
                         ? 'NORMAL'
                         : 'HOWLING_ABYSS',
-            memo: formData.memo,
             userInfo: {
                 myPosition: formData.myPosition.toUpperCase(),
                 myStyle: formData.playStyle === '빡겜' ? 'HARDCORE' : 'FUN',
@@ -67,6 +66,7 @@ export default function CreateDuoModal({ open, onClose, onSuccess  }) {
                 opponentPosition: formData.duoPosition.toUpperCase(),
                 opponentStyle: formData.duoPlayStyle === '빡겜' ? 'HARDCORE' : 'FUN',
             },
+            memo: formData.memo,
         };
 
         try {
