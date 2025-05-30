@@ -45,7 +45,7 @@ export default function DuoDetailModal({
         queueType,
         school = 'XX대학교',
         department = 'XX학과',
-        memo,
+        message,
         playStyle,
         status,
         mic,
@@ -143,7 +143,7 @@ export default function DuoDetailModal({
                             whiteSpace: 'pre-line',
                         }}
                     >
-                        {memo || ''}
+                        {message || ''}
                     </Box>
 
                     {/* 추가 정보 영역 */}
@@ -183,7 +183,7 @@ export default function DuoDetailModal({
                             </Box>
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>MBTI</Typography>
-                                <Typography>{mbti || '-'}</Typography>
+                                <Typography>{mbti === "UNKNOWN" ? "비밀" : mbti || '-'}</Typography>
                             </Box>
                         </Box>
                     </Box>

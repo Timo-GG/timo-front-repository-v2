@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {useLocation} from 'react-router-dom';
 import {
     Box,
     Container,
@@ -11,6 +11,7 @@ import {
     FormControl,
     Menu,
     CircularProgress,
+    Typography
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -24,12 +25,12 @@ import PositionIcon from '/src/components/PositionIcon';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
-import { useQuery } from '@tanstack/react-query';
-import { fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards } from '../apis/redisAPI';
-import { getMyInfo } from '../apis/authAPI';
-import { useQueryClient } from '@tanstack/react-query';
-import { formatRelativeTime } from '../utils/timeUtils';
-import { toast } from 'react-toastify';
+import {useQuery} from '@tanstack/react-query';
+import {fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards, deleteMyDuoBoard} from '../apis/redisAPI';
+import {getMyInfo} from '../apis/authAPI';
+import {useQueryClient} from '@tanstack/react-query';
+import {formatRelativeTime} from '../utils/timeUtils';
+import {toast} from 'react-toastify';
 
 export default function DuoPage() {
     const theme = useTheme();
@@ -55,9 +56,10 @@ export default function DuoPage() {
 
     const location = useLocation();
     const userData = useAuthStore(state => state.userData);
-    const { setUserData } = useAuthStore();
+    const {setUserData} = useAuthStore();
     const currentUser = useAuthStore(state => state.userData);
     const [loginModalOpen, setLoginModalOpen] = useState(false);
+    const [isCreatingBoard, setIsCreatingBoard] = useState(false);
 
 
     const queryClient = useQueryClient();
@@ -113,20 +115,24 @@ export default function DuoPage() {
         checkExistingBoard();
     }, [userData]);
 
-    const { data: initialData, isLoading } = useQuery({
+    const {data: initialData, isLoading} = useQuery({
         queryKey: ['duoUsers', 0],
         queryFn: () => fetchAllDuoBoards(0, pageSize),
         refetchInterval: 5000,
     });
+
     useEffect(() => {
-        if (initialData && initialData.content) {
-            console.log('초기 데이터 로드:', initialData);
+        if (initialData && initialData.content && !isCreatingBoard) {
+            console.log('폴링 데이터로 상태 업데이트:', initialData);
+
+            // 서버 데이터로 완전 교체 (삭제된 항목 자동 제거)
             setAllDuoUsers(initialData.content);
             setDisplayedUsers(initialData.content);
+
             setHasMore(initialData.content.length === pageSize && !initialData.last);
-            setCurrentPage(0);
         }
-    }, [initialData, pageSize]);
+    }, [initialData, pageSize, isCreatingBoard]);
+
     const handleLoadMore = async () => {
         if (isLoadingMore || !hasMore) return;
 
@@ -172,7 +178,7 @@ export default function DuoPage() {
                 setDisplayedUsers(prev => {
                     const updated = prev.map(user => {
                         if (user.memberId === currentUserId) {
-                            return { ...user, updatedAt: currentTime };
+                            return {...user, updatedAt: currentTime};
                         }
                         return user;
                     });
@@ -202,8 +208,6 @@ export default function DuoPage() {
             setIsRefreshing(false);
         }
     };
-
-
 
 
     const handleRegisterDuo = () => {
@@ -245,32 +249,64 @@ export default function DuoPage() {
     };
 
     // 모달 성공 후 기존 게시물 상태 업데이트
-    const handleModalSuccess = async () => {
+    const handleModalSuccess = async (newBoardData) => {
         if (isLoggedIn()) {
             try {
-                const exists = await isExistMyBoard();
-                setHasExistingBoard(exists);
+                setHasExistingBoard(true);
 
-                // 상태 리셋
-                setCurrentPage(0);
-                setAllDuoUsers([]);
-                setDisplayedUsers([]);
-                setHasMore(true);
+                if (newBoardData) {
+                    // 이미 변환된 데이터이므로 바로 사용
+                    setDisplayedUsers(prev => {
+                        // 중복 확인 후 추가
+                        const exists = prev.some(user => user.id === newBoardData.id);
+                        if (!exists) {
+                            return [newBoardData, ...prev];
+                        }
+                        return prev;
+                    });
+                    setAllDuoUsers(prev => {
+                        const exists = prev.some(user => user.id === newBoardData.id);
+                        if (!exists) {
+                            return [newBoardData, ...prev];
+                        }
+                        return prev;
+                    });
+                }
 
-                // 쿼리 무효화
-                queryClient.invalidateQueries(['duoUsers']);
+                // 폴링 일시 중단 후 재개
+                queryClient.cancelQueries(['duoUsers']);
+                setTimeout(() => {
+                    queryClient.invalidateQueries(['duoUsers']);
+                }, 1000);
+
             } catch (error) {
                 console.log('게시물 상태 업데이트 실패:', error);
             }
         }
     };
 
+    const handleDeleteSuccess = async (deletedUserId) => {
+        try {
+            setSelectedUser(null);
+
+            // 로컬에서 즉시 제거
+            setDisplayedUsers(prev => prev.filter(user => user.id !== deletedUserId));
+            setAllDuoUsers(prev => prev.filter(user => user.id !== deletedUserId));
+            setHasExistingBoard(false);
+
+            // 즉시 서버 데이터 동기화 (다른 사용자들도 빠르게 업데이트)
+            queryClient.invalidateQueries(['duoUsers']);
+
+        } catch (error) {
+            console.log('삭제 후 상태 업데이트 실패:', error);
+        }
+    };
     const filteredUsers = displayedUsers.filter(u =>
         positionFilter === 'nothing' || u.position?.toLowerCase() === positionFilter
     );
 
     return (
-        <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
+        <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
             <Container maxWidth="lg">
                 <FilterBar
                     positionFilter={positionFilter}
@@ -284,11 +320,36 @@ export default function DuoPage() {
                     isLoggedIn={isLoggedIn()}
                     isRefreshing={isRefreshing}
                 />
-                <DuoHeader />
+                <DuoHeader/>
+                {isCreatingBoard && (
+                    <Box sx={{
+                        ...itemRowStyle,
+                        backgroundColor: '#3A3B4F',
+                        border: '2px solid #42E6B5',
+                        justifyContent: 'center',
+                        py: 2,
+                    }}>
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            color: '#42E6B5'
+                        }}>
+                            <CircularProgress
+                                size={24}
+                                sx={{ color: '#42E6B5' }}
+                            />
+                            <Typography sx={{
+                                fontSize: '0.9rem',
+                                fontWeight: 500
+                            }}>
+                            </Typography>
+                        </Box>
+                    </Box>
+                )}
                 {isLoading ? (
-                    <Box sx={{ textAlign: 'center', py: 4, color: '#fff' }}>
-                        <CircularProgress sx={{ color: '#A35AFF' }} />
-                        <Box sx={{ mt: 2 }}>로딩 중...</Box>
+                    <Box sx={{textAlign: 'center', py: 4, color: '#fff'}}>
+                        <CircularProgress sx={{color: '#A35AFF'}}/>
                     </Box>
                 ) : (
                     <>
@@ -299,6 +360,7 @@ export default function DuoPage() {
                                 currentUser={currentUser}
                                 onApplyDuo={() => handleApplyDuo(user, user.id)}
                                 onUserClick={handleUserClick}
+                                onDelete={handleDeleteSuccess}
                             />
                         ))}
 
@@ -334,11 +396,11 @@ export default function DuoPage() {
                                 >
                                     {isLoadingMore ? (
                                         <>
-                                            <CircularProgress size={20} sx={{ color: '#A35AFF' }} />
+                                            <CircularProgress size={20} sx={{color: '#A35AFF'}}/>
                                         </>
                                     ) : (
                                         <>
-                                            <KeyboardArrowDownIcon sx={{ fontSize: 18 }} />
+                                            <KeyboardArrowDownIcon sx={{fontSize: 18}}/>
                                         </>
                                     )}
                                 </Button>
@@ -376,6 +438,7 @@ export default function DuoPage() {
                 open={isCreateModalOpen}
                 onClose={() => setCreateModalOpen(false)}
                 onSuccess={handleModalSuccess}
+                onLoadingStart={setIsCreatingBoard} // 로딩 상태 전달
             />
 
             {selectedUser && !openSendModal && (
@@ -433,31 +496,31 @@ function FilterBar({
         return hasExistingBoard ? '게시물 끌어올리기' : '듀오등록하기';
     };
     const tierOptions = [
-        { value: 'all', label: '전체' },
-        { value: 'iron', label: '아이언' },
-        { value: 'bronze', label: '브론즈' },
-        { value: 'silver', label: '실버' },
-        { value: 'gold', label: '골드' },
-        { value: 'platinum', label: '플래티넘' },
-        { value: 'emerald', label: '에메랄드' },
-        { value: 'diamond', label: '다이아몬드' },
-        { value: 'master', label: '마스터' },
-        { value: 'grandmaster', label: '그랜드마스터' },
-        { value: 'challenger', label: '챌린저' }
+        {value: 'all', label: '전체'},
+        {value: 'iron', label: '아이언'},
+        {value: 'bronze', label: '브론즈'},
+        {value: 'silver', label: '실버'},
+        {value: 'gold', label: '골드'},
+        {value: 'platinum', label: '플래티넘'},
+        {value: 'emerald', label: '에메랄드'},
+        {value: 'diamond', label: '다이아몬드'},
+        {value: 'master', label: '마스터'},
+        {value: 'grandmaster', label: '그랜드마스터'},
+        {value: 'challenger', label: '챌린저'}
     ];
 
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick} />
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
+        <Box sx={{display: 'flex', alignItems: 'center', gap: 2, mb: 2}}>
+            <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick}/>
+            <Box sx={{display: 'flex', gap: 2, alignItems: 'center'}}>
+                <FormControl variant="outlined" size="small" sx={{height: 48}}>
                     <Select value={rankType} onChange={(e) => setRankType(e.target.value)} sx={selectStyle}>
                         <MenuItem value="solo">랭크</MenuItem>
                         <MenuItem value="normal">일반</MenuItem>
                         <MenuItem value="aram">칼바람</MenuItem>
                     </Select>
                 </FormControl>
-                <FormControl variant="outlined" size="small" sx={{ height: 48 }}>
+                <FormControl variant="outlined" size="small" sx={{height: 48}}>
                     <Select value={schoolFilter} onChange={(e) => setSchoolFilter(e.target.value)} sx={selectStyle}>
                         {tierOptions.map((tier) => (
                             <MenuItem key={tier.value} value={tier.value}>
@@ -499,7 +562,7 @@ function DuoHeader() {
     return (
         <Box sx={headerRowStyle}>
             {headers.map((text, i) => (
-                <Box key={i} sx={{ flex: columns[i], textAlign: 'center' }}>
+                <Box key={i} sx={{flex: columns[i], textAlign: 'center'}}>
                     {text}
                 </Box>
             ))}
@@ -507,13 +570,36 @@ function DuoHeader() {
     );
 }
 
-function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
+function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete}) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
     const isMine = currentUser &&
         user.name === currentUser.riotAccount?.accountName &&
         user.tag === currentUser.riotAccount?.accountTag;
 
     const [anchorEl, setAnchorEl] = useState(null);
+
+
+    const handleDelete = async () => {
+        if (window.confirm('정말로 게시글을 삭제하시겠습니까?')) {
+            try {
+                await deleteMyDuoBoard();
+                toast.success('게시글이 삭제되었습니다.');
+
+                setAnchorEl(null);
+
+                // 삭제된 게시물 ID를 부모에게 전달
+                if (onDelete) onDelete(user.id);
+
+            } catch (error) {
+                console.error('게시글 삭제 실패:', error);
+                toast.error('게시글 삭제에 실패했습니다.');
+                setAnchorEl(null);
+            }
+        } else {
+            setAnchorEl(null);
+        }
+    };
+
 
     const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(user.updatedAt));
     useEffect(() => {
@@ -529,20 +615,26 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
     }, [user.updatedAt]);
     return (
         <Box onClick={() => onUserClick(user)} sx={itemRowStyle}>
-            <Box sx={{ flex: columns[0] }}>
-                <SummonerInfo name={user.name} avatarUrl={user.avatarUrl} tag={user.tag} school={user.school} />
+            <Box sx={{flex: columns[0]}}>
+                <SummonerInfo name={user.name} avatarUrl={user.avatarUrl} tag={user.tag} school={user.school}/>
             </Box>
-            <Box sx={{ flex: columns[1], textAlign: 'center' }}>{user.queueType}</Box>
-            <Box sx={{ flex: columns[2], textAlign: 'center' }}>
-                <PositionIcon position={user.position} />
+            <Box sx={{flex: columns[1], textAlign: 'center'}}>{user.queueType}</Box>
+            <Box sx={{flex: columns[2], textAlign: 'center'}}>
+                <PositionIcon position={user.position}/>
             </Box>
-            <Box sx={{ flex: columns[3], textAlign: 'center' }}>
-                <TierBadge tier={user.tier} score={user.leaguePoint} rank={user.rank} />
+            <Box sx={{flex: columns[3], textAlign: 'center'}}>
+                <TierBadge tier={user.tier} score={user.leaguePoint} rank={user.rank}/>
             </Box>
-            <Box sx={{ flex: columns[4], textAlign: 'center' }}>
-                <PositionIcon position={user.lookingForPosition} />
+            <Box sx={{flex: columns[4], textAlign: 'center'}}>
+                <PositionIcon position={user.lookingForPosition}/>
             </Box>
-            <Box sx={{ flex: columns[5], textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{
+                flex: columns[5],
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
                 <Box sx={{
                     backgroundColor: '#424254',
                     p: 1,
@@ -562,21 +654,46 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
                     {user.message}
                 </Box>
             </Box>
-            <Box sx={{ flex: columns[6], textAlign: 'center', fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{relativeTime}</Box>
-            <Box sx={{ flex: columns[7], textAlign: 'center' }}>
-                <Button variant="contained" sx={applyBtnStyle} onClick={(e) => { e.stopPropagation(); onApplyDuo(); }}>
+            <Box sx={{
+                flex: columns[6],
+                textAlign: 'center',
+                fontSize: {xs: '0.7rem', sm: '0.75rem'}
+            }}>{relativeTime}</Box>
+            <Box sx={{flex: columns[7], textAlign: 'center'}}>
+                <Button variant="contained" sx={applyBtnStyle} onClick={(e) => {
+                    e.stopPropagation();
+                    onApplyDuo();
+                }}>
                     신청
                 </Button>
             </Box>
-            <Box sx={{ flex: columns[8], textAlign: 'right' }}>
+            <Box sx={{flex: columns[8], textAlign: 'right'}}>
                 {isMine && (
                     <>
-                        <IconButton onClick={(e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); }}>
-                            <MoreVertIcon sx={{ color: '#aaa' }} />
+                        <IconButton onClick={(e) => {
+                            e.stopPropagation();
+                            setAnchorEl(e.currentTarget);
+                        }}>
+                            <MoreVertIcon sx={{color: '#aaa'}}/>
                         </IconButton>
                         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-                            <MenuItem onClick={() => alert('수정')}>수정</MenuItem>
-                            <MenuItem onClick={() => alert('삭제')}>삭제</MenuItem>
+                            <MenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAnchorEl(null);
+                                    alert('수정 기능은 추후 구현 예정입니다.');
+                                }}
+                            >
+                                수정
+                            </MenuItem>
+                            <MenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete();
+                                }}
+                            >
+                                삭제
+                            </MenuItem>
                         </Menu>
                     </>
                 )}
@@ -593,10 +710,10 @@ const selectStyle = {
     color: '#fff',
     borderRadius: 0.8,
     height: 48,
-    '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#42E6B5' },
-    '.MuiSelect-select': { display: 'flex', alignItems: 'center', padding: '0 32px 0 14px', height: '100%' },
-    '& .MuiSelect-icon': { color: '#7B7B8E' },
+    '.MuiOutlinedInput-notchedOutline': {borderColor: '#424254'},
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {borderColor: '#42E6B5'},
+    '.MuiSelect-select': {display: 'flex', alignItems: 'center', padding: '0 32px 0 14px', height: '100%'},
+    '& .MuiSelect-icon': {color: '#7B7B8E'},
 };
 
 const registerBtnStyle = {
@@ -634,7 +751,7 @@ const itemRowStyle = {
     py: 1,
     borderBottom: '2px solid #12121a',
     cursor: 'pointer',
-    '&:hover': { backgroundColor: '#2E2E38' },
+    '&:hover': {backgroundColor: '#2E2E38'},
 };
 
 const applyBtnStyle = {

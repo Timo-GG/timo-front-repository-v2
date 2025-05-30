@@ -15,7 +15,7 @@ import PositionFilterBar from './PositionFilterBar';
 import { createDuoBoard, isExistMyBoard } from '../../apis/redisAPI';
 import useAuthStore from '../../storage/useAuthStore';
 
-export default function CreateDuoModal({ open, onClose, onSuccess  }) {
+export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStart  }) {
     const [hasExistingBoard, setHasExistingBoard] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -54,6 +54,8 @@ export default function CreateDuoModal({ open, onClose, onSuccess  }) {
     };
 
     const handleSubmit = async () => {
+        if (onLoadingStart) onLoadingStart(true); // 로딩 시작
+
         if (!riot || !memberId) {
             alert('로그인 또는 라이엇 계정 연동이 필요합니다.');
             return;
@@ -86,16 +88,55 @@ export default function CreateDuoModal({ open, onClose, onSuccess  }) {
         };
 
         try {
-            await createDuoBoard(dto);
-            alert('듀오 게시글이 등록되었습니다.');
+            const response = await createDuoBoard(dto);
+
+            // 백엔드 데이터를 프론트엔드 형식으로 변환
+            const transformedData = transformBackendToFrontend(response.data);
+
+            onSuccess(transformedData); // 변환된 데이터 전달
             onClose();
-            onSuccess?.();
+            alert('듀오 게시글이 등록되었습니다.');
         } catch (err) {
             console.error('등록 실패:', err);
             alert('등록에 실패했습니다.');
+        } finally {
+            if (onLoadingStart) onLoadingStart(false);
         }
     };
+    const transformBackendToFrontend = (boardData) => {
+        const user = boardData.memberInfo;
+        const riot = user?.riotAccount || {};
+        const userInfo = boardData.userInfo || {};
+        const duoInfo = boardData.duoInfo || {};
 
+        return {
+            id: boardData.boardUUID,
+            name: riot.gameName,
+            tag: riot.tagLine,
+            avatarUrl: riot.profileUrl,
+            school: user?.univName || '미인증',
+            department: user?.department || '',
+            queueType: boardData.mapCode === 'RANK' ? '랭크' :
+                boardData.mapCode === 'NORMAL' ? '일반' : '칼바람',
+            message: boardData.memo,
+            position: userInfo.myPosition?.toLowerCase() || '',
+            playStyle: userInfo.myStyle?.toLowerCase() || '',
+            status: userInfo.myStatus?.toLowerCase() || '',
+            mic: userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
+            gender: user?.gender,
+            mbti: user?.mbti === "UNKNOWN" ? "모름" : user?.mbti,
+            tier: user?.rankInfo?.tier || 'Unranked',
+            leaguePoint: user?.rankInfo?.lp || 0,
+            rank: user?.rankInfo?.rank || '',
+            lookingForPosition: duoInfo.opponentPosition?.toLowerCase() || '',
+            lookingForStyle: duoInfo.opponentStyle?.toLowerCase() || '',
+            updatedAt: new Date().toISOString(),
+            type: '듀오',
+            champions: user?.most3Champ || [],
+            wins: user?.rankInfo?.wins || 0,
+            losses: user?.rankInfo?.losses || 0,
+        };
+    };
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm">
             <Box>

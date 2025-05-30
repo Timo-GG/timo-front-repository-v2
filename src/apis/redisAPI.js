@@ -16,6 +16,22 @@ export const refreshDuoBoards = async () => {
     return response.data;
 }
 
+// 내 듀오 게시글 삭제
+export const deleteMyDuoBoard = async () => {
+    const response = await axiosInstance.delete('/matching/duo/my', {
+        withAuth: true,
+    });
+    return response.data;
+};
+
+// 내 스크림 게시글 삭제
+export const deleteMyScrimBoard = async () => {
+    const response = await axiosInstance.delete('/matching/scrim/my', {
+        withAuth: true,
+    });
+    return response.data;
+};
+
 /**
  * Redis에 저장된 모든 듀오 게시글 조회 (페이징)
  */
