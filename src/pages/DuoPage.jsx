@@ -157,17 +157,34 @@ export default function DuoPage() {
     const handleRefresh = async () => {
         try {
             setIsRefreshing(true);
-            queryClient.cancelQueries(['duoUsers']);
 
+            // ✅ 상태 초기화 제거 - 기존 데이터 유지
+            // setCurrentPage(0);
+            // setAllDuoUsers([]);
+            // setDisplayedUsers([]);
+            // setHasMore(true);
+
+            // ✅ Optimistic Update: 즉시 UI 업데이트
+            const currentTime = new Date().toISOString();
+            const currentUserId = currentUser?.memberId;
+
+            if (currentUserId) {
+                setDisplayedUsers(prev => {
+                    const updated = prev.map(user => {
+                        if (user.memberId === currentUserId) {
+                            return { ...user, updatedAt: currentTime };
+                        }
+                        return user;
+                    });
+                    // 최신순 정렬
+                    return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                });
+            }
+
+            // API 호출
             await refreshDuoBoards();
 
-            // 상태 리셋
-            setCurrentPage(0);
-            setAllDuoUsers([]);
-            setDisplayedUsers([]);
-            setHasMore(true);
-
-            // 쿼리 무효화하여 새 데이터 로드
+            // ✅ 백그라운드에서 데이터 동기화 (UI 깜빡임 없음)
             queryClient.invalidateQueries(['duoUsers']);
 
             toast.success('게시물이 끌어올려졌습니다!');
@@ -175,6 +192,9 @@ export default function DuoPage() {
 
         } catch (error) {
             console.error('끌어올리기 실패:', error);
+            // 에러 시에만 쿼리 무효화로 원래 상태 복구
+            queryClient.invalidateQueries(['duoUsers']);
+
             if (error.response?.status === 401) {
                 setLoginModalOpen(true);
             }
@@ -182,6 +202,7 @@ export default function DuoPage() {
             setIsRefreshing(false);
         }
     };
+
 
 
 
