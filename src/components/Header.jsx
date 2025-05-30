@@ -8,7 +8,7 @@ import {getMyInfo} from '../apis/authAPI';
 import { useMediaQuery, useTheme } from '@mui/material';
 import useNotificationStore from '../storage/useNotification';
 import { fetchUnreadNotifications, markNotificationAsRead } from '../apis/notificationAPI';
-
+import { formatRelativeTime } from '../utils/timeUtils.js'
 import {
     AppBar,
     Toolbar,
@@ -126,6 +126,7 @@ export default function Header() {
             try {
                 const unreadList = await fetchUnreadNotifications();
                 unreadList.forEach((noti) => {
+                    console.log('📅 알림 데이터:', noti);
                     addNotification({
                         id: noti.id,
                         message: noti.message,
@@ -372,10 +373,13 @@ export default function Header() {
                                                         backgroundColor: '#3b3c4f',
                                                         borderRadius: 2,
                                                         p: {xs: 1, sm: 1.5},
+                                                        pr: {xs: 4, sm: 4},
                                                         mb: 1,
-                                                        fontSize: {xs: '0.8rem', sm: '0.875rem'},
+                                                        fontSize: {xs: '0.8rem', sm: '0.87rem'},
                                                         position: 'relative',
                                                         cursor: 'pointer',
+                                                        wordWrap: 'break-word',
+                                                        overflowWrap: 'break-word',
                                                     }}
                                                     onClick={async () => {
                                                         try {
@@ -393,11 +397,18 @@ export default function Header() {
                                                 >
                                                     <Typography
                                                         variant="body2"
+                                                        sx={{
+                                                            wordWrap: 'break-word',
+                                                            whiteSpace: 'pre-wrap',
+                                                            wordBreak: 'break-word',
+                                                            overflowWrap: 'break-word'
+
+                                                        }}
                                                     >
                                                         {noti.message}
                                                     </Typography>
                                                     <Typography variant="caption" sx={{color: '#aaa'}}>
-                                                        {noti.time}
+                                                        {formatRelativeTime(noti.time)}
                                                     </Typography>
                                                     <IconButton
                                                         size="small"
