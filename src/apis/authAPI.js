@@ -1,6 +1,4 @@
-// src/apis/authAPI.js
-
-import axios from 'axios'; // ✅ interceptor 안 타는 기본 axios
+import axios from 'axios';
 import axiosInstance from './axiosInstance';
 import useAuthStore from '../storage/useAuthStore';
 
@@ -31,9 +29,8 @@ export const socialLogin = async (provider, authorizationCode, state) => {
 
         const { accessToken, refreshToken, newUser } = realData;
 
-        // 토큰 저장
-        useAuthStore.setState({ accessToken, refreshToken });
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        // ✅ useAuthStore의 login 메서드 사용
+        useAuthStore.getState().login(accessToken, refreshToken);
 
         return { accessToken, refreshToken, newUser };
     } catch (err) {
@@ -42,32 +39,32 @@ export const socialLogin = async (provider, authorizationCode, state) => {
     }
 };
 
+// 🔄 AccessToken 재발급
+export async function refreshToken() {
+    const { accessToken, refreshToken } = useAuthStore.getState();
+
+    if (!refreshToken) {
+        throw new Error('No refresh token available');
+    }
+
+    const res = await axios.post('http://localhost:8080/api/v1/auth/refresh', null, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Refresh-Token': `Bearer ${refreshToken}`,
+        },
+    });
+
+    const newAccessToken = res.data.data?.accessToken || res.data.accessToken;
+    const newRefreshToken = res.data.data?.refreshToken || res.data.refreshToken;
+
+    // ✅ useAuthStore의 updateTokens 메서드 사용
+    useAuthStore.getState().updateTokens(newAccessToken, newRefreshToken);
+
+    return newAccessToken;
+}
+
 // 내 정보 조회
 export const getMyInfo = async () => {
     const response = await axiosInstance.get('/members/me', { withAuth: true });
     return response.data;
 };
-
-// 🔄 AccessToken 재발급
-export async function refreshToken() {
-    const { refreshToken } = useAuthStore.getState();
-
-    const res = await axios.post('http://localhost:8080/api/v1/auth/refresh', null, {
-        headers: {
-            'Authorization': `Bearer ${refreshToken}`,
-            'Refresh-Token': `Bearer ${refreshToken}`,
-        },
-    });
-
-    const newAccessToken = res.data.accessToken;
-    const newRefreshToken = res.data.refreshToken;
-
-    useAuthStore.setState({
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-    });
-
-    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
-
-    return newAccessToken;
-}

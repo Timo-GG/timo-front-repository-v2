@@ -9,70 +9,125 @@ const axiosInstance = axios.create({
     },
 });
 
-axiosInstance.interceptors.request.use((config) => {
-    const token = useAuthStore.getState().accessToken;
-    console.log("token", token);
-    const customConfig = config; // 타입 안정성 고려 시 config as any 또는 config as CustomConfig
-
-    if (customConfig.withAuth && token) {
-        customConfig.headers = {
-            ...customConfig.headers,
-            Authorization: `Bearer ${token}`,
-        };
-    }
-
-    return customConfig;
-});
-
 // 🔁 중복 요청 방지용 상태 관리
 let isRefreshing = false;
-let refreshSubscribers = [];
+let failedQueue = [];
 
-function onAccessTokenFetched(newToken) {
-    refreshSubscribers.forEach((callback) => callback(newToken));
-    refreshSubscribers = [];
-}
+// 대기열 처리 함수
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
 
-function addRefreshSubscriber(callback) {
-    refreshSubscribers.push(callback);
-}
+// 토큰 만료 체크 함수
+const isTokenExpired = (token, bufferMinutes = 2) => {
+    if (!token) return true;
 
-// ✅ 응답 인터셉터: accessToken 만료 대응
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        const bufferTime = bufferMinutes * 60;
+        return payload.exp < (currentTime + bufferTime);
+    } catch (error) {
+        return true;
+    }
+};
+
+// 요청 인터셉터
+axiosInstance.interceptors.request.use(
+    (config) => {
+        if (config.withAuth) {
+            // ✅ useAuthStore에서 토큰 가져오기 (localStorage 백업)
+            const { accessToken } = useAuthStore.getState();
+            const token = accessToken || localStorage.getItem('accessToken');
+
+            console.log("요청 토큰:", token);
+
+            if (token) {
+                if (isTokenExpired(token)) {
+                    console.log("토큰이 곧 만료됨, 갱신 필요");
+                }
+
+                config.headers = {
+                    ...config.headers,
+                    Authorization: `Bearer ${token}`,
+                };
+            } else {
+                console.log("토큰이 없음 - 인증 필요");
+                return Promise.reject(new Error('No authentication token available'));
+            }
+        }
+
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// 응답 인터셉터
 axiosInstance.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // 조건: 401 에러 + 한 번도 재시도하지 않은 요청
         if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            const authStore = useAuthStore.getState();
 
             if (isRefreshing) {
-                // 다른 요청이 재발급 중이면 대기
-                return new Promise((resolve) => {
-                    addRefreshSubscriber((newToken) => {
-                        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-                        resolve(axiosInstance(originalRequest));
-                    });
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then(token => {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                    return axiosInstance(originalRequest);
+                }).catch(err => {
+                    return Promise.reject(err);
                 });
             }
 
+            originalRequest._retry = true;
             isRefreshing = true;
 
             try {
-                const newAccessToken = await refreshTokenAPI(); // ✅ 아래에 정의됨
-                onAccessTokenFetched(newAccessToken);
+                // ✅ useAuthStore에서 refreshToken 가져오기
+                const { refreshToken } = useAuthStore.getState();
+
+                if (!refreshToken) {
+                    console.log("Refresh token이 없음");
+                    throw new Error('No refresh token available');
+                }
+
+                console.log("토큰 갱신 시도 중...");
+
+                const newAccessToken = await refreshTokenAPI();
+
+                console.log("토큰 갱신 성공");
+
+                processQueue(null, newAccessToken);
+
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                return axiosInstance(originalRequest); // ✅ 재요청
-            } catch (refreshErr) {
-                // 재발급도 실패 → 로그아웃
-                authStore.logout();
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-                window.location.href = '/';
-                return Promise.reject(refreshErr);
+                return axiosInstance(originalRequest);
+
+            } catch (refreshError) {
+                console.error("토큰 갱신 실패:", refreshError);
+
+                processQueue(refreshError, null);
+
+                // ✅ useAuthStore의 logout 메서드 사용
+                useAuthStore.getState().logout();
+
+                // 커스텀 이벤트 발생
+                window.dispatchEvent(new CustomEvent('authError', {
+                    detail: {
+                        message: 'Token refresh failed',
+                        error: refreshError.message
+                    }
+                }));
+
+                return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
             }
