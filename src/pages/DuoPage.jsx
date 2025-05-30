@@ -495,6 +495,9 @@ function DuoItem({ user, currentUser, onApplyDuo, onUserClick }) {
     const [anchorEl, setAnchorEl] = useState(null);
 
     const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(user.updatedAt));
+    useEffect(() => {
+        setRelativeTime(formatRelativeTime(user.updatedAt));
+    }, [user.updatedAt]);
 
     useEffect(() => {
         const interval = setInterval(() => {
