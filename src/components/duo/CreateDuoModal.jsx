@@ -1,5 +1,5 @@
 // src/components/duo/CreateDuoModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dialog,
     Box,
@@ -12,15 +12,31 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PositionFilterBar from './PositionFilterBar';
-import { createDuoBoard } from '../../apis/redisAPI';
+import { createDuoBoard, isExistMyBoard } from '../../apis/redisAPI';
 import useAuthStore from '../../storage/useAuthStore';
 
 export default function CreateDuoModal({ open, onClose, onSuccess  }) {
+    const [hasExistingBoard, setHasExistingBoard] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
+    // 모달이 열릴 때 기존 게시물 확인
+    useEffect(() => {
+        if (open) {
+            checkExistingBoard();
+        }
+    }, [open]);
     const { userData } = useAuthStore();
     const riot = userData?.riotAccount;
     const memberId = userData?.memberId;
-
+    const checkExistingBoard = async () => {
+        try {
+            const exists = await isExistMyBoard();
+            setHasExistingBoard(exists);
+        } catch (error) {
+            console.log('기존 게시물 확인 실패:', error);
+            setHasExistingBoard(false);
+        }
+    };
     const [
         formData, setFormData] = useState({
         myPosition: 'nothing',

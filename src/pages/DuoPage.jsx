@@ -1,4 +1,3 @@
-// src/pages/DuoPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -11,7 +10,9 @@ import {
     MenuItem,
     FormControl,
     Menu,
+    CircularProgress,
 } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import CreateDuoModal from '/src/components/duo/CreateDuoModal';
 import DuoDetailModal from '/src/components/duo/DuoDetailModal';
@@ -24,10 +25,11 @@ import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import { useQuery } from '@tanstack/react-query';
-import { fetchAllDuoBoards } from '../apis/redisAPI';
+import { fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards } from '../apis/redisAPI';
 import { getMyInfo } from '../apis/authAPI';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatRelativeTime } from '../utils/timeUtils'; // 추가
+import { formatRelativeTime } from '../utils/timeUtils';
+import { toast } from 'react-toastify';
 
 export default function DuoPage() {
     const theme = useTheme();
@@ -35,21 +37,48 @@ export default function DuoPage() {
     const [rankType, setRankType] = useState('solo');
     const [schoolFilter, setSchoolFilter] = useState('all');
 
+    // 페이징 관련 상태
+    const [allDuoUsers, setAllDuoUsers] = useState([]); // 모든 데이터 저장
+    const [displayedUsers, setDisplayedUsers] = useState([]); // 화면에 표시할 데이터
+    const [currentPage, setCurrentPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const pageSize = 5;
+
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [openSendModal, setOpenSendModal] = useState(false);
     const [currentBoardUUID, setCurrentBoardUUID] = useState(null);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+    const [hasExistingBoard, setHasExistingBoard] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
     const location = useLocation();
     const userData = useAuthStore(state => state.userData);
     const { setUserData } = useAuthStore();
     const currentUser = useAuthStore(state => state.userData);
-    const [loginModalOpen, setLoginModalOpen] = useState(false); // 로그인 모달 상태 추가
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
+
 
     const queryClient = useQueryClient();
+
     const isLoggedIn = () => {
         return userData && (userData.accessToken || userData.memberId);
     };
+
+    useEffect(() => {
+        const handleAuthError = (event) => {
+            console.log('인증 에러 발생:', event.detail);
+            setLoginModalOpen(true);
+            toast.error('로그인이 만료되었습니다. 다시 로그인해주세요.');
+        };
+
+        window.addEventListener('authError', handleAuthError);
+
+        return () => {
+            window.removeEventListener('authError', handleAuthError);
+        };
+    }, []);
     useEffect(() => {
         const fetchAndUpdateUser = async () => {
             if (isLoggedIn()) {
@@ -63,13 +92,97 @@ export default function DuoPage() {
             }
         };
         fetchAndUpdateUser();
-    }, []); // 빈 의존성 배열로 한 번만 실행
+    }, []);
 
-    const { data: duoUsers = [] } = useQuery({
-        queryKey: ['duoUsers'],
-        queryFn: fetchAllDuoBoards,
+    // 기존 게시물 존재 여부 확인
+    useEffect(() => {
+        const checkExistingBoard = async () => {
+            if (isLoggedIn()) {
+                try {
+                    const exists = await isExistMyBoard();
+                    setHasExistingBoard(exists);
+                } catch (error) {
+                    console.log('기존 게시물 확인 실패:', error);
+                    setHasExistingBoard(false);
+                }
+            } else {
+                setHasExistingBoard(false);
+            }
+        };
+
+        checkExistingBoard();
+    }, [userData]);
+
+    const { data: initialData, isLoading } = useQuery({
+        queryKey: ['duoUsers', 0],
+        queryFn: () => fetchAllDuoBoards(0, pageSize),
         refetchInterval: 5000,
     });
+    useEffect(() => {
+        if (initialData && initialData.content) {
+            console.log('초기 데이터 로드:', initialData);
+            setAllDuoUsers(initialData.content);
+            setDisplayedUsers(initialData.content);
+            setHasMore(initialData.content.length === pageSize && !initialData.last);
+            setCurrentPage(0);
+        }
+    }, [initialData, pageSize]);
+    const handleLoadMore = async () => {
+        if (isLoadingMore || !hasMore) return;
+
+        setIsLoadingMore(true);
+        try {
+            const nextPage = currentPage + 1;
+            console.log('다음 페이지 로드:', nextPage);
+
+            const moreData = await fetchAllDuoBoards(nextPage, pageSize);
+            console.log('추가 데이터:', moreData);
+
+            if (moreData && moreData.content && moreData.content.length > 0) {
+                setAllDuoUsers(prev => [...prev, ...moreData.content]);
+                setDisplayedUsers(prev => [...prev, ...moreData.content]);
+                setCurrentPage(nextPage);
+                setHasMore(!moreData.last && moreData.content.length === pageSize);
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error('더 많은 데이터 로드 실패:', error);
+            toast.error('데이터를 불러오는데 실패했습니다.');
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+    // 끌어올리기 처리 함수 (state 끌어올리기)
+    const handleRefresh = async () => {
+        try {
+            setIsRefreshing(true);
+            queryClient.cancelQueries(['duoUsers']);
+
+            await refreshDuoBoards();
+
+            // 상태 리셋
+            setCurrentPage(0);
+            setAllDuoUsers([]);
+            setDisplayedUsers([]);
+            setHasMore(true);
+
+            // 쿼리 무효화하여 새 데이터 로드
+            queryClient.invalidateQueries(['duoUsers']);
+
+            toast.success('게시물이 끌어올려졌습니다!');
+            setHasExistingBoard(true);
+
+        } catch (error) {
+            console.error('끌어올리기 실패:', error);
+            if (error.response?.status === 401) {
+                setLoginModalOpen(true);
+            }
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
 
 
     const handleRegisterDuo = () => {
@@ -78,7 +191,13 @@ export default function DuoPage() {
             setLoginModalOpen(true);
             return;
         }
-        setCreateModalOpen(true);
+
+        // 기존 게시물이 있으면 끌어올리기, 없으면 모달 열기
+        if (hasExistingBoard) {
+            handleRefresh();
+        } else {
+            setCreateModalOpen(true);
+        }
     };
 
     const handleUserClick = (user) => {
@@ -86,7 +205,6 @@ export default function DuoPage() {
         setSelectedUser(user);
     };
 
-    // “듀오 신청” 버튼 클릭 시 모달 열기
     const handleApplyDuo = (user, boardUUID) => {
         console.log('듀오 신청 클릭 - 로그인 상태:', isLoggedIn(), userData);
         if (!isLoggedIn()) {
@@ -100,14 +218,35 @@ export default function DuoPage() {
 
     const handleLoginModalClose = () => {
         setLoginModalOpen(false);
-        // 로그인 성공 후 상태를 다시 확인
         setTimeout(() => {
             console.log('로그인 모달 닫힌 후 상태:', userData);
         }, 100);
     };
 
-    const filteredUsers = duoUsers
-        .filter(u => positionFilter === 'nothing' || u.position.toLowerCase() === positionFilter)
+    // 모달 성공 후 기존 게시물 상태 업데이트
+    const handleModalSuccess = async () => {
+        if (isLoggedIn()) {
+            try {
+                const exists = await isExistMyBoard();
+                setHasExistingBoard(exists);
+
+                // 상태 리셋
+                setCurrentPage(0);
+                setAllDuoUsers([]);
+                setDisplayedUsers([]);
+                setHasMore(true);
+
+                // 쿼리 무효화
+                queryClient.invalidateQueries(['duoUsers']);
+            } catch (error) {
+                console.log('게시물 상태 업데이트 실패:', error);
+            }
+        }
+    };
+
+    const filteredUsers = displayedUsers.filter(u =>
+        positionFilter === 'nothing' || u.position?.toLowerCase() === positionFilter
+    );
 
     return (
         <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
@@ -120,23 +259,102 @@ export default function DuoPage() {
                     schoolFilter={schoolFilter}
                     setSchoolFilter={setSchoolFilter}
                     onRegisterDuo={handleRegisterDuo}
+                    hasExistingBoard={hasExistingBoard}
+                    isLoggedIn={isLoggedIn()}
+                    isRefreshing={isRefreshing}
                 />
                 <DuoHeader />
-                {filteredUsers.map((user) => (
-                    <DuoItem
-                        key={user.id}
-                        user={user}
-                        currentUser={currentUser}
-                        onApplyDuo={() => handleApplyDuo(user, user.id)}
-                        onUserClick={handleUserClick}
-                    />
-                ))}
+                {isLoading ? (
+                    <Box sx={{ textAlign: 'center', py: 4, color: '#fff' }}>
+                        <CircularProgress sx={{ color: '#A35AFF' }} />
+                        <Box sx={{ mt: 2 }}>로딩 중...</Box>
+                    </Box>
+                ) : (
+                    <>
+                        {filteredUsers.map((user) => (
+                            <DuoItem
+                                key={user.id}
+                                user={user}
+                                currentUser={currentUser}
+                                onApplyDuo={() => handleApplyDuo(user, user.id)}
+                                onUserClick={handleUserClick}
+                            />
+                        ))}
+
+                        {/* Load More 버튼 */}
+                        {hasMore && (
+                            <Box sx={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                mt: 3,
+                                mb: 2
+                            }}>
+                                <Button
+                                    onClick={handleLoadMore}
+                                    disabled={isLoadingMore}
+                                    sx={{
+                                        backgroundColor: '#2B2C3C',
+                                        color: '#fff',
+                                        border: '1px solid #424254',
+                                        borderRadius: 4,
+                                        px: 1,
+                                        py: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        '&:hover': {
+                                            backgroundColor: '#424254',
+                                        },
+                                        '&:disabled': {
+                                            backgroundColor: '#1a1a1a',
+                                            color: '#666',
+                                        }
+                                    }}
+                                >
+                                    {isLoadingMore ? (
+                                        <>
+                                            <CircularProgress size={20} sx={{ color: '#A35AFF' }} />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <KeyboardArrowDownIcon sx={{ fontSize: 18 }} />
+                                        </>
+                                    )}
+                                </Button>
+                            </Box>
+                        )}
+
+                        {/* 더 이상 데이터가 없을 때 메시지 */}
+                        {!hasMore && displayedUsers.length > 0 && (
+                            <Box sx={{
+                                textAlign: 'center',
+                                py: 3,
+                                color: '#666',
+                                fontSize: '0.9rem'
+                            }}>
+                                모든 게시물을 확인했습니다.
+                            </Box>
+                        )}
+
+                        {/* 데이터가 없을 때 메시지 */}
+                        {!isLoading && displayedUsers.length === 0 && (
+                            <Box sx={{
+                                textAlign: 'center',
+                                py: 4,
+                                color: '#666',
+                                fontSize: '1rem'
+                            }}>
+                                등록된 듀오 게시물이 없습니다.
+                            </Box>
+                        )}
+                    </>
+                )}
             </Container>
 
             <CreateDuoModal
                 open={isCreateModalOpen}
                 onClose={() => setCreateModalOpen(false)}
-                onSuccess={() => queryClient.invalidateQueries(['duoUsers'])}
+                onSuccess={handleModalSuccess}
             />
 
             {selectedUser && !openSendModal && (
@@ -160,11 +378,10 @@ export default function DuoPage() {
                 />
             )}
 
-            {/* 로그인 모달 */}
             <LoginModal
                 open={loginModalOpen}
                 onClose={handleLoginModalClose}
-                redirectTo={location.pathname} // 현재 페이지 경로 전달
+                redirectTo={location.pathname}
             />
 
             <ConfirmRequiredDialog
@@ -175,21 +392,39 @@ export default function DuoPage() {
     );
 }
 
-const tierOptions = [
-    { value: 'all', label: '모든 티어' },
-    { value: 'iron', label: '아이언' },
-    { value: 'bronze', label: '브론즈' },
-    { value: 'silver', label: '실버' },
-    { value: 'gold', label: '골드' },
-    { value: 'platinum', label: '플래티넘' },
-    { value: 'emerald', label: '에메랄드' },
-    { value: 'diamond', label: '다이아몬드' },
-    { value: 'master', label: '마스터' },
-    { value: 'grandmaster', label: '그랜드마스터' },
-    { value: 'challenger', label: '챌린저' },
-];
+// FilterBar 컴포넌트 수정
+function FilterBar({
+                       positionFilter,
+                       onPositionClick,
+                       rankType,
+                       setRankType,
+                       schoolFilter,
+                       setSchoolFilter,
+                       onRegisterDuo,
+                       hasExistingBoard,
+                       isLoggedIn,
+                       isRefreshing
+                   }) {
+    // 버튼 텍스트 결정
+    const getButtonText = () => {
+        if (!isLoggedIn) return '듀오등록하기';
+        if (isRefreshing) return '끌어올리는 중...';
+        return hasExistingBoard ? '게시물 끌어올리기' : '듀오등록하기';
+    };
+    const tierOptions = [
+        { value: 'all', label: '전체' },
+        { value: 'iron', label: '아이언' },
+        { value: 'bronze', label: '브론즈' },
+        { value: 'silver', label: '실버' },
+        { value: 'gold', label: '골드' },
+        { value: 'platinum', label: '플래티넘' },
+        { value: 'emerald', label: '에메랄드' },
+        { value: 'diamond', label: '다이아몬드' },
+        { value: 'master', label: '마스터' },
+        { value: 'grandmaster', label: '그랜드마스터' },
+        { value: 'challenger', label: '챌린저' }
+    ];
 
-function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, schoolFilter, setSchoolFilter, onRegisterDuo }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick} />
@@ -211,8 +446,27 @@ function FilterBar({ positionFilter, onPositionClick, rankType, setRankType, sch
                     </Select>
                 </FormControl>
             </Box>
-            <Button variant="contained" sx={registerBtnStyle} onClick={onRegisterDuo}>
-                듀오등록하기
+            <Button
+                variant="contained"
+                disabled={isRefreshing}
+                sx={{
+                    ...registerBtnStyle,
+                    background: hasExistingBoard && isLoggedIn
+                        ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                        : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
+                    '&:hover': {
+                        background: hasExistingBoard && isLoggedIn
+                            ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
+                            : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
+                    },
+                    '&:disabled': {
+                        background: '#666',
+                        color: '#999'
+                    }
+                }}
+                onClick={onRegisterDuo}
+            >
+                {getButtonText()}
             </Button>
         </Box>
     );
