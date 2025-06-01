@@ -20,7 +20,13 @@ import ScrimDetailModal from '/src/components/scrim/ScrimDetailModal';
 import { useTheme } from '@mui/material/styles';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
-import {deleteMyScrimBoard, fetchAllScrimBoards, fetchUnivScrimBoards} from '../apis/redisAPI.js';
+import {
+    deleteMyScrimBoard,
+    fetchAllScrimBoards,
+    fetchUnivScrimBoards,
+    isExistMyScimBoard,
+    refreshScrimBoard
+} from '../apis/redisAPI.js';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from "react-toastify";
@@ -36,16 +42,57 @@ export default function ScrimPage() {
     const [menuTargetId, setMenuTargetId] = useState(null);
     const [selectedPartyId, setSelectedPartyId] = useState(null);
     const [editScrim, setEditScrim] = useState(null);
+    const [selectedScrim, setSelectedScrim] = useState(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const { isLoggedIn, userData } = useAuthStore();
     const riot = userData?.riotAccount || {};
     const queryClient = useQueryClient();
     const [loginOpen, setLoginOpen] = useState(false);
     const [requiredOpen, setRequiredOpen] = useState(false);
+
     const handleTabChange = (event, newValue) => {
         if (!isLoggedIn) return setLoginOpen(true);
         if (newValue === 1 && !userData?.certifiedUnivInfo) return setRequiredOpen(true);
         setTab(newValue);
+    };
+
+    const {
+        data: hasExistingScrimBoard,
+        refetch: refetchScrimBoardExistence
+    } = useQuery({
+        queryKey: ['hasMyScrimBoard'],
+        queryFn: isExistMyScimBoard,
+        enabled: isLoggedIn && !!userData?.memberId,
+        refetchInterval: 10000
+    });
+
+    const handleRefreshScrim = async () => {
+        try {
+            setIsRefreshing(true);
+            const now = new Date().toISOString();
+
+            queryClient.setQueryData(['scrimBoards', tab], old => {
+                if (!old || !old.content) return old;
+                const updatedContent = old.content.map(item => {
+                    if (item.name === riot.accountName && item.tag === riot.accountTag) {
+                        return { ...item, updatedAt: now };
+                    }
+                    return item;
+                }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                return { ...old, content: updatedContent };
+            });
+
+            await refreshScrimBoard();
+            toast.success('스크림 게시글이 끌어올려졌습니다!');
+        } catch (err) {
+            console.error("스크림 끌어올리기 실패", err);
+            toast.error("끌어올리기에 실패했습니다.");
+        } finally {
+            setIsRefreshing(false);
+            queryClient.invalidateQueries(['scrimBoards']);
+            queryClient.invalidateQueries(['hasMyScrimBoard']);
+        }
     };
 
     const pageSize = 30;
@@ -63,17 +110,24 @@ export default function ScrimPage() {
 
     const handleAddScrim = () => {
         queryClient.invalidateQueries(['scrimBoards']);
+        queryClient.invalidateQueries(['hasMyScrimBoard']);
     };
 
-    const handleDeleteScrim = async () => {
+    const handleDeleteScrim = async (id) => {
+        queryClient.setQueryData(['scrimBoards', tab], old => {
+            if (!old || !old.content) return old;
+            return { ...old, content: old.content.filter(item => item.id !== id) };
+        });
+
         try {
             await deleteMyScrimBoard();
             toast.success('게시글이 삭제되었습니다.');
-            queryClient.invalidateQueries(['scrimBoards']);
-            setDetailOpen(false);
-            handleClose();
         } catch (e) {
             console.error('스크림 삭제 실패:', e);
+            toast.error('삭제에 실패했습니다.');
+        } finally {
+            queryClient.invalidateQueries(['scrimBoards']);
+            queryClient.invalidateQueries(['hasMyScrimBoard']);
         }
     };
 
@@ -84,8 +138,17 @@ export default function ScrimPage() {
         handleClose();
     };
 
-    const handleUpdateScrim = () => {
-        queryClient.invalidateQueries(['scrimBoards']);
+    const handleUpdateScrim = (updatedData) => {
+        if (!updatedData) return;
+        queryClient.setQueryData(['scrimBoards', tab], old => {
+            if (!old || !old.content) return old;
+            const newContent = old.content.map(item =>
+                item.id === updatedData.id ? { ...item, ...updatedData } : item
+            );
+            return { ...old, content: newContent };
+        });
+        queryClient.invalidateQueries(['hasMyScrimBoard']);
+        toast.success("게시글이 수정되었습니다.");
     };
 
     const handleMenuClick = (event, id) => {
@@ -99,35 +162,78 @@ export default function ScrimPage() {
     };
 
     return (
-        <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5 }}>
-            <Container maxWidth="lg" sx={{ px: 0 }}>
-                <Box sx={{ backgroundColor: theme.palette.background.paper, p: 1, borderTopLeftRadius: 10, borderTopRightRadius: 10 }}>
-                    <Tabs value={tab} onChange={handleTabChange} textColor="inherit" TabIndicatorProps={{ style: { backgroundColor: '#ffffff' } }}>
-                        <Tab label="전체 대학교" sx={{ fontSize: '1.1rem', color: tab === 0 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 0 ? 'bold' : 'normal' }} />
-                        <Tab label="우리 학교" sx={{ fontSize: '1.1rem', color: tab === 1 ? '#ffffff' : '#B7B7C9', fontWeight: tab === 1 ? 'bold' : 'normal' }} />
+        <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
+            <Container maxWidth="lg" sx={{px: 0}}>
+                <Box sx={{
+                    backgroundColor: theme.palette.background.paper,
+                    p: 1,
+                    borderTopLeftRadius: 10,
+                    borderTopRightRadius: 10
+                }}>
+                    <Tabs value={tab} onChange={handleTabChange} textColor="inherit"
+                          TabIndicatorProps={{style: {backgroundColor: '#ffffff'}}}>
+                        <Tab label="전체 대학교" sx={{
+                            fontSize: '1.1rem',
+                            color: tab === 0 ? '#ffffff' : '#B7B7C9',
+                            fontWeight: tab === 0 ? 'bold' : 'normal'
+                        }}/>
+                        <Tab label="우리 학교" sx={{
+                            fontSize: '1.1rem',
+                            color: tab === 1 ? '#ffffff' : '#B7B7C9',
+                            fontWeight: tab === 1 ? 'bold' : 'normal'
+                        }}/>
                     </Tabs>
                 </Box>
-                <Box sx={{ height: '1px', backgroundColor: '#171717', width: '100%' }} />
+                <Box sx={{height: '1px', backgroundColor: '#171717', width: '100%'}}/>
 
-                <Box sx={{ p: 2, backgroundColor: theme.palette.background.paper }}>
-                    <Box sx={{ ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{p: 2, backgroundColor: theme.palette.background.paper}}>
+                    <Box sx={{ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                         <Box>
                             <Typography variant="h7" color="#42E6B5">콜로세움 게시판</Typography>
-                            <Typography variant="h5" fontWeight="bold" color="white">{tab === 0 ? '전체 대학교' : '서울과기대'}</Typography>
+                            <Typography variant="h5" fontWeight="bold"
+                                        color="white">{tab === 0 ? '전체 대학교' : userData.certifiedUnivInfo.univName}</Typography>
                         </Box>
-                        <Button sx={{ backgroundColor: '#46CFA7', color: '#fff', borderRadius: 0.5, fontWeight: 'bold', px: 2, py: 1.4 }} onClick={() => {
-                            if (!isLoggedIn) return setLoginOpen(true);
-                            if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
-                            setOpen(true);
-                        }}>
-                            <Typography variant="h7" fontWeight="bold" color="white">파티 생성하기</Typography>
+                        <Button
+                            sx={{
+                                background: hasExistingScrimBoard
+                                    ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                                    : 'linear-gradient(90deg, #46CFA7 0%, #42E6B5 100%)',
+                                color: '#fff',
+                                borderRadius: 0.5,
+                                fontWeight: 'bold',
+                                px: 2,
+                                py: 1.4
+                            }}
+                            onClick={() => {
+                                if (!isLoggedIn) return setLoginOpen(true);
+                                if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
+
+                                if (hasExistingScrimBoard) {
+                                    handleRefreshScrim();
+                                } else {
+                                    setOpen(true);
+                                }
+                            }}
+                        >
+                            <Typography variant="h7" fontWeight="bold" color="white">
+                                {isRefreshing ? '끌어올리는 중...' : hasExistingScrimBoard ? '게시물 끌어올리기' : '파티 생성하기'}
+                            </Typography>
                         </Button>
                     </Box>
                 </Box>
 
                 <Box>
-                    <Box sx={{ overflow: 'hidden' }}>
-                        <Box sx={{ px: 3, py: 1, display: 'flex', justifyContent: 'space-between', backgroundColor: '#28282F', color: '#999', fontSize: 14, fontWeight: 500 }}>
+                    <Box sx={{overflow: 'hidden'}}>
+                        <Box sx={{
+                            px: 3,
+                            py: 1,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#28282F',
+                            color: '#999',
+                            fontSize: 14,
+                            fontWeight: 500
+                        }}>
                             <Box width="15%" textAlign="center">소환사</Box>
                             <Box width="10%" textAlign="center">맵</Box>
                             <Box width="10%" textAlign="center">인원</Box>
@@ -139,8 +245,8 @@ export default function ScrimPage() {
                             <Box width="2%" textAlign="center"></Box>
                         </Box>
                         {isLoading ? (
-                            <Box sx={{ textAlign: 'center', py: 4, color: '#fff' }}>
-                                <CircularProgress sx={{ color: '#A35AFF' }} />
+                            <Box sx={{textAlign: 'center', py: 4, color: '#fff'}}>
+                                <CircularProgress sx={{color: '#A35AFF'}}/>
                             </Box>
                         ) : (
                             scrims.map((row) => {
@@ -204,6 +310,7 @@ export default function ScrimPage() {
                                                 border: '1px solid #71717D'
                                             }} onClick={(e) => {
                                                 e.stopPropagation();
+                                                setSelectedScrim(row);
                                                 setApplyOpen(true);
                                             }}>신청</Button>
                                         </Box>
@@ -237,11 +344,18 @@ export default function ScrimPage() {
                     </Box>
                 </Box>
             </Container>
-            <CreateScrimModal open={open} handleClose={() => setOpen(false)} onCreateScrim={handleAddScrim} currentTab={tab} />
-            <ApplyScrimModal open={applyOpen} handleClose={() => { setApplyOpen(false); setEditScrim(null); }} editScrim={editScrim} onUpdateScrim={handleUpdateScrim} />
-            <ScrimDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} partyId={selectedPartyId} scrims={scrims} />
-            <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)} />
-            <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+            <CreateScrimModal open={open} handleClose={() => setOpen(false)} onCreateScrim={handleAddScrim}
+                              currentTab={tab}/>
+            <ApplyScrimModal open={applyOpen}
+                             handleClose={() => {
+                                 setApplyOpen(false);
+                                 setEditScrim(null);
+                                 setSelectedScrim(null);
+                             }} targetScrim={selectedScrim} editScrim={editScrim} onUpdateScrim={handleUpdateScrim}/>
+            <ScrimDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} partyId={selectedPartyId}
+                              scrims={scrims}/>
+            <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)}/>
+            <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)}/>
         </Box>
     );
 }

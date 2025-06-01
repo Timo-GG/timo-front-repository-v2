@@ -41,11 +41,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
         Array(initialLimit).fill(null).map(() => ({ ...defaultMember, rankInfo: { ...defaultMember.rankInfo } }))
     );
     const [errors, setErrors] = useState({});
-    // 여러 슬롯에 대해 독립적인 소환사 입력을 관리 (초기엔 5:5이면 4슬롯, 3:3이면 2슬롯)
     const [summonerInputs, setSummonerInputs] = useState(Array(initialLimit).fill(""));
-    // "대학교" / "학과"를 별도 상태로 관리
-    const [university, setUniversity] = useState('');
-    const [department, setDepartment] = useState('');
 
     // people 상태 변경 시 멤버 입력 슬롯 길이 재설정
     useEffect(() => {
@@ -99,7 +95,6 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
             setErrors(prev => ({ ...prev, [index]: '소환사 정보를 가져오는 데 실패했습니다.' }));
         }
     };
-
 
     const partyLimit = people === '3:3' ? 2 : 4;
     const members = partyMembers.slice(0, partyLimit);
