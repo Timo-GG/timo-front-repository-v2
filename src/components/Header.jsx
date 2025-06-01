@@ -24,7 +24,7 @@ import {
 import {useLocation, useNavigate} from 'react-router-dom';
 import logo from '../assets/logo.png';
 import LoginModal from './login/LoginModal';
-import {connectSocket, getSocket, disconnectSocket, listenOnlineCount} from '../socket/socket';
+import { getSocket } from '../socket/socket'; // ✅ connectSocket, disconnectSocket 제거
 import useOnlineStore from '../storage/useOnlineStore';
 
 export default function Header() {
@@ -54,13 +54,16 @@ export default function Header() {
     const handleLogout = () => {
         handleUserMenuClose();
 
-        // 소켓 연결 해제 및 leave_online 이벤트 전송
+        // ✅ App.js에서 관리하는 소켓을 통해 leave_online 이벤트만 전송
         const socket = getSocket();
         const memberId = userData?.memberId;
-        if (socket && memberId) {
+        if (socket && socket.connected && memberId) {
+            console.log('📤 [Header] leave_online 이벤트 발송:', memberId);
             socket.emit('leave_online', { memberId });
         }
-        disconnectSocket();
+
+        // ❌ disconnectSocket() 제거 - App.js에서 관리
+        // disconnectSocket();
 
         // Zustand 상태 초기화
         logout();
@@ -130,7 +133,7 @@ export default function Header() {
                     addNotification({
                         id: noti.id,
                         message: noti.message,
-                        time: new Date().toLocaleTimeString(), // 서버에서 시간 안 주면 클라이언트에서 처리
+                        time: new Date().toLocaleTimeString(),
                         redirectUrl: noti.redirectUrl,
                     });
                 });
@@ -140,7 +143,7 @@ export default function Header() {
         }
 
         loadUnreadNotifications();
-    }, [accessToken]);
+    }, [accessToken, addNotification]);
     return (
         <>
             <AppBar position="sticky" sx={{backgroundColor: '#2b2c3c', padding: 0, overflow: 'visible'}}>

@@ -4,9 +4,12 @@ import { io } from 'socket.io-client';
 let socket = null;
 
 export const connectSocket = (accessToken) => {
-    console.log('🚀 connectSocket() 호출됨, accessToken:', accessToken);
+    console.log('🚀 connectSocket() 호출됨, accessToken:', !!accessToken);
 
+    // 기존 소켓이 있으면 정리
     if (socket) {
+        console.log('🔄 기존 소켓 정리 중...');
+        socket.removeAllListeners();
         socket.disconnect();
         socket = null;
     }
@@ -18,9 +21,10 @@ export const connectSocket = (accessToken) => {
     socket = io('ws://localhost:8085', {
         transports: ['websocket'],
         query,
+        forceNew: true, // 새로운 연결 강제
     });
 
-    // ✅ 연결 이벤트 리스너 추가
+    // 기본 이벤트 리스너들
     socket.on('connect', () => {
         console.log('✅ Socket 연결 성공! ID:', socket.id);
     });
@@ -38,22 +42,15 @@ export const connectSocket = (accessToken) => {
 
 export const getSocket = () => socket;
 
-// ✅ disconnectSocket 함수 추가
 export const disconnectSocket = () => {
     if (socket) {
         console.log('🔌 소켓 연결 해제 중...');
+        socket.removeAllListeners();
         socket.disconnect();
         socket = null;
     }
 };
 
-export const listenOnlineCount = (callback) => {
-    if (!socket) return;
-
-    socket.on('online_count', (data) => {
-        console.log('[listenOnlineCount] 수신 데이터:', data);
-        if (data && typeof data.count === 'number') {
-            callback(data.count);
-        }
-    });
+export const isSocketConnected = () => {
+    return socket && socket.connected;
 };

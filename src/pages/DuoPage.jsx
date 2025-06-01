@@ -44,7 +44,7 @@ export default function DuoPage() {
     const [currentPage, setCurrentPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const pageSize = 5;
+    const pageSize = 1;
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);

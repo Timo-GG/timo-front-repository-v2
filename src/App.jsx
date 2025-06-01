@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import MainPage from './pages/MainPage';
@@ -14,7 +14,7 @@ import TestPage from './pages/TestPage';
 import NotificationListener from './socket/NotificationListener';
 import AuthCallback from './pages/AuthCallback';
 import useAuthStore from './storage/useAuthStore';
-import { connectSocket } from './socket/socket';
+import { connectSocket, disconnectSocket } from './socket/socket';
 import useOnlineStore from './storage/useOnlineStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -22,6 +22,8 @@ function App() {
     const { accessToken, userData, initializeAuth } = useAuthStore();
     const { setOnlineCount } = useOnlineStore();
     const queryClient = new QueryClient();
+    const socketRef = useRef(null);
+    const isJoinedRef = useRef(false);
 
     // ✅ 앱 시작 시 토큰 복원
     useEffect(() => {
@@ -30,8 +32,13 @@ function App() {
     }, []);
 
     useEffect(() => {
-        const socket = connectSocket(accessToken);
+        console.log('🔄 소켓 연결 시작, accessToken:', !!accessToken, 'memberId:', userData?.memberId);
 
+        const socket = connectSocket(accessToken);
+        socketRef.current = socket;
+        isJoinedRef.current = false;
+
+        // 온라인 카운트 리스너 등록
         socket.on('online_count', (data) => {
             console.log('[App] online_count 수신:', data);
             if (data && typeof data.count === 'number') {
@@ -39,17 +46,50 @@ function App() {
             }
         });
 
-        if (accessToken && userData?.memberId) {
-            socket.emit('join_online', { memberId: userData.memberId });
-        }
+        // 연결 완료 후 즉시 처리
+        socket.on('connect', () => {
+            console.log('✅ 소켓 연결 완료');
 
-        return () => {
-            if (accessToken && userData?.memberId) {
-                socket.emit('leave_online', { memberId: userData.memberId });
+            // ✅ 연결 즉시 현재 온라인 카운트 요청 (인증 여부 무관)
+            socket.emit('request_online_count');
+
+            // ✅ 인증된 사용자라면 join_online 이벤트 발송 (선택적)
+            if (accessToken && userData?.memberId && !isJoinedRef.current) {
+                console.log('📤 join_online 이벤트 발송:', userData.memberId);
+                socket.emit('join_online', { memberId: userData.memberId });
+                isJoinedRef.current = true;
             }
-            socket.disconnect();
+        });
+
+        // 연결 해제 시 처리
+        socket.on('disconnect', (reason) => {
+            console.log('❌ 소켓 연결 해제:', reason);
+            isJoinedRef.current = false;
+        });
+
+        // 정리 함수
+        return () => {
+            console.log('🧹 소켓 정리 시작');
+
+            if (socketRef.current && socketRef.current.connected) {
+                if (accessToken && userData?.memberId && isJoinedRef.current) {
+                    console.log('📤 leave_online 이벤트 발송:', userData.memberId);
+                    socketRef.current.emit('leave_online', { memberId: userData.memberId });
+                }
+            }
+
+            // 이벤트 리스너 제거
+            if (socketRef.current) {
+                socketRef.current.off('online_count');
+                socketRef.current.off('connect');
+                socketRef.current.off('disconnect');
+            }
+
+            disconnectSocket();
+            socketRef.current = null;
+            isJoinedRef.current = false;
         };
-    }, [accessToken, userData?.memberId, setOnlineCount]);
+    }, [accessToken, userData?.memberId]); // setOnlineCount 제거
 
     function ChatRouteWrapper() {
         const location = useLocation();
