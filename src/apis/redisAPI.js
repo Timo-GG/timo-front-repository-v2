@@ -245,6 +245,12 @@ export const sendDuoRequest = async (dto) => {
     });
     return response.data;
 };
+export const sendScrimRequest = async (dto) => {
+    const response = await axiosInstance.post('/matching/mypage/scrim', dto, {
+        withAuth: true,
+    });
+    return response.data;
+};
 
 /**
  * [READ] 요청 조회
