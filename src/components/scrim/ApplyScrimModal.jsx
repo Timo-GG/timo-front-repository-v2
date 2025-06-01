@@ -1,101 +1,222 @@
-/** 내전 신청하기 모달창 */
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent,
-    Box, Typography, TextField, Select, MenuItem,
+    Dialog, Box, Typography, TextField, Select, MenuItem,
     Button, IconButton, Avatar
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SummonerInfo from '../SummonerInfo';
 import TierBadge from '../TierBadge';
 import PositionFilterBar from '../duo/PositionFilterBar';
 import ChampionIconList from '../champion/ChampionIconList';
 import theme from '../../theme';
+import { fetchCompactPlayerHistory } from '../../apis/compactPlayerHistory';
+import useAuthStore from "../../storage/useAuthStore.jsx";
+import {createScrimBoard, sendScrimRequest} from "../../apis/redisAPI.js";
 
-const POSITION_LIST = ['top', 'jungle', 'mid', 'bottom', 'support'];
 const defaultMember = {
-    name: '',
-    tag: '',
-    tier: null,
-    score: null,
-    champions: [],
-    position: null,
+    gameName: '',
+    tagLine: '',
+    profileUrl: 'default.png',
+    rankInfo: {
+        tier: '',
+        rank: '',
+        lp: 0,
+        wins: 0,
+        losses: 0,
+    },
+    most3Champ: [],
+    myPosition: 'NOTHING',
 };
-const dummyPartyMembers = [
-    {
-        name: '롤10년차고인물',
-        tag: '1234',
-        tier: 'emerald',
-        score: 1,
-        champions: ['Neeko', 'Kaisa', 'Ezreal'],
-        position: 'top'
-    },
-    {
-        name: '롤10년차고인물',
-        tag: '1234',
-        tier: 'emerald',
-        score: 1,
-        champions: ['Neeko', 'Kaisa', 'Ezreal'],
-        position: 'jungle'
-    },
-    {},
-    {}
-];
 
-export default function ApplyScrimModal({ open, handleClose }) {
+export default function ApplyScrimModal({ open, handleClose, targetScrim, onSendScrim }) {
     const [memo, setMemo] = useState('');
-    const [map, setMap] = useState('소환사 협곡');
-    const [people, setPeople] = useState('5:5');
-    const [department, setDepartment] = useState('');
     const [myPosition, setMyPosition] = useState('nothing');
-    const [partyMembers, setPartyMembers] = useState(dummyPartyMembers);
     const [errors, setErrors] = useState({});
-    const [summonerName, setSummonerName] = useState('');
+    const [summonerInputs, setSummonerInputs] = useState([]);
+    const [partyMembers, setPartyMembers] = useState([]);
 
-    const handleMemberPositionChange = (index, newPosition) => {
-        const updated = [...partyMembers];
-        updated[index] = {
-            ...updated[index],
-            position: newPosition,
-        };
-        setPartyMembers(updated);
-    };
-    const handleRemoveMember = (index) => {
-        const updated = [...partyMembers];
-        updated[index] = defaultMember;
-        setPartyMembers(updated);
-    };
+    console.log(targetScrim);
 
-    const handleVerifySummoner = (index) => {
-        const updated = [...partyMembers];
-        const summoner = updated[index];
+    const people = targetScrim?.headCount === 3 ? '3:3' : '5:5';
+    const partyLimit = people === '3:3' ? 2 : 4;
 
-        if (!summoner.name || !summoner.tag || summoner.name === '' || summoner.tag === '') {
-            setErrors(prev => ({ ...prev, [index]: '존재하지 않는 소환사입니다.' }));
-        } else {
+    useEffect(() => {
+        setPartyMembers(Array(partyLimit).fill(null).map(() => ({ ...defaultMember, rankInfo: { ...defaultMember.rankInfo } })));
+        setSummonerInputs(Array(partyLimit).fill(""));
+    }, [targetScrim]);
+
+    const handleVerifySummoner = async (index) => {
+        const input = summonerInputs[index];
+        if (!input.includes('#')) {
+            setErrors(prev => ({ ...prev, [index]: '형식이 올바르지 않습니다 (예: 소환사이름#태그)' }));
+            return;
+        }
+
+        const [gameName, tagLine] = input.split('#').map(s => s.trim());
+        if (!gameName || !tagLine) {
+            setErrors(prev => ({ ...prev, [index]: '형식이 올바르지 않습니다 (예: 소환사이름#태그)' }));
+            return;
+        }
+
+        try {
+            const { avatarUrl, rankInfo, most3Champ } = await fetchCompactPlayerHistory({ gameName, tagLine });
+
+            const updated = [...partyMembers];
+            updated[index] = {
+                gameName,
+                tagLine,
+                profileUrl: avatarUrl || '/default.png',
+                rankInfo: {
+                    tier: rankInfo?.tier || 'Unranked',
+                    rank: rankInfo?.rank || '',
+                    lp: rankInfo?.lp || 0,
+                    wins: rankInfo?.wins || 0,
+                    losses: rankInfo?.losses || 0,
+                },
+                most3Champ: most3Champ || [],
+                myPosition: 'NOTHING'
+            };
+            setPartyMembers(updated);
+
+            const updatedInputs = [...summonerInputs];
+            updatedInputs[index] = '';
+            setSummonerInputs(updatedInputs);
             setErrors(prev => ({ ...prev, [index]: '' }));
+        } catch (error) {
+            console.error("소환사 조회 실패:", error);
+            setErrors(prev => ({ ...prev, [index]: '조회 실패' }));
         }
     };
 
-    const partyLimit = people === '3:3' ? 2 : 4;
-    const members = partyMembers.slice(0, partyLimit);
+    const { userData: me } = useAuthStore();
+    const riot = me?.riotAccount;
+
+    console.log(me);
+
+    const handleSubmit = async () => {
+        const headCount = targetScrim.headCount;
+        const gameName = riot?.accountName || '';
+        const tagLine = riot?.accountTag || '';
+
+        try {
+            const { avatarUrl, rankInfo, most3Champ } = await fetchCompactPlayerHistory({ gameName, tagLine });
+
+            const author = {
+                gameName,
+                tagLine,
+                profileUrl: avatarUrl || '/default.png',
+                rankInfo: {
+                    tier: rankInfo?.tier || 'Unranked',
+                    rank: rankInfo?.rank || '',
+                    lp: rankInfo?.lp || 0,
+                    wins: rankInfo?.wins || 0,
+                    losses: rankInfo?.losses || 0
+                },
+                most3Champ: most3Champ || [],
+                myPosition: myPosition?.toUpperCase() || 'NOTHING'
+            };
+
+            // 멤버들 가공
+            const formattedMembers = partyMembers.slice(0, headCount - 1).map(m => ({
+                gameName: m.gameName,
+                tagLine: m.tagLine,
+                profileUrl: m.profileUrl || '/default.png',
+                rankInfo: {
+                    tier: m.rankInfo?.tier || 'Unranked',
+                    rank: m.rankInfo?.rank || '',
+                    lp: m.rankInfo?.lp || 0,
+                    wins: m.rankInfo?.wins || 0,
+                    losses: m.rankInfo?.losses || 0,
+                },
+                most3Champ: m.most3Champ || [],
+                myPosition: m.myPosition?.toUpperCase() || 'NOTHING'
+            }));
+
+            const requestBody = {
+                boardUUID: targetScrim.id,
+                requestorId: me.memberId,
+                partyInfo: [author, ...formattedMembers],
+                requestorMemo: memo
+            };
+
+            const res = await sendScrimRequest(requestBody);
+            const formatted = transformScrimPageForFrontend(res.data);
+            console.log('스크림 신청 완료:', res);
+            onSendScrim?.(formatted);
+            handleClose();
+        } catch (e) {
+            console.error('스크림 신청 실패:', e);
+        }
+    };
+
+    const transformScrimPageForFrontend = (scrim) => {
+        const { myPageUUID, headCount, mapCode, matchingCategory, matchingStatus, requestorMemo, acceptorMemo, requestor, acceptor, updatedAt } = scrim;
+
+        const transformMember = (memberData) => {
+            if (!memberData) return null;
+
+            const riot = memberData.memberInfo?.riotAccount || {};
+            const rankInfo = memberData.memberInfo?.rankInfo || {};
+            const most3Champ = memberData.memberInfo?.most3Champ || [];
+
+            return {
+                gameName: riot.gameName || '',
+                tagLine: riot.tagLine || '',
+                profileUrl: riot.profileUrl || '/default.png',
+                tier: rankInfo.tier || 'Unranked',
+                rank: rankInfo.rank || '',
+                lp: rankInfo.lp || 0,
+                wins: rankInfo.wins || 0,
+                losses: rankInfo.losses || 0,
+                champions: most3Champ,
+            };
+        };
+
+        const transformParty = (partyInfo) =>
+            (partyInfo || []).map((p) => ({
+                gameName: p.gameName || '',
+                tagLine: p.tagLine || '',
+                profileUrl: p.profileUrl || '/default.png',
+                tier: p.rankInfo?.tier || 'Unranked',
+                rank: p.rankInfo?.rank || '',
+                lp: p.rankInfo?.lp || 0,
+                wins: p.rankInfo?.wins || 0,
+                losses: p.rankInfo?.losses || 0,
+                myPosition: (p.myPosition || 'NOTHING').toLowerCase(),
+                champions: p.most3Champ || []
+            }));
+
+        return {
+            id: myPageUUID,
+            headCount,
+            queueType: mapCode === 'RIFT' ? '소환사 협곡' : '칼바람 나락',
+            category: matchingCategory === 'SCRIM' ? '내전' : '듀오',
+            status: matchingStatus.toLowerCase(),
+            updatedAt,
+            requestorMemo,
+            acceptorMemo,
+            requestor: {
+                member: transformMember(requestor),
+                party: transformParty(requestor?.partyInfo)
+            },
+            acceptor: {
+                member: transformMember(acceptor),
+                party: transformParty(acceptor?.partyInfo)
+            }
+        };
+    };
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
             <Box sx={{ backgroundColor: '#31313E', pl: 3, pr: 3, pt: 2, pb: 1 }}>
-                {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography fontSize="1.1rem" fontWeight="bold" color="#fff">내전 신청하기</Typography>
                     <IconButton onClick={handleClose}><CloseIcon sx={{ color: '#aaa' }} /></IconButton>
                 </Box>
             </Box>
             <Box sx={{ height: '1px', backgroundColor: '#171717' }} />
-
             <Box sx={{ backgroundColor: '#31313E', pl: 3, pr: 3, pb: 1 }}>
-                {/* 메모 */}
                 <TextField
-                    placeholder="저희랑 내전하실 분 구해요."
+                    placeholder="메모를 입력해주세요."
                     fullWidth
                     value={memo}
                     onChange={(e) => setMemo(e.target.value)}
@@ -105,45 +226,27 @@ export default function ApplyScrimModal({ open, handleClose }) {
                         borderRadius: 1,
                         bgcolor: '#282830',
                         '& .MuiOutlinedInput-root': {
-                            '& fieldset': {
-                                borderColor: 'transparent',
-                            },
-                            '&:hover fieldset': {
-                                borderColor: 'transparent',
-                            },
-                            '&.Mui-focused fieldset': {
-                                borderColor: 'transparent',
-                            }
+                            '& fieldset': { borderColor: 'transparent' },
+                            '&:hover fieldset': { borderColor: 'transparent' },
+                            '&.Mui-focused fieldset': { borderColor: 'transparent' }
                         },
-                        input: {
-                            color: '#fff',
-                        }
+                        input: { color: '#fff' }
                     }}
                 />
 
-                {/* 설정 */}
-                <Box display="flex" gap={2} alignItems="flex-end" mb={2}>
-                    <Box display="flex" flexDirection="column" justifyContent="flex-end">
-                        <Typography fontSize="0.85rem" color="#aaa" mb={0.5}>
-                            나의 포지션
-                        </Typography>
-                        <PositionFilterBar
-                            positionFilter={myPosition}
-                            onPositionClick={setMyPosition}
-                            selectedColor="#42E6B5"
-                            unselectedColor="#31313E"
-                            iconSize={24}
-
-                        />
-                    </Box>
-
-
+                <Box mb={2}>
+                    <Typography fontSize="0.85rem" color="#aaa" mb={0.5}>나의 포지션</Typography>
+                    <PositionFilterBar
+                        positionFilter={myPosition}
+                        onPositionClick={setMyPosition}
+                        selectedColor="#42E6B5"
+                        unselectedColor="#31313E"
+                    />
                 </Box>
 
                 {/* 테이블 헤더 */}
-                {/* 헤더 */}
                 <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem"
-                    sx={{ backgroundColor: "#28282F" }}>
+                     sx={{ backgroundColor: "#28282F" }}>
                     <Box width="25%">소환사 이름</Box>
                     <Box width="10%" textAlign="center">티어</Box>
                     <Box width="20%" textAlign="center">모스트 챔피언</Box>
@@ -151,32 +254,29 @@ export default function ApplyScrimModal({ open, handleClose }) {
                 </Box>
 
                 {/* 멤버 리스트 */}
-                {members.map((member, i) => (
-                    <Box
-                        key={i}
-                        display="flex"
-                        alignItems="center"
-                        px={1.5}
-                        py={1.2}
-                        borderTop="1px solid #393946"
-                    >
-                        {/* 소환사 이름 */}
+                {partyMembers.map((member, i) => (
+                    <Box key={i} display="flex" alignItems="center" px={1.5} py={1.2} borderTop="1px solid #393946">
                         <Box width="25%" display="flex" alignItems="center" gap={1}>
-                            {member.name ? (
+                            {member.gameName ? (
                                 <>
-                                    <Avatar src="/default.png" sx={{ width: 32, height: 32 }} />
+                                    <Avatar src={member.profileUrl} sx={{ width: 32, height: 32 }} />
                                     <Box>
-                                        <Typography fontSize="0.9rem" color="#fff">{member.name}</Typography>
-                                        <Typography fontSize="0.75rem" color="#888">#{member.tag}</Typography>
+                                        <Typography fontSize="0.9rem" color="#fff">{member.gameName}</Typography>
+                                        <Typography fontSize="0.75rem" color="#888">#{member.tagLine}</Typography>
                                     </Box>
                                 </>
                             ) : (
                                 <Box sx={{ display: 'flex', height: '40px', width: '100%' }}>
                                     <TextField
                                         fullWidth
-                                        placeholder="소환사 이름#NA1"
+                                        placeholder="소환사 이름#태그"
                                         variant="outlined"
-                                        onChange={(e) => setSummonerName(e.target.value)}
+                                        value={summonerInputs[i]}
+                                        onChange={(e) => {
+                                            const updated = [...summonerInputs];
+                                            updated[i] = e.target.value;
+                                            setSummonerInputs(updated);
+                                        }}
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
                                                 height: '100%',
@@ -193,7 +293,7 @@ export default function ApplyScrimModal({ open, handleClose }) {
                                         }}
                                     />
                                     <Button
-                                        onClick={handleVerifySummoner}
+                                        onClick={() => handleVerifySummoner(i)}
                                         sx={{
                                             height: '100%',
                                             borderRadius: '0 10px 10px 0',
@@ -211,29 +311,34 @@ export default function ApplyScrimModal({ open, handleClose }) {
                                 </Box>
                             )}
                         </Box>
-
-                        {/* 티어 */}
                         <Box width="10%" textAlign="center">
-                            {member.tier ? <TierBadge tier={member.tier} score={member.score} /> : <TierBadge tier='unrank' />}
+                            <TierBadge
+                                tier={(member.rankInfo?.tier || 'unrank').toLowerCase()}
+                                score={member.rankInfo?.lp || 0}
+                                rank={member.rankInfo?.rank}
+                            />
                         </Box>
-
-                        {/* 모스트 챔피언 */}
                         <Box width="20%" display="flex" justifyContent="center">
-                            <ChampionIconList championNames={member.champions || []} />
+                            <ChampionIconList championNames={member.most3Champ || []} />
                         </Box>
-
-                        {/* 포지션 + 삭제버튼 */}
                         <Box width="45%" display="flex" justifyContent="space-between" alignItems="center">
                             <PositionFilterBar
-                                positionFilter={member.position || 'nothing'}
-                                onPositionClick={(pos) => handleMemberPositionChange(i, pos)}
+                                positionFilter={member.myPosition || 'nothing'}
+                                onPositionClick={(pos) => {
+                                    const updated = [...partyMembers];
+                                    updated[i] = { ...updated[i], myPosition: pos };
+                                    setPartyMembers(updated);
+                                }}
                                 selectedColor="#42E6B5"
                                 unselectedColor="#31313E"
-                                iconSize={18}
                             />
-                            {member.name && (
+                            {member.gameName && (
                                 <Button
-                                    onClick={() => handleRemoveMember(i)}
+                                    onClick={() => {
+                                        const updated = [...partyMembers];
+                                        updated[i] = defaultMember;
+                                        setPartyMembers(updated);
+                                    }}
                                     sx={{
                                         ml: 1,
                                         minWidth: 0,
@@ -242,9 +347,7 @@ export default function ApplyScrimModal({ open, handleClose }) {
                                         borderRadius: '50%',
                                         color: '#aaa',
                                         fontSize: '0.8rem',
-                                        '&:hover': {
-                                            backgroundColor: '#3a3a4a',
-                                        }
+                                        '&:hover': { backgroundColor: '#3a3a4a' }
                                     }}
                                 >
                                     ✕
@@ -253,6 +356,7 @@ export default function ApplyScrimModal({ open, handleClose }) {
                         </Box>
                     </Box>
                 ))}
+
                 <Box display="flex" gap={2} mt={4}>
                     <Button fullWidth onClick={handleClose} sx={{
                         border: `1px solid ${theme.palette.border.main}`,
@@ -260,11 +364,11 @@ export default function ApplyScrimModal({ open, handleClose }) {
                     }}>
                         취소
                     </Button>
-                    <Button fullWidth sx={{ bgcolor: '#42E6B5', color: '#000', height: 48, fontWeight: 'bold' }}>
+                    <Button fullWidth onClick={handleSubmit} sx={{ bgcolor: '#42E6B5', color: '#000', height: 48, fontWeight: 'bold' }}>
                         <Typography fontWeight="bold" color="white">신청</Typography>
                     </Button>
                 </Box>
             </Box>
-        </Dialog >
+        </Dialog>
     );
 }
