@@ -20,9 +20,10 @@ import ScrimDetailModal from '/src/components/scrim/ScrimDetailModal';
 import { useTheme } from '@mui/material/styles';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
-import { deleteMyScrimBoard, fetchAllScrimBoards } from '../apis/redisAPI.js';
+import {deleteMyScrimBoard, fetchAllScrimBoards, fetchUnivScrimBoards} from '../apis/redisAPI.js';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from "react-toastify";
 
 export default function ScrimPage() {
     const theme = useTheme();
@@ -36,7 +37,7 @@ export default function ScrimPage() {
     const [editScrim, setEditScrim] = useState(null);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const { isLoggedIn, userData } = useAuthStore();
-    const currentUser = userData;
+    const riot = userData?.riotAccount || {};
     const queryClient = useQueryClient();
 
     const handleTabChange = (e, newValue) => setTab(newValue);
@@ -44,20 +45,26 @@ export default function ScrimPage() {
     const pageSize = 30;
     const { data: scrimData, isLoading } = useQuery({
         queryKey: ['scrimBoards', tab],
-        queryFn: () => fetchAllScrimBoards(0, pageSize),
+        queryFn: () =>
+            tab === 0
+                ? fetchAllScrimBoards(0, pageSize)
+                : fetchUnivScrimBoards( 0, pageSize, userData.certifiedUnivInfo?.univName || ''),
+        enabled: !!userData || tab === 0, // univName이 준비되었을 때만 fetch
         refetchInterval: 5000,
     });
 
     const scrims = scrimData?.content || [];
 
-    const handleAddScrim = (newScrim) => {
+    const handleAddScrim = () => {
         queryClient.invalidateQueries(['scrimBoards']);
     };
 
-    const handleDeleteScrim = async (id) => {
+    const handleDeleteScrim = async () => {
         try {
             await deleteMyScrimBoard();
+            toast.success('게시글이 삭제되었습니다.');
             queryClient.invalidateQueries(['scrimBoards']);
+            setDetailOpen(false);
             handleClose();
         } catch (e) {
             console.error('스크림 삭제 실패:', e);
@@ -71,7 +78,7 @@ export default function ScrimPage() {
         handleClose();
     };
 
-    const handleUpdateScrim = (updated) => {
+    const handleUpdateScrim = () => {
         queryClient.invalidateQueries(['scrimBoards']);
     };
 
@@ -79,6 +86,7 @@ export default function ScrimPage() {
         setAnchorEl(event.currentTarget);
         setMenuTargetId(id);
     };
+
     const handleClose = () => {
         setAnchorEl(null);
         setMenuTargetId(null);
@@ -116,7 +124,7 @@ export default function ScrimPage() {
                             <Box width="15%" textAlign="center">소환사</Box>
                             <Box width="10%" textAlign="center">맵</Box>
                             <Box width="10%" textAlign="center">인원</Box>
-                            <Box width="10%" textAlign="center">평균 티어</Box>
+                            <Box width="10%" textAlign="center">티어</Box>
                             <Box width="10%" textAlign="center">{tab === 0 ? '대학교' : '학과'}</Box>
                             <Box width="20%" textAlign="center">한 줄 소개</Box>
                             <Box width="10%" textAlign="center">등록 일시</Box>
@@ -129,32 +137,90 @@ export default function ScrimPage() {
                             </Box>
                         ) : (
                             scrims.map((row) => {
-                                const isMine = row.name === currentUser?.name && row.tag === currentUser?.tag;
+                                const isMine = row.name === riot?.accountName && row.tag === riot?.accountTag;
                                 return (
-                                    <Box key={row.id} onClick={() => { setSelectedPartyId(row.id); setDetailOpen(true); }} sx={{ px: 3, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.palette.background.paper, color: '#fff', fontSize: 14, borderBottom: '2px solid #12121a', cursor: 'pointer', '&:hover': { backgroundColor: '#2E2E38' } }}>
+                                    <Box key={row.id} onClick={() => {
+                                        setSelectedPartyId(row.id);
+                                        setDetailOpen(true);
+                                    }} sx={{
+                                        px: 3,
+                                        py: 1,
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        backgroundColor: theme.palette.background.paper,
+                                        color: '#fff',
+                                        fontSize: 14,
+                                        borderBottom: '2px solid #12121a',
+                                        cursor: 'pointer',
+                                        '&:hover': {backgroundColor: '#2E2E38'}
+                                    }}>
                                         <Box width="15%" display="flex">
-                                            <SummonerInfo name={row.name} tag={row.tag} avatarUrl={row.avatarUrl} />
+                                            <SummonerInfo name={row.name} tag={row.tag} avatarUrl={row.avatarUrl}/>
                                         </Box>
                                         <Box width="10%" textAlign="center">{row.queueType}</Box>
-                                        <Box width="10%" textAlign="center">{row.headCount ? `${row.headCount}:${row.headCount}` : ''}</Box>
+                                        <Box width="10%"
+                                             textAlign="center">{row.headCount ? `${row.headCount}:${row.headCount}` : ''}</Box>
                                         <Box width="10%" textAlign="center">
-                                            <TierBadge tier={row.party?.[0]?.tier} score={row.party?.[0]?.lp} rank={row.party?.[0]?.rank} />
+                                            <TierBadge tier={row.party?.[0]?.tier} score={row.party?.[0]?.lp}
+                                                       rank={row.party?.[0]?.rank}/>
                                         </Box>
-                                        <Box width="10%" textAlign="center">{tab === 0 ? row.school : row.department}</Box>
+                                        <Box width="10%"
+                                             textAlign="center">{tab === 0 ? row.school : row.department}</Box>
                                         <Box width="20%" textAlign="center">
-                                            <Box sx={{ backgroundColor: '#424254', p: 1, borderRadius: 1, color: '#fff', fontSize: '0.85rem', lineHeight: 1.4, textAlign: 'left', display: '-webkit-inline-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', maxHeight: '3.6em' }}>{row.message}</Box>
+                                            <Box sx={{
+                                                backgroundColor: '#424254',
+                                                p: 1,
+                                                borderRadius: 1,
+                                                color: '#fff',
+                                                fontSize: '0.85rem',
+                                                lineHeight: 1.4,
+                                                textAlign: 'left',
+                                                display: '-webkit-inline-box',
+                                                WebkitBoxOrient: 'vertical',
+                                                WebkitLineClamp: 2,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'normal',
+                                                maxHeight: '3.6em'
+                                            }}>{row.message}</Box>
                                         </Box>
                                         <Box width="10%" textAlign="center">{formatRelativeTime(row.updatedAt)}</Box>
                                         <Box width="10%" textAlign="center">
-                                            {!isMine && (
-                                                <Button sx={{ backgroundColor: '#424254', color: '#fff', borderRadius: 0.8, fontWeight: 'bold', px: 2, py: 1, border: '1px solid #71717D' }} onClick={(e) => { e.stopPropagation(); setApplyOpen(true); }}>신청</Button>
-                                            )}
+                                            <Button sx={{
+                                                backgroundColor: '#424254',
+                                                color: '#fff',
+                                                borderRadius: 0.8,
+                                                fontWeight: 'bold',
+                                                px: 2,
+                                                py: 1,
+                                                border: '1px solid #71717D'
+                                            }} onClick={(e) => {
+                                                e.stopPropagation();
+                                                setApplyOpen(true);
+                                            }}>신청</Button>
                                         </Box>
                                         <Box width="2%" textAlign="center">
                                             {isMine && (
-                                                <IconButton onClick={(e) => { e.stopPropagation(); handleMenuClick(e, row.id); }}>
-                                                    <MoreVertIcon sx={{ color: '#aaa' }} />
-                                                </IconButton>
+                                                <>
+                                                    <IconButton onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleMenuClick(e, row.id);
+                                                    }}>
+                                                        <MoreVertIcon sx={{color: '#aaa'}}/>
+                                                    </IconButton>
+                                                    <Menu anchorEl={anchorEl} open={menuTargetId === row.id}
+                                                          onClose={handleClose}>
+                                                        <MenuItem onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEditScrim(row.id);
+                                                        }}>수정</MenuItem>
+                                                        <MenuItem onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteScrim(row.id);
+                                                        }}>삭제</MenuItem>
+                                                    </Menu>
+                                                </>
                                             )}
                                         </Box>
                                     </Box>
@@ -164,10 +230,6 @@ export default function ScrimPage() {
                     </Box>
                 </Box>
             </Container>
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
-                <MenuItem onClick={() => handleEditScrim(menuTargetId)}>수정</MenuItem>
-                <MenuItem onClick={() => handleDeleteScrim(menuTargetId)}>삭제</MenuItem>
-            </Menu>
             <CreateScrimModal open={open} handleClose={() => setOpen(false)} onCreateScrim={handleAddScrim} currentTab={tab} />
             <ApplyScrimModal open={applyOpen} handleClose={() => { setApplyOpen(false); setEditScrim(null); }} editScrim={editScrim} onUpdateScrim={handleUpdateScrim} />
             <ScrimDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} partyId={selectedPartyId} scrims={scrims} />
