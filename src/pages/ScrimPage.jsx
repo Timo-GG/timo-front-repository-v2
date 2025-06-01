@@ -24,6 +24,7 @@ import {deleteMyScrimBoard, fetchAllScrimBoards, fetchUnivScrimBoards} from '../
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from "react-toastify";
+import LoginModal from '../components/login/LoginModal';
 
 export default function ScrimPage() {
     const theme = useTheme();
@@ -39,8 +40,13 @@ export default function ScrimPage() {
     const { isLoggedIn, userData } = useAuthStore();
     const riot = userData?.riotAccount || {};
     const queryClient = useQueryClient();
-
-    const handleTabChange = (e, newValue) => setTab(newValue);
+    const [loginOpen, setLoginOpen] = useState(false);
+    const [requiredOpen, setRequiredOpen] = useState(false);
+    const handleTabChange = (event, newValue) => {
+        if (!isLoggedIn) return setLoginOpen(true);
+        if (newValue === 1 && !userData?.certifiedUnivInfo) return setRequiredOpen(true);
+        setTab(newValue);
+    };
 
     const pageSize = 30;
     const { data: scrimData, isLoading } = useQuery({
@@ -48,8 +54,8 @@ export default function ScrimPage() {
         queryFn: () =>
             tab === 0
                 ? fetchAllScrimBoards(0, pageSize)
-                : fetchUnivScrimBoards( 0, pageSize, userData.certifiedUnivInfo?.univName || ''),
-        enabled: !!userData || tab === 0, // univName이 준비되었을 때만 fetch
+                : fetchUnivScrimBoards(0, pageSize, userData.certifiedUnivInfo?.univName || ''),
+        enabled: tab === 0 || (!!userData?.certifiedUnivInfo && isLoggedIn),
         refetchInterval: 5000,
     });
 
@@ -110,7 +116,8 @@ export default function ScrimPage() {
                             <Typography variant="h5" fontWeight="bold" color="white">{tab === 0 ? '전체 대학교' : '서울과기대'}</Typography>
                         </Box>
                         <Button sx={{ backgroundColor: '#46CFA7', color: '#fff', borderRadius: 0.5, fontWeight: 'bold', px: 2, py: 1.4 }} onClick={() => {
-                            if (!isLoggedIn) return alert('로그인이 필요합니다.');
+                            if (!isLoggedIn) return setLoginOpen(true);
+                            if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
                             setOpen(true);
                         }}>
                             <Typography variant="h7" fontWeight="bold" color="white">파티 생성하기</Typography>
@@ -233,7 +240,8 @@ export default function ScrimPage() {
             <CreateScrimModal open={open} handleClose={() => setOpen(false)} onCreateScrim={handleAddScrim} currentTab={tab} />
             <ApplyScrimModal open={applyOpen} handleClose={() => { setApplyOpen(false); setEditScrim(null); }} editScrim={editScrim} onUpdateScrim={handleUpdateScrim} />
             <ScrimDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} partyId={selectedPartyId} scrims={scrims} />
-            <ConfirmRequiredDialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)} />
+            <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)} />
+            <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
         </Box>
     );
 }
