@@ -251,27 +251,8 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                         '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
                         '& .MuiSelect-icon': { color: '#7B7B8E' },
                     }}>
-                        <MenuItem value="5:5">5:5</MenuItem>
-                        <MenuItem value="3:3">3:3</MenuItem>
-                    </Select>
-                    <Select
-                        value={department}
-                        onChange={e => setDepartment(e.target.value)}
-                        displayEmpty
-                        renderValue={
-                            department !== '' ? undefined : () => <span style={{ color: '#7B7B8E' }}>학과를 선택해주세요</span>
-                        }
-                        sx={{
-                            minWidth: 150,
-                            bgcolor: '#31313D',
-                            color: '#fff',
-                            '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-                            '& .MuiSelect-icon': { color: '#7B7B8E' },
-                        }}
-                    >
-                        <MenuItem value="컴퓨터공학과">컴퓨터공학과</MenuItem>
-                        <MenuItem value="전자공학과">전자공학과</MenuItem>
-                        <MenuItem value="기계공학과">기계공학과</MenuItem>
+                        <MenuItem value="5:5">5 : 5</MenuItem>
+                        <MenuItem value="3:3">3 : 3</MenuItem>
                     </Select>
                 </Box>
 
