@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     Box,
     Typography,
@@ -20,7 +20,13 @@ import ScrimDetailModal from '/src/components/scrim/ScrimDetailModal';
 import { useTheme } from '@mui/material/styles';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
-import {deleteMyScrimBoard, fetchAllScrimBoards, fetchUnivScrimBoards} from '../apis/redisAPI.js';
+import {
+    deleteMyScrimBoard,
+    fetchAllScrimBoards,
+    fetchUnivScrimBoards,
+    isExistMyScimBoard,
+    refreshScrimBoard
+} from '../apis/redisAPI.js';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from "react-toastify";
@@ -36,16 +42,64 @@ export default function ScrimPage() {
     const [menuTargetId, setMenuTargetId] = useState(null);
     const [selectedPartyId, setSelectedPartyId] = useState(null);
     const [editScrim, setEditScrim] = useState(null);
+    const [selectedScrim, setSelectedScrim] = useState(null);
+    const [hasExistingScrimBoard, setHasExistingScrimBoard] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const { isLoggedIn, userData } = useAuthStore();
     const riot = userData?.riotAccount || {};
     const queryClient = useQueryClient();
     const [loginOpen, setLoginOpen] = useState(false);
     const [requiredOpen, setRequiredOpen] = useState(false);
+
     const handleTabChange = (event, newValue) => {
         if (!isLoggedIn) return setLoginOpen(true);
         if (newValue === 1 && !userData?.certifiedUnivInfo) return setRequiredOpen(true);
         setTab(newValue);
+    };
+
+    useEffect(() => {
+        const checkMyScrim = async () => {
+            if (isLoggedIn && userData?.memberId) {
+                try {
+                    const exists = await isExistMyScimBoard();
+                    setHasExistingScrimBoard(exists);
+                } catch (err) {
+                    console.error("스크림 존재 여부 확인 실패", err);
+                    setHasExistingScrimBoard(false);
+                }
+            } else {
+                setHasExistingScrimBoard(false);
+            }
+        };
+        checkMyScrim();
+    }, [isLoggedIn, userData]);
+
+    const handleRefreshScrim = async () => {
+        try {
+            setIsRefreshing(true);
+            const now = new Date().toISOString();
+
+            queryClient.setQueryData(['scrimBoards', tab], old => {
+                if (!old || !old.content) return old;
+                const updatedContent = old.content.map(item => {
+                    if (item.name === riot.accountName && item.tag === riot.accountTag) {
+                        return { ...item, updatedAt: now };
+                    }
+                    return item;
+                }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                return { ...old, content: updatedContent };
+            });
+
+            await refreshScrimBoard();
+            toast.success('스크림 게시글이 끌어올려졌습니다!');
+        } catch (err) {
+            console.error("스크림 끌어올리기 실패", err);
+            toast.error("끌어올리기에 실패했습니다.");
+        } finally {
+            setIsRefreshing(false);
+            queryClient.invalidateQueries(['scrimBoards']);
+        }
     };
 
     const pageSize = 30;
@@ -65,15 +119,20 @@ export default function ScrimPage() {
         queryClient.invalidateQueries(['scrimBoards']);
     };
 
-    const handleDeleteScrim = async () => {
+    const handleDeleteScrim = async (id) => {
+        queryClient.setQueryData(['scrimBoards', tab], old => {
+            if (!old || !old.content) return old;
+            return { ...old, content: old.content.filter(item => item.id !== id) };
+        });
+
         try {
             await deleteMyScrimBoard();
             toast.success('게시글이 삭제되었습니다.');
-            queryClient.invalidateQueries(['scrimBoards']);
-            setDetailOpen(false);
-            handleClose();
         } catch (e) {
             console.error('스크림 삭제 실패:', e);
+            toast.error('삭제에 실패했습니다.');
+        } finally {
+            queryClient.invalidateQueries(['scrimBoards']);
         }
     };
 
@@ -84,8 +143,16 @@ export default function ScrimPage() {
         handleClose();
     };
 
-    const handleUpdateScrim = () => {
-        queryClient.invalidateQueries(['scrimBoards']);
+    const handleUpdateScrim = (updatedData) => {
+        if (!updatedData) return;
+        queryClient.setQueryData(['scrimBoards', tab], old => {
+            if (!old || !old.content) return old;
+            const newContent = old.content.map(item =>
+                item.id === updatedData.id ? { ...item, ...updatedData } : item
+            );
+            return { ...old, content: newContent };
+        });
+        toast.success("게시글이 수정되었습니다.");
     };
 
     const handleMenuClick = (event, id) => {
@@ -115,12 +182,31 @@ export default function ScrimPage() {
                             <Typography variant="h7" color="#42E6B5">콜로세움 게시판</Typography>
                             <Typography variant="h5" fontWeight="bold" color="white">{tab === 0 ? '전체 대학교' : '서울과기대'}</Typography>
                         </Box>
-                        <Button sx={{ backgroundColor: '#46CFA7', color: '#fff', borderRadius: 0.5, fontWeight: 'bold', px: 2, py: 1.4 }} onClick={() => {
-                            if (!isLoggedIn) return setLoginOpen(true);
-                            if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
-                            setOpen(true);
-                        }}>
-                            <Typography variant="h7" fontWeight="bold" color="white">파티 생성하기</Typography>
+                        <Button
+                            sx={{
+                                background: hasExistingScrimBoard
+                                    ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                                    : 'linear-gradient(90deg, #46CFA7 0%, #42E6B5 100%)',
+                                color: '#fff',
+                                borderRadius: 0.5,
+                                fontWeight: 'bold',
+                                px: 2,
+                                py: 1.4
+                            }}
+                            onClick={() => {
+                                if (!isLoggedIn) return setLoginOpen(true);
+                                if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
+
+                                if (hasExistingScrimBoard) {
+                                    handleRefreshScrim();
+                                } else {
+                                    setOpen(true);
+                                }
+                            }}
+                        >
+                            <Typography variant="h7" fontWeight="bold" color="white">
+                                {isRefreshing ? '끌어올리는 중...' : hasExistingScrimBoard ? '게시물 끌어올리기' : '파티 생성하기'}
+                            </Typography>
                         </Button>
                     </Box>
                 </Box>
