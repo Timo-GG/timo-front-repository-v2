@@ -3,7 +3,7 @@ import { Box, Avatar } from '@mui/material';
 
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 
-const getPositionImage = (position) => `/src/assets/position/${position}.png`;
+const getPositionImage = (position) => `/assets/position/${position}.png`;
 
 export default function PositionFilterBar({
     positionFilter,

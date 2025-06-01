@@ -8,7 +8,7 @@ import {
   useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import Timo from '/src/assets/character.png';
+import Timo from '/public/assets/character.png';
 import SocialButton from './SocialButton';
 import { useNavigate } from 'react-router-dom';
 

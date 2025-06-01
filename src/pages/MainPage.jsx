@@ -11,8 +11,8 @@ import {
     DialogContent
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import title from '../assets/title.png';
-import character from '../assets/character.png';
+import title from '../../public/assets/title.png';
+import character from '../../public/assets/character.png';
 import MatchHistoryModal from '../components/MatchHistoryModal';
 import {fetchRecentMatchFull} from '../apis/accountAPI';
 import { CircularProgress } from '@mui/material';
