@@ -65,7 +65,6 @@ export const fetchAllDuoBoards = async (page = 0, size = 10) => {
             const riot = user.riotAccount || {};
             const userInfo = item.userInfo || {};
             const duoInfo = item.duoInfo || {};
-
             return {
                 id: item.boardUUID,
                 name: riot.gameName,
@@ -296,7 +295,7 @@ const transformRequestorToFrontend = (item) => {
         leaguePoint: memberInfo.rankInfo?.lp || 0,
         rank: memberInfo.rankInfo?.rank || '',
         lookingForPosition: '',
-        lookingForStyle: '',
+        lookingForStyle: item.duoInfo.opponentStyle?.toLowerCase() || '',
         updatedAt: item.updatedAt,
         type: matchingCategory === 'DUO' ? '듀오' : '내전',
         champions: memberInfo.most3Champ || [],
@@ -335,7 +334,7 @@ const transformAcceptorToFrontend = (item) => {
         leaguePoint: memberInfo.rankInfo?.lp || 0,
         rank: memberInfo.rankInfo?.rank || '',
         lookingForPosition: '',
-        lookingForStyle: '',
+        lookingForStyle: item.duoInfo.opponentStyle?.toLowerCase() || '',
         updatedAt: item.updatedAt,
         type: matchingCategory === 'DUO' ? '듀오' : '내전',
         champions: memberInfo.most3Champ || [],

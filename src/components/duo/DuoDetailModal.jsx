@@ -22,7 +22,7 @@ export default function DuoDetailModal({
     partyData,
 }) {
     if (!partyData) return null;
-
+    console.log(partyData);
     const genderDisplay = {
         MALE: '남자',
         FEMALE: '여자',
@@ -48,6 +48,7 @@ export default function DuoDetailModal({
         message,
         playStyle,
         status,
+        lookingForStyle,
         mic,
         gender,
         mbti,
@@ -166,7 +167,7 @@ export default function DuoDetailModal({
                             }}
                         >
                             <Box>
-                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>플레이스타일</Typography>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>플레이 스타일</Typography>
                                 <Typography>{playStyleDisplay[playStyle] || '-'}</Typography>
                             </Box>
                             <Box>
@@ -184,6 +185,10 @@ export default function DuoDetailModal({
                             <Box>
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>MBTI</Typography>
                                 <Typography>{mbti === "UNKNOWN" ? "비밀" : mbti || '-'}</Typography>
+                            </Box>
+                            <Box>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>선호 스타일</Typography>
+                                <Typography>{playStyleDisplay[lookingForStyle]}</Typography>
                             </Box>
                         </Box>
                     </Box>
