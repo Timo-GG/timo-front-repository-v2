@@ -11,36 +11,24 @@ import TierBadge from '../TierBadge';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import ChampionIconList from '../champion/ChampionIconList';
 import theme from '../../theme';
+import useAuthStore from "../../storage/useAuthStore.jsx";
+import {fetchCompactPlayerHistory} from "../../apis/compactPlayerHistory.js";
+import {createScrimBoard} from "../../apis/redisAPI.js";
 
 const defaultMember = {
-    name: '',
-    tag: '',
-    tier: null,
-    score: null,
-    champions: [],
-    position: null,
+    gameName: '',
+    tagLine: '',
+    profileUrl: 'default.png',
+    rankInfo: {
+        tier: '',
+        rank: '',
+        lp: 0,
+        wins: 0,
+        losses: 0,
+    },
+    most3Champ: [],
+    myPosition: 'NOTHING',
 };
-
-const dummyPartyMembers = [
-    {
-        name: '롤10년차고인물',
-        tag: '1234',
-        tier: 'emerald',
-        score: 1,
-        champions: ['Neeko', 'Kaisa', 'Ezreal'],
-        position: 'top'
-    },
-    {
-        name: '롤10년차고인물',
-        tag: '1234',
-        tier: 'emerald',
-        score: 1,
-        champions: ['Neeko', 'Kaisa', 'Ezreal'],
-        position: 'jungle'
-    },
-    {},
-    {}
-];
 
 export default function CreateScrimModal({ open, handleClose, onCreateScrim, currentTab }) {
     const [memo, setMemo] = useState('');
@@ -48,10 +36,12 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
     const [people, setPeople] = useState('5:5');
     const [myPosition, setMyPosition] = useState('nothing');
     // partyMembers: 입력받은 나머지 멤버들 (작성자는 따로 포함)
-    const [partyMembers, setPartyMembers] = useState(dummyPartyMembers);
+    const initialLimit = people === '3:3' ? 2 : 4;
+    const [partyMembers, setPartyMembers] = useState(
+        Array(initialLimit).fill(null).map(() => ({ ...defaultMember, rankInfo: { ...defaultMember.rankInfo } }))
+    );
     const [errors, setErrors] = useState({});
     // 여러 슬롯에 대해 독립적인 소환사 입력을 관리 (초기엔 5:5이면 4슬롯, 3:3이면 2슬롯)
-    const initialLimit = people === '3:3' ? 2 : 4;
     const [summonerInputs, setSummonerInputs] = useState(Array(initialLimit).fill(""));
     // "대학교" / "학과"를 별도 상태로 관리
     const [university, setUniversity] = useState('');
@@ -60,95 +50,143 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
     // people 상태 변경 시 멤버 입력 슬롯 길이 재설정
     useEffect(() => {
         const newLimit = people === '3:3' ? 2 : 4;
-        setPartyMembers(prev => prev.slice(0, newLimit));
+        setPartyMembers(
+            Array(newLimit).fill(null).map(() => ({ ...defaultMember, rankInfo: { ...defaultMember.rankInfo } }))
+        );
         setSummonerInputs(Array(newLimit).fill(""));
     }, [people]);
 
     // 각 슬롯의 입력값 검증 및 등록 (형식: "소환사이름#태그")
-    const handleVerifySummoner = (index) => {
+    const handleVerifySummoner = async (index) => {
         const input = summonerInputs[index];
         if (!input.includes('#')) {
             setErrors(prev => ({ ...prev, [index]: '형식이 올바르지 않습니다 (예: 소환사이름#태그)' }));
             return;
         }
-        const [name, tag] = input.split('#');
-        if (!name.trim() || !tag.trim()) {
+
+        const [gameName, tagLine] = input.split('#').map(s => s.trim());
+        if (!gameName || !tagLine) {
             setErrors(prev => ({ ...prev, [index]: '형식이 올바르지 않습니다 (예: 소환사이름#태그)' }));
             return;
         }
-        // 검증 성공: 더미 데이터를 생성 (실제라면 API 호출 후 결과 사용 가능)
-        const dummy = {
-            name: name.trim(),
-            tag: tag.trim(),
-            tier: 'Gold',
-            score: 77,
-            champions: ['Ahri', 'Jinx', 'Nautilus'],
-            position: 'Mid'
-        };
-        const updated = [...partyMembers];
-        updated[index] = dummy;
-        setPartyMembers(updated);
 
-        const updatedInputs = [...summonerInputs];
-        updatedInputs[index] = "";
-        setSummonerInputs(updatedInputs);
-        setErrors(prev => ({ ...prev, [index]: '' }));
+        try {
+            const { avatarUrl, rankInfo, most3Champ } = await fetchCompactPlayerHistory({ gameName, tagLine });
+
+            const updated = [...partyMembers];
+            updated[index] = {
+                gameName,
+                tagLine,
+                profileUrl: avatarUrl || '/default.png',
+                rankInfo: {
+                    tier: rankInfo?.tier || 'UNRANKED',
+                    rank: rankInfo?.rank || '',
+                    lp: rankInfo?.lp || 0,
+                    wins: rankInfo?.wins || 0,
+                    losses: rankInfo?.losses || 0,
+                },
+                most3Champ: most3Champ || [],
+                myPosition: 'NOTHING'
+            };
+            setPartyMembers(updated);
+
+            const updatedInputs = [...summonerInputs];
+            updatedInputs[index] = '';
+            setSummonerInputs(updatedInputs);
+            setErrors(prev => ({ ...prev, [index]: '' }));
+        } catch (error) {
+            console.error("API 요청 실패:", error);
+            setErrors(prev => ({ ...prev, [index]: '소환사 정보를 가져오는 데 실패했습니다.' }));
+        }
     };
+
 
     const partyLimit = people === '3:3' ? 2 : 4;
     const members = partyMembers.slice(0, partyLimit);
 
+    const { userData: me } = useAuthStore();
+    const riot = me?.riotAccount;
+
     // "등록" 버튼 클릭 시: 작성자 정보를 자동 포함하여 전체 멤버 배열(fullMembers) 구성
-    const handleSubmit = () => {
-        // 작성자 정보 (현재 사용자 정보; 실제 서비스에서는 context 또는 prop으로 전달)
-        const author = {
-            name: '롤10년차고인물',
-            tag: '1234',
-            avatarUrl: '/default.png',
-            tier: 'Gold',   // 예시값
-            score: 77,
-            university: "서울과기대",
-            champions: ['Ahri', 'Jinx', 'Nautilus'],
-            position: myPosition  // 또는 별도로 설정된 값
-        };
+    const handleSubmit = async () => {
+        const mapCode = map === '소환사 협곡' ? 'RIFT' : 'ABYSS';
+        const headCount = people === '3:3' ? 3 : 5;
 
-        // fullMembers: 작성자 + 나머지 멤버들; 3:3이면 총 3명, 5:5이면 총 5명.
-        const fullMembers = [author, ...members];
+        const gameName = riot?.accountName || '';
+        const tagLine = riot?.accountTag || '';
 
-        // 실제 스크림 객체에 대학/학과를 분기하여 저장
-        let finalUniversity = '';
-        let finalDepartment = '';
+        try {
+            // 작성자 정보 최신화
+            const { avatarUrl, rankInfo, most3Champ } = await fetchCompactPlayerHistory({ gameName, tagLine });
 
-        if (currentTab === 0) {
-            // 전체 대학교 탭이면 university 값을 사용
-            finalUniversity = university;
-            finalDepartment = ''; // 학과는 비워둠
-        } else {
-            // 우리 학교 탭이면 department 값을 사용
-            finalUniversity = '';
-            finalDepartment = department;
+            const author = {
+                gameName,
+                tagLine,
+                profileUrl: avatarUrl || '/default.png',
+                rankInfo: {
+                    tier: rankInfo?.tier || 'Unranked',
+                    rank: rankInfo?.rank || '',
+                    lp: rankInfo?.lp || 0,
+                    wins: rankInfo?.wins || 0,
+                    losses: rankInfo?.losses || 0
+                },
+                most3Champ: most3Champ || [],
+                myPosition: myPosition?.toUpperCase() || 'NOTHING'
+            };
+
+            // 멤버들 가공
+            const formattedMembers = partyMembers.slice(0, headCount - 1).map(m => ({
+                gameName: m.gameName,
+                tagLine: m.tagLine,
+                profileUrl: m.profileUrl || '/default.png',
+                rankInfo: {
+                    tier: m.rankInfo?.tier || 'Unranked',
+                    rank: m.rankInfo?.rank || '',
+                    lp: m.rankInfo?.lp || 0,
+                    wins: m.rankInfo?.wins || 0,
+                    losses: m.rankInfo?.losses || 0,
+                },
+                most3Champ: m.most3Champ || [],
+                myPosition: m.myPosition?.toUpperCase() || 'NOTHING'
+            }));
+
+            const requestBody = {
+                memberId: me?.memberId,
+                mapCode,
+                memo,
+                headCount,
+                partyInfo: [author, ...formattedMembers]
+            };
+
+            const res = await createScrimBoard(requestBody);
+            const formatted = transformScrimForFrontend(res.data);
+            console.log('스크림 생성 완료:', res);
+            onCreateScrim?.(formatted);
+            handleClose();
+        } catch (e) {
+            console.error('스크림 생성 실패:', e);
         }
-
-        const newScrim = {
-            id: Date.now(),
-            name: author.name,
-            tag: author.tag,
-            avatarUrl: author.avatarUrl,
-            map,
-            people,
-            avgTier: 'Gold',
-            avgScore: 77,
-            // 탭에 따라 달라진 최종값을 넣어준다
-            university: finalUniversity,
-            department: finalDepartment,
-            message: memo,
-            createdAt: new Date().toISOString(),
-            members: fullMembers,
-        };
-        onCreateScrim(newScrim);
-        handleClose();
-
     };
+
+    const transformScrimForFrontend = (data) => {
+        const author = data.memberInfo;
+        const riot = author?.riotAccount;
+
+        return {
+            id: data.boardUUID,
+            name: riot?.gameName || '',
+            tag: riot?.tagLine || '',
+            avatarUrl: riot?.profileUrl || '/default.png',
+            queueType: data.mapCode === 'RIFT' ? '소환사 협곡' : '칼바람 나락',
+            school: author?.univName || '미인증',
+            department: author?.department || '',
+            message: data.memo,
+            headCount: data.headCount,
+            party: data.partyInfo,
+            updatedAt: new Date().toISOString(), // 지금 시각
+        };
+    };
+
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
@@ -250,12 +288,12 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                 {members.map((member, i) => (
                     <Box key={i} display="flex" alignItems="center" px={1.5} py={1.2} borderTop="1px solid #393946">
                         <Box width="25%" display="flex" alignItems="center" gap={1}>
-                            {member.name ? (
+                            {member.gameName ? (
                                 <>
-                                    <Avatar src="/default.png" sx={{ width: 32, height: 32 }} />
+                                    <Avatar src={member.profileUrl} sx={{ width: 32, height: 32 }} />
                                     <Box>
-                                        <Typography fontSize="0.9rem" color="#fff">{member.name}</Typography>
-                                        <Typography fontSize="0.75rem" color="#888">#{member.tag}</Typography>
+                                        <Typography fontSize="0.9rem" color="#fff">{member.gameName}</Typography>
+                                        <Typography fontSize="0.75rem" color="#888">#{member.tagLine}</Typography>
                                     </Box>
                                 </>
                             ) : (
@@ -306,25 +344,29 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                         </Box>
 
                         <Box width="10%" textAlign="center">
-                            {member.tier ? <TierBadge tier={member.tier} score={member.score} /> : <TierBadge tier='unrank' />}
+                            <TierBadge
+                                tier={(member.rankInfo?.tier || 'unrank').toLowerCase()}
+                                score={member.rankInfo?.lp || 0}
+                                rank={member.rankInfo?.rank}
+                            />
                         </Box>
 
                         <Box width="20%" display="flex" justifyContent="center">
-                            <ChampionIconList championNames={member.champions || []} />
+                            <ChampionIconList championNames={member.most3Champ || []} />
                         </Box>
 
                         <Box width="45%" display="flex" justifyContent="space-between" alignItems="center">
                             <PositionFilterBar
-                                positionFilter={member.position || 'nothing'}
+                                positionFilter={member.myPosition || 'nothing'}
                                 onPositionClick={(pos) => {
                                     const updated = [...partyMembers];
-                                    updated[i] = { ...updated[i], position: pos };
+                                    updated[i] = { ...updated[i], myPosition: pos };
                                     setPartyMembers(updated);
                                 }}
                                 selectedColor="#42E6B5"
                                 unselectedColor="#31313E"
                             />
-                            {member.name && (
+                            {member.gameName && (
                                 <Button
                                     onClick={() => {
                                         const updated = [...partyMembers];

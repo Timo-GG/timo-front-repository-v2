@@ -9,12 +9,27 @@ export const isExistMyBoard = async () => {
     return response.data.data;
 }
 
+export const isExistMyScimBoard = async () => {
+    const response = await axiosInstance.get('/matching/scrim/exists', {
+        withAuth: true,
+    });
+    console.log("isExist : ", response.data.data);
+    return response.data.data;
+}
+
 export const refreshDuoBoards = async () => {
     const response = await axiosInstance.put('/matching/duo/refresh', {}, {
         withAuth: true,
     });
     return response.data;
 }
+
+export const refreshScrimBoard = async () => {
+    const response = await axiosInstance.put('/matching/scrim/refresh', {}, {
+        withAuth: true,
+    });
+    return response.data;
+};
 
 // 내 듀오 게시글 삭제
 export const deleteMyDuoBoard = async () => {
@@ -97,9 +112,72 @@ export const fetchAllDuoBoards = async (page = 0, size = 10) => {
     };
 };
 
+export const fetchAllScrimBoards = async (page = 0, size = 10) => {
+    const response = await axiosInstance.get(`/matching/scrim?page=${page}&size=${size}`);
+
+    const pageData = response.data.data;
+
+    const transformedContent = pageData.content
+        .filter(item => item !== null && item !== undefined)
+        .map((item) => {
+            const member = item.memberInfo;
+            const riot = member?.riotAccount || {};
+            const partyInfo = item.partyInfo || [];
+
+            return {
+                id: item.boardUUID,
+                name: riot.gameName,
+                tag: riot.tagLine,
+                avatarUrl: riot.profileUrl,
+                school: member.univName || '미인증',
+                department: member.department || '',
+                queueType:
+                    item.mapCode === 'RIFT'
+                        ? '소환사 협곡'
+                        : '칼바람 나락',
+                message: item.memo,
+                headCount: item.headCount || 5,
+                updatedAt: item.updatedAt,
+                type: '내전',
+                party: partyInfo.map(p => ({
+                    gameName: p.gameName,
+                    tagLine: p.tagLine,
+                    profileUrl: p.profileUrl || '/default.png',
+                    myPosition: p.myPosition?.toLowerCase() || 'nothing',
+                    tier: p.rankInfo?.tier || 'unranked',
+                    rank: p.rankInfo?.rank || '',
+                    lp: p.rankInfo?.lp || 0,
+                    wins: p.rankInfo?.wins || 0,
+                    losses: p.rankInfo?.losses || 0,
+                    champions: p.most3Champ || []
+                }))
+            };
+        });
+
+    return {
+        content: transformedContent,
+        page: pageData.page,
+        size: pageData.size,
+        totalElements: pageData.totalElements,
+        totalPages: pageData.totalPages,
+        first: pageData.first,
+        last: pageData.last,
+        hasNext: pageData.hasNext,
+        hasPrevious: pageData.hasPrevious
+    };
+};
+
+
 // 나머지 함수들은 동일...
 export const createDuoBoard = async (dto) => {
     const response = await axiosInstance.post('/matching/duo', dto, {
+        withAuth: true,
+    });
+    return response.data;
+};
+
+export const createScrimBoard = async (dto) => {
+    const response = await axiosInstance.post('/matching/scrim', dto, {
         withAuth: true,
     });
     return response.data;
