@@ -14,17 +14,18 @@ import CloseIcon from '@mui/icons-material/Close';
 import PositionFilterBar from './PositionFilterBar';
 import { createDuoBoard, isExistMyBoard } from '../../apis/redisAPI';
 import useAuthStore from '../../storage/useAuthStore';
+import { updateDuoBoard } from '/src/apis/redisAPI';
 
-export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStart  }) {
+export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStart, editData=null, isEditMode=false }) {
     const [hasExistingBoard, setHasExistingBoard] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     // 모달이 열릴 때 기존 게시물 확인
     useEffect(() => {
-        if (open) {
+        if (open && !isEditMode) {
             checkExistingBoard();
         }
-    }, [open]);
+    }, [open, isEditMode]);
     const { userData } = useAuthStore();
     const riot = userData?.riotAccount;
     const memberId = userData?.memberId;
@@ -49,35 +50,74 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
         memo: '',
     });
 
+    useEffect(() => {
+        if (isEditMode && editData && open) {
+            const originalData = editData.originalData;
+            setFormData({
+                myPosition: originalData.userInfo?.myPosition?.toLowerCase() || 'nothing',
+                playStyle: originalData.userInfo?.myStyle === 'HARDCORE' ? '빡겜' : '즐겜',
+                gameStatus: originalData.userInfo?.myStatus === 'FIRST' ? '첫판' :
+                    originalData.userInfo?.myStatus === 'CONTINUE' ? '계속 플레이' : '마지막판',
+                mic: originalData.userInfo?.myVoice === 'ENABLED' ? 'on' : 'off',
+                duoPosition: originalData.duoInfo?.opponentPosition?.toLowerCase() || 'nothing',
+                duoPlayStyle: originalData.duoInfo?.opponentStyle === 'HARDCORE' ? '빡겜' : '즐겜',
+                queueType: originalData.mapCode === 'RANK' ? '랭크' :
+                    originalData.mapCode === 'NORMAL' ? '일반' : '칼바람',
+                memo: originalData.memo || '',
+            });
+        } else if (!isEditMode && open) {
+            // 생성 모드일 때는 초기값으로 리셋
+            setFormData({
+                myPosition: 'nothing',
+                playStyle: '즐겜',
+                gameStatus: '첫판',
+                mic: 'off',
+                duoPosition: 'nothing',
+                duoPlayStyle: '즐겜',
+                queueType: '랭크',
+                memo: '',
+            });
+        }
+    }, [isEditMode, editData, open]);
+
     const updateField = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
     const handleSubmit = async () => {
-        if (onLoadingStart) onLoadingStart(true); // 로딩 시작
+        if (onLoadingStart) onLoadingStart(true);
 
         if (!riot || !memberId) {
             alert('로그인 또는 라이엇 계정 연동이 필요합니다.');
+            if (onLoadingStart) onLoadingStart(false);
             return;
         }
 
-        const dto = {
-            memberId: memberId,
-            mapCode:
-                formData.queueType === '랭크'
-                    ? 'RANK'
-                    : formData.queueType === '일반'
-                        ? 'NORMAL'
-                        : 'HOWLING_ABYSS',
+        const dto = isEditMode ? {
+            boardUUID: editData.boardUUID,
+            mapCode: formData.queueType === '랭크' ? 'RANK' :
+                formData.queueType === '일반' ? 'NORMAL' : 'HOWLING_ABYSS',
             userInfo: {
                 myPosition: formData.myPosition.toUpperCase(),
                 myStyle: formData.playStyle === '빡겜' ? 'HARDCORE' : 'FUN',
-                myStatus:
-                    formData.gameStatus === '첫판'
-                        ? 'FIRST'
-                        : formData.gameStatus === '계속 플레이'
-                            ? 'CONTINUE'
-                            : 'LAST',
+                myStatus: formData.gameStatus === '첫판' ? 'FIRST' :
+                    formData.gameStatus === '계속 플레이' ? 'CONTINUE' : 'LAST',
+                myVoice: formData.mic === 'on' ? 'ENABLED' : 'DISABLED',
+            },
+            duoInfo: {
+                opponentPosition: formData.duoPosition.toUpperCase(),
+                opponentStyle: formData.duoPlayStyle === '빡겜' ? 'HARDCORE' : 'FUN',
+            },
+            memo: formData.memo,
+        } : {
+            memberId: memberId,
+            mapCode: formData.queueType === '랭크' ? 'RANK' :
+                formData.queueType === '일반' ? 'NORMAL' : 'HOWLING_ABYSS',
+            userInfo: {
+                myPosition: formData.myPosition.toUpperCase(),
+                myStyle: formData.playStyle === '빡겜' ? 'HARDCORE' : 'FUN',
+                myStatus: formData.gameStatus === '첫판' ? 'FIRST' :
+                    formData.gameStatus === '계속 플레이' ? 'CONTINUE' : 'LAST',
                 myVoice: formData.mic === 'on' ? 'ENABLED' : 'DISABLED',
             },
             duoInfo: {
@@ -88,21 +128,24 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
         };
 
         try {
-            const response = await createDuoBoard(dto);
+            const response = isEditMode ?
+                await updateDuoBoard(dto) :
+                await createDuoBoard(dto);
 
             // 백엔드 데이터를 프론트엔드 형식으로 변환
             const transformedData = transformBackendToFrontend(response.data);
 
-            onSuccess(transformedData); // 변환된 데이터 전달
+            onSuccess(transformedData);
             onClose();
-            alert('듀오 게시글이 등록되었습니다.');
+            alert(isEditMode ? '듀오 게시글이 수정되었습니다.' : '듀오 게시글이 등록되었습니다.');
         } catch (err) {
-            console.error('등록 실패:', err);
-            alert('등록에 실패했습니다.');
+            console.error(isEditMode ? '수정 실패:' : '등록 실패:', err);
+            alert(isEditMode ? '수정에 실패했습니다.' : '등록에 실패했습니다.');
         } finally {
             if (onLoadingStart) onLoadingStart(false);
         }
     };
+
     const transformBackendToFrontend = (boardData) => {
         const user = boardData.memberInfo;
         const riot = user?.riotAccount || {};
@@ -135,6 +178,13 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
             champions: user?.most3Champ || [],
             wins: user?.rankInfo?.wins || 0,
             losses: user?.rankInfo?.losses || 0,
+
+            originalData: {
+                mapCode: boardData.mapCode,
+                memo: boardData.memo,
+                userInfo: boardData.userInfo,
+                duoInfo: boardData.duoInfo
+            }
         };
     };
     return (
@@ -143,7 +193,7 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
                 <Box sx={{ backgroundColor: '#31313D', p: 2 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Typography fontSize="1.1rem" fontWeight="bold" color="#fff">
-                            듀오 등록하기
+                            {isEditMode ? '듀오 게시글 수정' : '듀오 등록하기'}
                         </Typography>
                         <IconButton onClick={onClose} size="small">
                             <CloseIcon sx={{ color: '#fff' }} />
@@ -387,7 +437,7 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
                                 borderRadius: 1,
                             }}
                         >
-                            <Typography fontWeight="bold" color="#fff">등록</Typography>
+                            <Typography fontWeight="bold" color="#fff">{isEditMode ? '수정' : '등록'}</Typography>
                         </Button>
                     </Box>
                 </Box>

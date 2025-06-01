@@ -26,7 +26,7 @@ import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import {useQuery} from '@tanstack/react-query';
-import {fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards, deleteMyDuoBoard} from '../apis/redisAPI';
+import {fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards, deleteMyDuoBoard, fetchDuoBoard} from '../apis/redisAPI';
 import {getMyInfo} from '../apis/authAPI';
 import {useQueryClient} from '@tanstack/react-query';
 import {formatRelativeTime} from '../utils/timeUtils';
@@ -61,6 +61,8 @@ export default function DuoPage() {
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [isCreatingBoard, setIsCreatingBoard] = useState(false);
 
+    const [editingDuo, setEditingDuo] = useState(null); // 수정할 듀오 데이터
+    const [isEditMode, setIsEditMode] = useState(false); // 수정 모드 여부
 
     const queryClient = useQueryClient();
 
@@ -225,6 +227,24 @@ export default function DuoPage() {
         }
     };
 
+    const handleEditDuo = async (boardUUID) => {
+        try {
+            const duoData = await fetchDuoBoard(boardUUID);
+            setEditingDuo(duoData);
+            setIsEditMode(true);
+            setCreateModalOpen(true);
+        } catch (error) {
+            console.error('듀오 게시글 조회 실패:', error);
+            toast.error('게시글 정보를 불러오는데 실패했습니다.');
+        }
+    };
+
+    const handleModalClose = () => {
+        setCreateModalOpen(false);
+        setEditingDuo(null);
+        setIsEditMode(false);
+    };
+
     const handleUserClick = (user) => {
         if (user.name === currentUser.name && user.tag === currentUser.tag) return;
         setSelectedUser(user);
@@ -249,28 +269,42 @@ export default function DuoPage() {
     };
 
     // 모달 성공 후 기존 게시물 상태 업데이트
+    // 모달 성공 핸들러 수정
     const handleModalSuccess = async (newBoardData) => {
         if (isLoggedIn()) {
             try {
-                setHasExistingBoard(true);
-
-                if (newBoardData) {
-                    // 이미 변환된 데이터이므로 바로 사용
-                    setDisplayedUsers(prev => {
-                        // 중복 확인 후 추가
-                        const exists = prev.some(user => user.id === newBoardData.id);
-                        if (!exists) {
-                            return [newBoardData, ...prev];
-                        }
-                        return prev;
-                    });
-                    setAllDuoUsers(prev => {
-                        const exists = prev.some(user => user.id === newBoardData.id);
-                        if (!exists) {
-                            return [newBoardData, ...prev];
-                        }
-                        return prev;
-                    });
+                if (isEditMode) {
+                    // 수정 모드일 때
+                    setDisplayedUsers(prev =>
+                        prev.map(user =>
+                            user.id === newBoardData.id ? newBoardData : user
+                        )
+                    );
+                    setAllDuoUsers(prev =>
+                        prev.map(user =>
+                            user.id === newBoardData.id ? newBoardData : user
+                        )
+                    );
+                    toast.success('게시글이 수정되었습니다.');
+                } else {
+                    // 생성 모드일 때 (기존 로직)
+                    setHasExistingBoard(true);
+                    if (newBoardData) {
+                        setDisplayedUsers(prev => {
+                            const exists = prev.some(user => user.id === newBoardData.id);
+                            if (!exists) {
+                                return [newBoardData, ...prev];
+                            }
+                            return prev;
+                        });
+                        setAllDuoUsers(prev => {
+                            const exists = prev.some(user => user.id === newBoardData.id);
+                            if (!exists) {
+                                return [newBoardData, ...prev];
+                            }
+                            return prev;
+                        });
+                    }
                 }
 
                 // 폴링 일시 중단 후 재개
@@ -361,6 +395,7 @@ export default function DuoPage() {
                                 onApplyDuo={() => handleApplyDuo(user, user.id)}
                                 onUserClick={handleUserClick}
                                 onDelete={handleDeleteSuccess}
+                                onEdit={handleEditDuo}
                             />
                         ))}
 
@@ -439,6 +474,8 @@ export default function DuoPage() {
                 onClose={() => setCreateModalOpen(false)}
                 onSuccess={handleModalSuccess}
                 onLoadingStart={setIsCreatingBoard} // 로딩 상태 전달
+                editData={editingDuo} // 수정할 데이터 전달
+                isEditMode={isEditMode} // 수정 모드 여부 전달
             />
 
             {selectedUser && !openSendModal && (
@@ -570,13 +607,20 @@ function DuoHeader() {
     );
 }
 
-function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete}) {
+function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit}) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
     const isMine = currentUser &&
         user.name === currentUser.riotAccount?.accountName &&
         user.tag === currentUser.riotAccount?.accountTag;
 
     const [anchorEl, setAnchorEl] = useState(null);
+
+    const handleEdit = async () => {
+        setAnchorEl(null);
+        if (onEdit) {
+            onEdit(user.id);
+        }
+    };
 
 
     const handleDelete = async () => {
@@ -680,8 +724,7 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete}) {
                             <MenuItem
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    setAnchorEl(null);
-                                    alert('수정 기능은 추후 구현 예정입니다.');
+                                    handleEdit();
                                 }}
                             >
                                 수정
