@@ -17,40 +17,42 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
     if (!partyData) return null;
 
     // 파티의 멤버 배열 (백엔드 혹은 생성 시 newScrim.members 등에 저장된 것을 사용)
-    const members = partyData.members || [];
+    const members = partyData.party || [];
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
             <Box sx={{ backgroundColor: '#2B2C3C', pl: 3, pr: 3, pt: 2, pb: 1 }}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                    {/* 왼쪽: 맵 */}
-                    <Box display="flex" alignItems="center" gap={1} mr={3}>
-                        <Typography fontSize="0.75rem" color="#888">맵</Typography>
-                        <Typography fontSize="0.75rem" color="#fff">
-                            {partyData.map || ''}
-                        </Typography>
-                    </Box>
-                    {/* 오른쪽: 인원 */}
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Typography fontSize="0.75rem" color="#888">내전 인원</Typography>
-                        <Typography fontSize="0.75rem" color="#fff">
-                            {partyData.people || ''}
-                        </Typography>
+                    {/* 왼쪽: 맵 + 내전 인원  */}
+                    <Box display="flex" alignItems="center" gap={3}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <Typography fontSize="0.75rem" color="#888">맵</Typography>
+                            <Typography fontSize="0.75rem" color="#fff">
+                                {partyData.queueType || ''}
+                            </Typography>
+                        </Box>
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <Typography fontSize="0.75rem" color="#888">내전 인원</Typography>
+                            <Typography fontSize="0.75rem" color="#fff">
+                                {partyData.headCount ? `${partyData.headCount} : ${partyData.headCount}` : ''}
+                            </Typography>
+                        </Box>
                     </Box>
 
-                    {/* 닫기 버튼 */}
+                    {/* 오른쪽: 닫기 버튼 */}
                     <IconButton onClick={handleClose}>
                         <CloseIcon sx={{ color: '#aaa' }} />
                     </IconButton>
                 </Box>
             </Box>
+
             <Box sx={{ height: '1px', backgroundColor: '#171717' }} />
 
             <DialogContent sx={{ backgroundColor: '#2B2C3C' }}>
                 <Box textAlign="center" mb={2}>
                     <Typography fontSize="1rem" color="#A5A5A5" sx={{ mb: 2 }}>
-                        {`${partyData.university || ''} ${partyData.department || ''}`}
+                        {`${partyData.school || ''} ${partyData.department || ''}`}
                     </Typography>
                     <Box
                         sx={{
@@ -93,12 +95,12 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
                 {/* 멤버 리스트 */}
                 <Box>
                     {members.map((member, i) => {
-                        if (!member.name) return null;
+                        if (!member.gameName) return null;
 
                         // 작성자(글쓴이) 여부 판단
                         const isAuthor =
-                            partyData.name === member.name &&
-                            partyData.tag === member.tag;
+                            partyData.name === member.gameName &&
+                            partyData.tag === member.tagLine;
 
                         return (
                             <Box
@@ -114,9 +116,9 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
                                     {/* 감싼 래퍼(Box)를 position: relative 로 설정 */}
                                     <Box sx={{ position: 'relative', display: 'inline-block' }}>
                                         <SummonerInfo
-                                            name={member.name}
-                                            avatarUrl={member.avatarUrl}
-                                            tag={member.tag}
+                                            name={member.gameName}
+                                            avatarUrl={member.profileUrl}
+                                            tag={member.tagLine}
                                             copyable
                                         />
                                         {/* 작성자일 경우만 별 표시 */}
@@ -143,7 +145,7 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
                                 {/* 티어 */}
                                 <Box width="15%" textAlign="center">
                                     {member.tier
-                                        ? <TierBadge tier={member.tier} score={member.score} />
+                                        ? <TierBadge tier={member.tier} score={member.lp} rank={member.rank} />
                                         : <TierBadge tier='unrank' />
                                     }
                                 </Box>
@@ -155,7 +157,7 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
 
                                 {/* 포지션 */}
                                 <Box width="8%" textAlign="center">
-                                    <PositionIcon position={member.position} />
+                                    <PositionIcon position={member.myPosition} />
                                 </Box>
                             </Box>
                         );
