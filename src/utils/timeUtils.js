@@ -25,3 +25,37 @@ export const formatRelativeTime = (timestamp) => {
         });
     }
 };
+
+export const calculateExpiryTime = (createdAt) => {
+    const created = new Date(createdAt);
+    const expiry = new Date(created.getTime() + 24 * 60 * 60 * 1000); // 24시간 후
+    return expiry;
+};
+
+export const formatTimeUntilExpiry = (createdAt) => {
+    const now = new Date();
+    const expiry = calculateExpiryTime(createdAt);
+    const timeDiff = expiry.getTime() - now.getTime();
+
+    if (timeDiff <= 0) {
+        return "만료됨";
+    }
+
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+        return `${hours}시간 후`;
+    } else if (minutes > 0) {
+        return `${minutes}분 후 만료`;
+    } else {
+        return "곧 만료";
+    }
+};
+
+export const isExpired = (createdAt) => {
+    const now = new Date();
+    const expiry = calculateExpiryTime(createdAt);
+    return now.getTime() > expiry.getTime();
+};
+

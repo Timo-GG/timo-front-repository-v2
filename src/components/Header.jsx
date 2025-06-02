@@ -22,7 +22,7 @@ import {
     MenuItem,
 } from '@mui/material';
 import {useLocation, useNavigate} from 'react-router-dom';
-import logo from '../assets/logo.png';
+import logo from '../../public/assets/logo.png';
 import LoginModal from './login/LoginModal';
 import { getSocket } from '../socket/socket'; // ✅ connectSocket, disconnectSocket 제거
 import useOnlineStore from '../storage/useOnlineStore';

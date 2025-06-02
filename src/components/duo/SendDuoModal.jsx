@@ -37,7 +37,7 @@ export default function SendDuoModal({ open, handleClose, boardUUID, userData = 
             requestorId: memberId,
             userInfo: {
                 myPosition: position.toUpperCase(),
-                myStyle: playStyle === '빡겜' ? 'HARD' : 'FUN',
+                myStyle: playStyle === '빡겜' ? 'HARDCORE' : 'FUN',
                 myStatus:
                     gameStatus === '첫판'
                         ? 'FIRST'

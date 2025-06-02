@@ -1,12 +1,12 @@
 // src/components/PositionIcon.jsx
 import React from 'react';
 import { Box } from '@mui/material';
-import top from '../assets/position/top.png';
-import jungle from '../assets/position/jungle.png';
-import mid from '../assets/position/mid.png';
-import bottom from '../assets/position/bottom.png';
-import support from '../assets/position/support.png';
-import nothing from '../assets/position/nothing.png';
+import top from '../../public/assets/position/top.png';
+import jungle from '../../public/assets/position/jungle.png';
+import mid from '../../public/assets/position/mid.png';
+import bottom from '../../public/assets/position/bottom.png';
+import support from '../../public/assets/position/support.png';
+import nothing from '../../public/assets/position/nothing.png';
 
 const positionIcons = {
   top,

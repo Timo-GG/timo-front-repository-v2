@@ -32,6 +32,13 @@ export const refreshScrimBoard = async () => {
     return response.data;
 };
 
+export const updateDuoBoard = async (dto) => {
+    const response = await axiosInstance.put('/matching/duo', dto, {
+        withAuth: true,
+    });
+    return response.data;
+};
+
 /**
  * [DELETE] 게시글 삭제 로직
  */
@@ -65,7 +72,6 @@ export const fetchAllDuoBoards = async (page = 0, size = 10) => {
             const riot = user.riotAccount || {};
             const userInfo = item.userInfo || {};
             const duoInfo = item.duoInfo || {};
-
             return {
                 id: item.boardUUID,
                 name: riot.gameName,
@@ -112,6 +118,55 @@ export const fetchAllDuoBoards = async (page = 0, size = 10) => {
         hasPrevious: pageData.hasPrevious
     };
 };
+
+export const fetchDuoBoard = async (boardUUID) => {
+    const response = await axiosInstance.get(`/matching/duo/${boardUUID}`, {
+        withAuth: true,
+    });
+
+    // 백엔드 응답을 프론트엔드 형식으로 변환
+    const item = response.data.data;
+    const user = item.memberInfo;
+    const riot = user.riotAccount || {};
+    const userInfo = item.userInfo || {};
+    const duoInfo = item.duoInfo || {};
+
+    return {
+        id: item.boardUUID,
+        boardUUID: item.boardUUID,
+        name: riot.gameName,
+        tag: riot.tagLine,
+        avatarUrl: riot.profileUrl,
+        school: user.univName || '미인증',
+        department: user.department || '',
+        queueType: item.mapCode === 'RANK' ? '랭크' : item.mapCode === 'NORMAL' ? '일반' : '칼바람',
+        message: item.memo,
+        position: userInfo.myPosition?.toLowerCase() || '',
+        playStyle: userInfo.myStyle?.toLowerCase() || '',
+        status: userInfo.myStatus?.toLowerCase() || '',
+        mic: userInfo.myVoice === 'ENABLED' ? '사용함' : '사용 안함',
+        gender: user.gender,
+        mbti: user.mbti,
+        tier: user.rankInfo.tier || 'Unranked',
+        leaguePoint: user.rankInfo.lp || 0,
+        rank: user.rankInfo.rank || '',
+        lookingForPosition: duoInfo.opponentPosition?.toLowerCase() || '',
+        lookingForStyle: duoInfo.opponentStyle?.toLowerCase() || '',
+        updatedAt: item.updatedAt,
+        type: '듀오',
+        champions: user.most3Champ || [],
+        wins: 0,
+        losses: 0,
+        // 수정용 원본 데이터
+        originalData: {
+            mapCode: item.mapCode,
+            memo: item.memo,
+            userInfo: item.userInfo,
+            duoInfo: item.duoInfo
+        }
+    };
+};
+
 export const fetchAllScrimBoards = async (page = 0, size = 10) => {
     const response = await axiosInstance.get(`/matching/scrim?page=${page}&size=${size}`);
 
@@ -262,6 +317,7 @@ export const fetchReceivedRequests = async (acceptorId) => {
     const data = res.data.data;
     return data.map(item => transformRequestorToFrontend(item));
 };
+
 export const fetchSentRequests = async (requestorId) => {
     const res = await axiosInstance.get(`/matching/mypage/requestor/${requestorId}`,
         {withAuth: true});

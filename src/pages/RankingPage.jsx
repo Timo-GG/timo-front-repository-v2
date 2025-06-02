@@ -43,7 +43,7 @@ export default function RankingPage() {
     const itemsPerPage = 100;
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
     const [searchTarget, setSearchTarget] = React.useState(null);
-    const rowRefs = React.useRef({}); // 각 행의 ref를 저장할 객체
+    const rowRefs = React.useRef({});
 
     const {
         data: responseData = {},
@@ -101,20 +101,18 @@ export default function RankingPage() {
         if (!exists) {
             setSearchTarget(null);
         } else {
-            // 해당 행으로 스크롤
             const targetElement = rowRefs.current[searchTarget];
             if (targetElement) {
                 setTimeout(() => {
                     targetElement.scrollIntoView({
                         behavior: 'smooth',
-                        block: 'center', // 화면 중앙에 위치
+                        block: 'center',
                         inline: 'nearest'
                     });
-                }, 100); // 페이지 변경 후 약간의 지연
+                }, 100);
             }
         }
     }, [rankingData.list, searchTarget, currentPage]);
-
 
     const handleSearch = async () => {
         if (!searchText.trim() || !searchText.includes('#')) return;
@@ -135,7 +133,7 @@ export default function RankingPage() {
 
     return (
         <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
-            <Container maxWidth="lg" sx={{px: 0}}>
+            <Container maxWidth="lg" sx={{px: {xs: 1, sm: 3}}}>
                 {/* 탭 영역 */}
                 <Box sx={{
                     backgroundColor: theme.palette.background.paper,
@@ -193,10 +191,18 @@ export default function RankingPage() {
                                     pl: 1.5,
                                     pr: 1.5,
                                     minWidth: 120,
-                                    flex: {xs: 1.8, sm: 'none'}, // 모바일: 비율 2
+                                    flex: {xs: 1.8, sm: 'none'},
                                 }}
                             >
-                                <IconButton onClick={handleSearch}>
+                                <IconButton
+                                    onClick={handleSearch}
+                                    sx={{
+                                        padding: '2px', // 기본 패딩 줄이기
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.04)'
+                                        }
+                                    }}
+                                >
                                     <SearchIcon sx={{color: '#424254'}}/>
                                 </IconButton>
                                 <InputBase
@@ -209,7 +215,7 @@ export default function RankingPage() {
                                     sx={{
                                         flex: 1,
                                         color: '#fff',
-                                        fontSize: {xs: '0.8rem', sm: '0.9rem'},
+                                        fontSize: {xs: '0.7rem', sm: '0.9rem'},
                                         fontWeight: 'bold',
                                         ml: 1,
                                         mr: 1
@@ -227,7 +233,7 @@ export default function RankingPage() {
                                     py: 1.4,
                                     height: 40,
                                     width: {xs: '100%', sm: 'auto'},
-                                    flex: {xs: 1, sm: 'none'}, // 모바일: 비율 1
+                                    flex: {xs: 1.2, sm: 'none'},
                                 }}
                                 onClick={handleEditClick}
                             >
@@ -236,119 +242,130 @@ export default function RankingPage() {
                                 </Typography>
                             </Button>
                         </Box>
-
                     </Box>
                 </Box>
 
-                {/* 테이블 영역 */}
-                <Box sx={{minWidth: {xs: '1100px', sm: 'auto'}}}>
-                    <Box sx={{
-                        px: 0,
-                        py: 1.5,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        backgroundColor: '#28282F',
-                        color: '#999',
-                        fontSize: 14,
-                        fontWeight: 500
-                    }}>
-                        <Box width="5%" textAlign="center">순위</Box>
-                        <Box width="15%" textAlign="center">소환사</Box>
-                        <Box width="10%" textAlign="center">주 포지션</Box>
-                        <Box width="5%" textAlign="center">티어</Box>
-                        <Box width="10%" textAlign="center">{tab === 0 ? '대학교' : '학과'}</Box>
-                        <Box width="10%" textAlign="center">모스트 챔피언</Box>
-                        <Box width="15%" textAlign="center">승률</Box>
-                        <Box width="20%" textAlign="center">한 줄 소개</Box>
-                    </Box>
+                {/* 테이블 영역 - 가로 스크롤 적용 */}
+                <Box sx={{overflowX: {xs: 'auto', sm: 'visible'}}}>
+                    <Box sx={{minWidth: {xs: '1100px', sm: 'auto'}}}>
+                        {/* 테이블 헤더 */}
+                        <Box sx={{
+                            px: 0,
+                            py: 1.5,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#28282F',
+                            color: '#999',
+                            fontSize: 14,
+                            fontWeight: 500
+                        }}>
+                            <Box width="5%" textAlign="center">순위</Box>
+                            <Box width="15%" textAlign="center">소환사</Box>
+                            <Box width="10%" textAlign="center">주 포지션</Box>
+                            <Box width="5%" textAlign="center">티어</Box>
+                            <Box width="10%" textAlign="center">{tab === 0 ? '대학교' : '학과'}</Box>
+                            <Box width="10%" textAlign="center">모스트 챔피언</Box>
+                            <Box width="15%" textAlign="center">승률</Box>
+                            <Box width="20%" textAlign="center">한 줄 소개</Box>
+                        </Box>
 
-                    {rankingData.list.map(row => {
-                        const full = `${row.name}#${row.tag}`.toLowerCase().replace(/\s+/g, '');
-                        const isHighlighted = full === searchTarget;
+                        {/* 테이블 바디 */}
+                        {rankingData.list.map(row => {
+                            const full = `${row.name}#${row.tag}`.toLowerCase().replace(/\s+/g, '');
+                            const isHighlighted = full === searchTarget;
 
-                        return (
-                            <Collapse key={full} in={true}>
-                                <Box
-                                    ref={(el) => {
-                                        if (el) {
-                                            rowRefs.current[full] = el; // 각 행의 ref 저장
-                                        }
-                                    }}
-                                    onClick={() => handleRowClick(row)}
-                                    sx={{
-                                        px: 0,
-                                        py: 1,
-                                        pr: 1,
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        fontSize: 14,
-                                        borderBottom: '2px solid #12121a',
-                                        cursor: 'pointer',
-                                        color: '#fff',
-                                        backgroundColor: isHighlighted ? '#2E2E38' : theme.palette.background.paper,
-
-                                        // 하이라이트가 아닐 때만 hover 적용
-                                        ...(isHighlighted
-                                            ? {}
-                                            : {
-                                                '&:hover': {
-                                                    backgroundColor: '#2E2E38',
-                                                },
-                                            }),
-                                    }}
-                                >
-                                    {/* ...기존 컬럼 그대로 */}
-                                    <Box width="5%" textAlign="center">{row.ranking}</Box>
-                                    <Box width="15%" display="flex"><SummonerInfo name={row.name} tag={row.tag}
-                                                                                  avatarUrl={row.avatarUrl}/></Box>
-                                    <Box width="10%" textAlign="center"><PositionIcon position={row.position}/></Box>
-                                    <Box width="5%" textAlign="center"><TierBadge tier={row.tier} score={row.lp}
-                                                                                  rank={row.rank}/></Box>
-                                    <Box width="10%"
-                                         textAlign="center">{tab === 0 ? row.university : row.department}</Box>
-                                    <Box width="10%" textAlign="center"><ChampionIconList
-                                        championNames={row.champions}/></Box>
-                                    <Box width="15%" textAlign="center"><WinRateBar wins={row.wins}
-                                                                                    losses={row.losses}/></Box>
-                                    <Box width="20%" textAlign="center">
-                                        <Box sx={{
-                                            backgroundColor: '#424254',
-                                            p: 1,
-                                            borderRadius: 1,
+                            return (
+                                <Collapse key={full} in={true}>
+                                    <Box
+                                        ref={(el) => {
+                                            if (el) {
+                                                rowRefs.current[full] = el;
+                                            }
+                                        }}
+                                        onClick={() => handleRowClick(row)}
+                                        sx={{
+                                            px: 0,
+                                            py: 1,
+                                            pr: 1,
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            fontSize: 14,
+                                            borderBottom: '2px solid #12121a',
+                                            cursor: 'pointer',
                                             color: '#fff',
-                                            fontSize: '0.85rem',
-                                            lineHeight: 1.4,
-                                            textAlign: 'left',
-                                            display: '-webkit-inline-box',
-                                            WebkitBoxOrient: 'vertical',
-                                            WebkitLineClamp: 2,
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'normal',
-                                            maxHeight: '3.6em'
-                                        }}>{row.message}</Box>
+                                            backgroundColor: isHighlighted ? '#2E2E38' : theme.palette.background.paper,
+                                            ...(isHighlighted
+                                                ? {}
+                                                : {
+                                                    '&:hover': {
+                                                        backgroundColor: '#2E2E38',
+                                                    },
+                                                }),
+                                        }}
+                                    >
+                                        <Box width="5%" textAlign="center">{row.ranking}</Box>
+                                        <Box width="15%" display="flex">
+                                            <SummonerInfo name={row.name} tag={row.tag} avatarUrl={row.avatarUrl}/>
+                                        </Box>
+                                        <Box width="10%" textAlign="center">
+                                            <PositionIcon position={row.position}/>
+                                        </Box>
+                                        <Box width="5%" textAlign="center">
+                                            <TierBadge tier={row.tier} score={row.lp} rank={row.rank}/>
+                                        </Box>
+                                        <Box width="10%" textAlign="center">
+                                            {tab === 0 ? row.university : row.department}
+                                        </Box>
+                                        <Box width="10%" textAlign="center">
+                                            <ChampionIconList championNames={row.champions}/>
+                                        </Box>
+                                        <Box width="15%" textAlign="center">
+                                            <WinRateBar wins={row.wins} losses={row.losses}/>
+                                        </Box>
+                                        <Box width="20%" textAlign="center">
+                                            <Box sx={{
+                                                backgroundColor: '#424254',
+                                                p: 1,
+                                                borderRadius: 1,
+                                                color: '#fff',
+                                                fontSize: '0.85rem',
+                                                lineHeight: 1.4,
+                                                textAlign: 'left',
+                                                display: '-webkit-inline-box',
+                                                WebkitBoxOrient: 'vertical',
+                                                WebkitLineClamp: 2,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'normal',
+                                                maxHeight: '3.6em'
+                                            }}>
+                                                {row.message}
+                                            </Box>
+                                        </Box>
                                     </Box>
-                                </Box>
-                            </Collapse>
-                        );
-                    })}
-
-                    <Box sx={{display: 'flex', justifyContent: 'center', py: 3}}>
-                        <Pagination
-                            count={totalPages}
-                            page={currentPage}
-                            onChange={(e, value) => setCurrentPage(value)}
-                            shape="rounded"
-                            color="primary"
-                            sx={{
-                                '& .MuiPaginationItem-root': {color: '#fff'},
-                                '& .Mui-selected': {backgroundColor: '#42E6B5', color: '#000'}
-                            }}
-                        />
+                                </Collapse>
+                            );
+                        })}
                     </Box>
+                </Box>
+
+                {/* 페이지네이션 */}
+                <Box sx={{display: 'flex', justifyContent: 'center', py: 3}}>
+                    <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={(e, value) => setCurrentPage(value)}
+                        shape="rounded"
+                        color="primary"
+                        sx={{
+                            '& .MuiPaginationItem-root': {color: '#fff'},
+                            '& .Mui-selected': {backgroundColor: '#42E6B5', color: '#000'}
+                        }}
+                    />
                 </Box>
             </Container>
+
             <RankingDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} data={selectedData}/>
             <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)}/>
             <EditProfileModal open={open} handleClose={() => setOpen(false)} userProfileData={myProfileData}/>

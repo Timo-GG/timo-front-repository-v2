@@ -105,7 +105,6 @@ export default function MyPage({defaultTab, initialRoomId}) {
             </Tabs>
         </Box>
     );
-
     return (
         <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
             <Container maxWidth="lg" sx={{px: {xs: 1, sm: 3}}}>
@@ -264,7 +263,8 @@ export default function MyPage({defaultTab, initialRoomId}) {
             </Container>
 
             {selectedUser && (
-                <DuoDetailModal open handleClose={() => setSelectedUser(null)} partyData={selectedUser}/>
+                <DuoDetailModal open handleClose={() => setSelectedUser(null)} partyData={selectedUser}                     isMyPageView={true}
+                />
             )}
             {selectedScrim && (
                 <ScrimRequestModal open handleClose={() => setSelectedScrim(null)} partyId={selectedScrim.id}
