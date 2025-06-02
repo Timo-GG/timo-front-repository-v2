@@ -20,6 +20,7 @@ export default function DuoDetailModal({
     open,
     handleClose,
     partyData,
+   isMyPageView = false
 }) {
     if (!partyData) return null;
     console.log(partyData);
@@ -186,10 +187,12 @@ export default function DuoDetailModal({
                                 <Typography color="#888" sx={{ fontSize: '0.8rem' }}>MBTI</Typography>
                                 <Typography>{mbti === "UNKNOWN" ? "비밀" : mbti || '-'}</Typography>
                             </Box>
-                            <Box>
-                                <Typography color="#888" sx={{ fontSize: '0.8rem' }}>선호 스타일</Typography>
-                                <Typography>{playStyleDisplay[lookingForStyle]}</Typography>
-                            </Box>
+                            {!isMyPageView && (
+                                <Box>
+                                    <Typography color="#888" sx={{ fontSize: '0.8rem' }}>선호 스타일</Typography>
+                                    <Typography>{playStyleDisplay[lookingForStyle]}</Typography>
+                                </Box>
+                            )}
                         </Box>
                     </Box>
 

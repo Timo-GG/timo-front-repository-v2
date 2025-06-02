@@ -317,6 +317,7 @@ export const fetchReceivedRequests = async (acceptorId) => {
     const data = res.data.data;
     return data.map(item => transformRequestorToFrontend(item));
 };
+
 export const fetchSentRequests = async (requestorId) => {
     const res = await axiosInstance.get(`/matching/mypage/requestor/${requestorId}`,
         {withAuth: true});
@@ -357,7 +358,7 @@ const transformRequestorToFrontend = (item) => {
         leaguePoint: memberInfo.rankInfo?.lp || 0,
         rank: memberInfo.rankInfo?.rank || '',
         lookingForPosition: '',
-        lookingForStyle: item.duoInfo.opponentStyle?.toLowerCase() || '',
+        lookingForStyle: '',
         updatedAt: item.updatedAt,
         type: matchingCategory === 'DUO' ? '듀오' : '내전',
         champions: memberInfo.most3Champ || [],
@@ -396,7 +397,7 @@ const transformAcceptorToFrontend = (item) => {
         leaguePoint: memberInfo.rankInfo?.lp || 0,
         rank: memberInfo.rankInfo?.rank || '',
         lookingForPosition: '',
-        lookingForStyle: item.duoInfo.opponentStyle?.toLowerCase() || '',
+        lookingForStyle: '',
         updatedAt: item.updatedAt,
         type: matchingCategory === 'DUO' ? '듀오' : '내전',
         champions: memberInfo.most3Champ || [],
