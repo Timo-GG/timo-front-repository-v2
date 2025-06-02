@@ -1,4 +1,3 @@
-// src/components/duo/CreateDuoModal.jsx
 import React, { useState, useEffect } from 'react';
 import {
     Dialog,
@@ -26,9 +25,11 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
             checkExistingBoard();
         }
     }, [open, isEditMode]);
+
     const { userData } = useAuthStore();
     const riot = userData?.riotAccount;
     const memberId = userData?.memberId;
+
     const checkExistingBoard = async () => {
         try {
             const exists = await isExistMyBoard();
@@ -38,8 +39,8 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
             setHasExistingBoard(false);
         }
     };
-    const [
-        formData, setFormData] = useState({
+
+    const [formData, setFormData] = useState({
         myPosition: 'nothing',
         playStyle: '즐겜',
         gameStatus: '첫판',
@@ -187,8 +188,20 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
             }
         };
     };
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm">
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="sm"
+            scroll="body"
+            sx={{
+                '& .MuiDialog-paper': {
+                    maxHeight: {xs: '90vh', sm: 'none'},
+                    margin: {xs: 1, sm: 3}
+                }
+            }}
+        >
             <Box>
                 <Box sx={{ backgroundColor: '#31313D', p: 2 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -203,10 +216,21 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
 
                 <Box sx={{ height: '1px', backgroundColor: '#171717' }} />
 
-                <Box sx={{ backgroundColor: '#31313E', p: 3 }}>
-                    <Box display="flex" justifyContent="center" gap={3} mb={3}>
+                <Box sx={{ backgroundColor: '#31313E', p: {xs: 2, sm: 3} }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: {xs: 'column', sm: 'row'},
+                        justifyContent: 'center',
+                        gap: 3,
+                        mb: 3
+                    }}>
                         {/* 내 정보 영역 */}
-                        <Box sx={{ width: 280, p: 2, borderRadius: 1, backgroundColor: '#31313E' }}>
+                        <Box sx={{
+                            width: {xs: '100%', sm: 280},
+                            p: {xs: 1, sm: 2},
+                            borderRadius: 1,
+                            backgroundColor: '#31313E'
+                        }}>
                             <Typography fontSize="1rem" fontWeight="bold" color="#fff" mb={2}>
                                 내 정보
                             </Typography>
@@ -305,7 +329,12 @@ export default function CreateDuoModal({ open, onClose, onSuccess, onLoadingStar
                         </Box>
 
                         {/* 듀오 정보 영역 */}
-                        <Box sx={{ width: 280, p: 2, borderRadius: 1, backgroundColor: '#31313E' }}>
+                        <Box sx={{
+                            width: {xs: '100%', sm: 280},
+                            p: {xs: 1, sm: 2},
+                            borderRadius: 1,
+                            backgroundColor: '#31313E'
+                        }}>
                             <Typography fontSize="1rem" fontWeight="bold" color="#fff" mb={2}>듀오 정보</Typography>
 
                             {/* 찾는 포지션 */}

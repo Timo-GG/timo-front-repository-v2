@@ -29,18 +29,18 @@ import {useQuery} from '@tanstack/react-query';
 import {fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards, deleteMyDuoBoard, fetchDuoBoard} from '../apis/redisAPI';
 import {getMyInfo} from '../apis/authAPI';
 import {useQueryClient} from '@tanstack/react-query';
-import {formatRelativeTime} from '../utils/timeUtils';
+import {formatRelativeTime, formatTimeUntilExpiry, isExpired } from '../utils/timeUtils';
 import {toast} from 'react-toastify';
 
 export default function DuoPage() {
     const theme = useTheme();
     const [positionFilter, setPositionFilter] = useState('nothing');
-    const [rankType, setRankType] = useState('solo');
+    const [rankType, setRankType] = useState('all');
     const [schoolFilter, setSchoolFilter] = useState('all');
 
     // 페이징 관련 상태
-    const [allDuoUsers, setAllDuoUsers] = useState([]); // 모든 데이터 저장
-    const [displayedUsers, setDisplayedUsers] = useState([]); // 화면에 표시할 데이터
+    const [allDuoUsers, setAllDuoUsers] = useState([]);
+    const [displayedUsers, setDisplayedUsers] = useState([]);
     const [currentPage, setCurrentPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -61,8 +61,8 @@ export default function DuoPage() {
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [isCreatingBoard, setIsCreatingBoard] = useState(false);
 
-    const [editingDuo, setEditingDuo] = useState(null); // 수정할 듀오 데이터
-    const [isEditMode, setIsEditMode] = useState(false); // 수정 모드 여부
+    const [editingDuo, setEditingDuo] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const queryClient = useQueryClient();
 
@@ -70,6 +70,7 @@ export default function DuoPage() {
         return userData && (userData.accessToken || userData.memberId);
     };
 
+    // 기존 useEffect들은 동일하게 유지...
     useEffect(() => {
         const handleAuthError = (event) => {
             console.log('인증 에러 발생:', event.detail);
@@ -78,11 +79,11 @@ export default function DuoPage() {
         };
 
         window.addEventListener('authError', handleAuthError);
-
         return () => {
             window.removeEventListener('authError', handleAuthError);
         };
     }, []);
+
     useEffect(() => {
         const fetchAndUpdateUser = async () => {
             if (isLoggedIn()) {
@@ -98,7 +99,6 @@ export default function DuoPage() {
         fetchAndUpdateUser();
     }, []);
 
-    // 기존 게시물 존재 여부 확인
     useEffect(() => {
         const checkExistingBoard = async () => {
             if (isLoggedIn()) {
@@ -126,25 +126,20 @@ export default function DuoPage() {
     useEffect(() => {
         if (initialData && initialData.content && !isCreatingBoard) {
             console.log('폴링 데이터로 상태 업데이트:', initialData);
-
-            // 서버 데이터로 완전 교체 (삭제된 항목 자동 제거)
             setAllDuoUsers(initialData.content);
             setDisplayedUsers(initialData.content);
-
             setHasMore(initialData.content.length === pageSize && !initialData.last);
         }
     }, [initialData, pageSize, isCreatingBoard]);
 
+    // 기존 핸들러 함수들은 동일하게 유지...
     const handleLoadMore = async () => {
         if (isLoadingMore || !hasMore) return;
 
         setIsLoadingMore(true);
         try {
             const nextPage = currentPage + 1;
-            console.log('다음 페이지 로드:', nextPage);
-
             const moreData = await fetchAllDuoBoards(nextPage, pageSize);
-            console.log('추가 데이터:', moreData);
 
             if (moreData && moreData.content && moreData.content.length > 0) {
                 setAllDuoUsers(prev => [...prev, ...moreData.content]);
@@ -161,18 +156,10 @@ export default function DuoPage() {
             setIsLoadingMore(false);
         }
     };
-    // 끌어올리기 처리 함수 (state 끌어올리기)
+
     const handleRefresh = async () => {
         try {
             setIsRefreshing(true);
-
-            // ✅ 상태 초기화 제거 - 기존 데이터 유지
-            // setCurrentPage(0);
-            // setAllDuoUsers([]);
-            // setDisplayedUsers([]);
-            // setHasMore(true);
-
-            // ✅ Optimistic Update: 즉시 UI 업데이트
             const currentTime = new Date().toISOString();
             const currentUserId = currentUser?.memberId;
 
@@ -184,23 +171,17 @@ export default function DuoPage() {
                         }
                         return user;
                     });
-                    // 최신순 정렬
                     return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
                 });
             }
 
-            // API 호출
             await refreshDuoBoards();
-
-            // ✅ 백그라운드에서 데이터 동기화 (UI 깜빡임 없음)
             queryClient.invalidateQueries(['duoUsers']);
-
             toast.success('게시물이 끌어올려졌습니다!');
             setHasExistingBoard(true);
 
         } catch (error) {
             console.error('끌어올리기 실패:', error);
-            // 에러 시에만 쿼리 무효화로 원래 상태 복구
             queryClient.invalidateQueries(['duoUsers']);
 
             if (error.response?.status === 401) {
@@ -211,15 +192,12 @@ export default function DuoPage() {
         }
     };
 
-
     const handleRegisterDuo = () => {
-        console.log('듀오 등록 클릭 - 로그인 상태:', isLoggedIn(), userData);
         if (!isLoggedIn()) {
             setLoginModalOpen(true);
             return;
         }
 
-        // 기존 게시물이 있으면 끌어올리기, 없으면 모달 열기
         if (hasExistingBoard) {
             handleRefresh();
         } else {
@@ -251,7 +229,6 @@ export default function DuoPage() {
     };
 
     const handleApplyDuo = (user, boardUUID) => {
-        console.log('듀오 신청 클릭 - 로그인 상태:', isLoggedIn(), userData);
         if (!isLoggedIn()) {
             setLoginModalOpen(true);
             return;
@@ -263,18 +240,12 @@ export default function DuoPage() {
 
     const handleLoginModalClose = () => {
         setLoginModalOpen(false);
-        setTimeout(() => {
-            console.log('로그인 모달 닫힌 후 상태:', userData);
-        }, 100);
     };
 
-    // 모달 성공 후 기존 게시물 상태 업데이트
-    // 모달 성공 핸들러 수정
     const handleModalSuccess = async (newBoardData) => {
         if (isLoggedIn()) {
             try {
                 if (isEditMode) {
-                    // 수정 모드일 때
                     setDisplayedUsers(prev =>
                         prev.map(user =>
                             user.id === newBoardData.id ? newBoardData : user
@@ -287,7 +258,6 @@ export default function DuoPage() {
                     );
                     toast.success('게시글이 수정되었습니다.');
                 } else {
-                    // 생성 모드일 때 (기존 로직)
                     setHasExistingBoard(true);
                     if (newBoardData) {
                         setDisplayedUsers(prev => {
@@ -307,7 +277,6 @@ export default function DuoPage() {
                     }
                 }
 
-                // 폴링 일시 중단 후 재개
                 queryClient.cancelQueries(['duoUsers']);
                 setTimeout(() => {
                     queryClient.invalidateQueries(['duoUsers']);
@@ -322,26 +291,22 @@ export default function DuoPage() {
     const handleDeleteSuccess = async (deletedUserId) => {
         try {
             setSelectedUser(null);
-
-            // 로컬에서 즉시 제거
             setDisplayedUsers(prev => prev.filter(user => user.id !== deletedUserId));
             setAllDuoUsers(prev => prev.filter(user => user.id !== deletedUserId));
             setHasExistingBoard(false);
-
-            // 즉시 서버 데이터 동기화 (다른 사용자들도 빠르게 업데이트)
             queryClient.invalidateQueries(['duoUsers']);
-
         } catch (error) {
             console.log('삭제 후 상태 업데이트 실패:', error);
         }
     };
+
     const filteredUsers = displayedUsers.filter(u =>
         positionFilter === 'nothing' || u.position?.toLowerCase() === positionFilter
     );
 
     return (
         <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
-            <Container maxWidth="lg">
+            <Container maxWidth="lg" sx={{px: {xs: 1, sm: 3}}}>
                 <FilterBar
                     positionFilter={positionFilter}
                     onPositionClick={setPositionFilter}
@@ -354,128 +319,134 @@ export default function DuoPage() {
                     isLoggedIn={isLoggedIn()}
                     isRefreshing={isRefreshing}
                 />
-                <DuoHeader/>
-                {isCreatingBoard && (
-                    <Box sx={{
-                        ...itemRowStyle,
-                        backgroundColor: '#3A3B4F',
-                        border: '2px solid #42E6B5',
-                        justifyContent: 'center',
-                        py: 2,
-                    }}>
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            color: '#42E6B5'
-                        }}>
-                            <CircularProgress
-                                size={24}
-                                sx={{ color: '#42E6B5' }}
-                            />
-                            <Typography sx={{
-                                fontSize: '0.9rem',
-                                fontWeight: 500
+
+                {/* 테이블 영역 - 가로 스크롤 적용 */}
+                <Box sx={{overflowX: {xs: 'auto', sm: 'visible'}}}>
+                    <Box sx={{minWidth: {xs: '900px', sm: 'auto'}}}>
+                        <DuoHeader/>
+
+                        {isCreatingBoard && (
+                            <Box sx={{
+                                ...itemRowStyle,
+                                backgroundColor: '#3A3B4F',
+                                border: '2px solid #42E6B5',
+                                justifyContent: 'center',
+                                py: 2,
                             }}>
-                            </Typography>
-                        </Box>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    color: '#42E6B5'
+                                }}>
+                                    <CircularProgress
+                                        size={24}
+                                        sx={{ color: '#42E6B5' }}
+                                    />
+                                    <Typography sx={{
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500
+                                    }}>
+                                        게시글을 등록하고 있습니다...
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {isLoading ? (
+                            <Box sx={{textAlign: 'center', py: 4, color: '#fff'}}>
+                                <CircularProgress sx={{color: '#A35AFF'}}/>
+                            </Box>
+                        ) : (
+                            <>
+                                {filteredUsers.length === 0 ? (
+                                    <Box sx={{
+                                        textAlign: 'center',
+                                        py: 4,
+                                        color: '#666',
+                                        backgroundColor: '#2B2C3C',
+                                        borderBottomLeftRadius: 10,
+                                        borderBottomRightRadius: 10
+                                    }}>
+                                        <Typography>등록된 듀오 게시물이 없습니다.</Typography>
+                                    </Box>
+                                ) : (
+                                    filteredUsers.map((user) => (
+                                        <DuoItem
+                                            key={user.id}
+                                            user={user}
+                                            currentUser={currentUser}
+                                            onApplyDuo={() => handleApplyDuo(user, user.id)}
+                                            onUserClick={handleUserClick}
+                                            onDelete={handleDeleteSuccess}
+                                            onEdit={handleEditDuo}
+                                        />
+                                    ))
+                                )}
+                            </>
+                        )}
+                    </Box>
+                </Box>
+
+                {/* Load More 버튼 */}
+                {hasMore && (
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        mt: 3,
+                        mb: 2
+                    }}>
+                        <Button
+                            onClick={handleLoadMore}
+                            disabled={isLoadingMore}
+                            sx={{
+                                backgroundColor: '#2B2C3C',
+                                color: '#fff',
+                                border: '1px solid #424254',
+                                borderRadius: 4,
+                                px: 1,
+                                py: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                '&:hover': {
+                                    backgroundColor: '#424254',
+                                },
+                                '&:disabled': {
+                                    backgroundColor: '#1a1a1a',
+                                    color: '#666',
+                                }
+                            }}
+                        >
+                            {isLoadingMore ? (
+                                <CircularProgress size={20} sx={{color: '#A35AFF'}}/>
+                            ) : (
+                                <KeyboardArrowDownIcon sx={{fontSize: 18}}/>
+                            )}
+                        </Button>
                     </Box>
                 )}
-                {isLoading ? (
-                    <Box sx={{textAlign: 'center', py: 4, color: '#fff'}}>
-                        <CircularProgress sx={{color: '#A35AFF'}}/>
+
+                {!hasMore && displayedUsers.length > 0 && (
+                    <Box sx={{
+                        textAlign: 'center',
+                        py: 3,
+                        color: '#666',
+                        fontSize: '0.9rem'
+                    }}>
+                        모든 게시물을 확인했습니다.
                     </Box>
-                ) : (
-                    <>
-                        {filteredUsers.map((user) => (
-                            <DuoItem
-                                key={user.id}
-                                user={user}
-                                currentUser={currentUser}
-                                onApplyDuo={() => handleApplyDuo(user, user.id)}
-                                onUserClick={handleUserClick}
-                                onDelete={handleDeleteSuccess}
-                                onEdit={handleEditDuo}
-                            />
-                        ))}
-
-                        {/* Load More 버튼 */}
-                        {hasMore && (
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'center',
-                                mt: 3,
-                                mb: 2
-                            }}>
-                                <Button
-                                    onClick={handleLoadMore}
-                                    disabled={isLoadingMore}
-                                    sx={{
-                                        backgroundColor: '#2B2C3C',
-                                        color: '#fff',
-                                        border: '1px solid #424254',
-                                        borderRadius: 4,
-                                        px: 1,
-                                        py: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        '&:hover': {
-                                            backgroundColor: '#424254',
-                                        },
-                                        '&:disabled': {
-                                            backgroundColor: '#1a1a1a',
-                                            color: '#666',
-                                        }
-                                    }}
-                                >
-                                    {isLoadingMore ? (
-                                        <>
-                                            <CircularProgress size={20} sx={{color: '#A35AFF'}}/>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <KeyboardArrowDownIcon sx={{fontSize: 18}}/>
-                                        </>
-                                    )}
-                                </Button>
-                            </Box>
-                        )}
-
-                        {/* 더 이상 데이터가 없을 때 메시지 */}
-                        {!hasMore && displayedUsers.length > 0 && (
-                            <Box sx={{
-                                textAlign: 'center',
-                                py: 3,
-                                color: '#666',
-                                fontSize: '0.9rem'
-                            }}>
-                                모든 게시물을 확인했습니다.
-                            </Box>
-                        )}
-
-                        {/* 데이터가 없을 때 메시지 */}
-                        {!isLoading && displayedUsers.length === 0 && (
-                            <Box sx={{
-                                textAlign: 'center',
-                                py: 4,
-                                color: '#666',
-                                fontSize: '1rem'
-                            }}>
-                                등록된 듀오 게시물이 없습니다.
-                            </Box>
-                        )}
-                    </>
                 )}
             </Container>
 
+            {/* 모달들 */}
             <CreateDuoModal
                 open={isCreateModalOpen}
-                onClose={() => setCreateModalOpen(false)}
+                onClose={handleModalClose}
                 onSuccess={handleModalSuccess}
-                onLoadingStart={setIsCreatingBoard} // 로딩 상태 전달
-                editData={editingDuo} // 수정할 데이터 전달
-                isEditMode={isEditMode} // 수정 모드 여부 전달
+                onLoadingStart={setIsCreatingBoard}
+                editData={editingDuo}
+                isEditMode={isEditMode}
             />
 
             {selectedUser && !openSendModal && (
@@ -513,7 +484,7 @@ export default function DuoPage() {
     );
 }
 
-// FilterBar 컴포넌트 수정
+// 수정된 FilterBar 컴포넌트
 function FilterBar({
                        positionFilter,
                        onPositionClick,
@@ -526,14 +497,14 @@ function FilterBar({
                        isLoggedIn,
                        isRefreshing
                    }) {
-    // 버튼 텍스트 결정
     const getButtonText = () => {
         if (!isLoggedIn) return '듀오등록하기';
         if (isRefreshing) return '끌어올리는 중...';
         return hasExistingBoard ? '게시물 끌어올리기' : '듀오등록하기';
     };
+
     const tierOptions = [
-        {value: 'all', label: '전체'},
+        {value: 'all', label: '전체 티어'},
         {value: 'iron', label: '아이언'},
         {value: 'bronze', label: '브론즈'},
         {value: 'silver', label: '실버'},
@@ -547,18 +518,32 @@ function FilterBar({
     ];
 
     return (
-        <Box sx={{display: 'flex', alignItems: 'center', gap: 2, mb: 2}}>
-            <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick}/>
-            <Box sx={{display: 'flex', gap: 2, alignItems: 'center'}}>
-                <FormControl variant="outlined" size="small" sx={{height: 48}}>
-                    <Select value={rankType} onChange={(e) => setRankType(e.target.value)} sx={selectStyle}>
+        <Box sx={{mb: 3}}>
+            {/* 데스크톱: 한 줄로 배치 */}
+            <Box sx={{
+                display: {xs: 'none', sm: 'flex'},
+                alignItems: 'center',
+                gap: 2
+            }}>
+                <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick}/>
+                <FormControl variant="outlined" size="small" sx={{height: 48, minWidth: 120}}>
+                    <Select
+                        value={rankType}
+                        onChange={(e) => setRankType(e.target.value)}
+                        sx={selectStyle}
+                    >
+                        <MenuItem value="all">큐 타입</MenuItem>
                         <MenuItem value="solo">랭크</MenuItem>
                         <MenuItem value="normal">일반</MenuItem>
                         <MenuItem value="aram">칼바람</MenuItem>
                     </Select>
                 </FormControl>
-                <FormControl variant="outlined" size="small" sx={{height: 48}}>
-                    <Select value={schoolFilter} onChange={(e) => setSchoolFilter(e.target.value)} sx={selectStyle}>
+                <FormControl variant="outlined" size="small" sx={{height: 48, minWidth: 140}}>
+                    <Select
+                        value={schoolFilter}
+                        onChange={(e) => setSchoolFilter(e.target.value)}
+                        sx={selectStyle}
+                    >
                         {tierOptions.map((tier) => (
                             <MenuItem key={tier.value} value={tier.value}>
                                 {tier.label}
@@ -566,36 +551,116 @@ function FilterBar({
                         ))}
                     </Select>
                 </FormControl>
-            </Box>
-            <Button
-                variant="contained"
-                disabled={isRefreshing}
-                sx={{
-                    ...registerBtnStyle,
-                    background: hasExistingBoard && isLoggedIn
-                        ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
-                        : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
-                    '&:hover': {
+                <Button
+                    variant="contained"
+                    disabled={isRefreshing}
+                    sx={{
+                        ...registerBtnStyle,
                         background: hasExistingBoard && isLoggedIn
-                            ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
-                            : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
-                    },
-                    '&:disabled': {
-                        background: '#666',
-                        color: '#999'
-                    }
-                }}
-                onClick={onRegisterDuo}
-            >
-                {getButtonText()}
-            </Button>
+                            ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                            : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
+                        '&:hover': {
+                            background: hasExistingBoard && isLoggedIn
+                                ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
+                                : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
+                        },
+                        '&:disabled': {
+                            background: '#666',
+                            color: '#999'
+                        }
+                    }}
+                    onClick={onRegisterDuo}
+                >
+                    {getButtonText()}
+                </Button>
+            </Box>
+
+            {/* 모바일: 두 줄로 분리 */}
+            <Box sx={{display: {xs: 'block', sm: 'none'}}}>
+                {/* 첫 번째 줄: 포지션 필터 */}
+                <Box sx={{mb: 2}}>
+                    <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick}/>
+                </Box>
+
+                {/* 두 번째 줄: 큐타입, 티어, 등록버튼 */}
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    justifyContent: 'space-between'
+                }}>
+                    <FormControl variant="outlined" size="small" sx={{height: 40, flex: 1, minWidth: 80}}>
+                        <Select
+                            value={rankType}
+                            onChange={(e) => setRankType(e.target.value)}
+                            sx={{
+                                ...selectStyle,
+                                height: 40,
+                                fontSize: '0.85rem'
+                            }}
+                        >
+                            <MenuItem value="all">큐 타입</MenuItem>
+                            <MenuItem value="solo">랭크</MenuItem>
+                            <MenuItem value="normal">일반</MenuItem>
+                            <MenuItem value="aram">칼바람</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl variant="outlined" size="small" sx={{height: 40, flex: 1, minWidth: 90}}>
+                        <Select
+                            value={schoolFilter}
+                            onChange={(e) => setSchoolFilter(e.target.value)}
+                            sx={{
+                                ...selectStyle,
+                                height: 40,
+                                fontSize: '0.85rem'
+                            }}
+                        >
+                            {tierOptions.map((tier) => (
+                                <MenuItem key={tier.value} value={tier.value}>
+                                    {tier.label}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <Button
+                        variant="contained"
+                        disabled={isRefreshing}
+                        sx={{
+                            fontWeight: 'bold',
+                            height: 40,
+                            px: 2,
+                            background: hasExistingBoard && isLoggedIn
+                                ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                                : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
+                            color: '#fff',
+                            fontSize: '0.85rem',
+                            borderRadius: 0.8,
+                            minWidth: 100,
+                            '&:hover': {
+                                background: hasExistingBoard && isLoggedIn
+                                    ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
+                                    : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
+                            },
+                            '&:disabled': {
+                                background: '#666',
+                                color: '#999'
+                            }
+                        }}
+                        onClick={onRegisterDuo}
+                    >
+                        {getButtonText()}
+                    </Button>
+                </Box>
+            </Box>
         </Box>
     );
 }
 
 function DuoHeader() {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
-    const headers = ['소환사', '큐 타입', '주 포지션', '티어', '찾는 포지션', '한 줄 소개', '등록 일시', '듀오 신청', ''];
+    const headers = ['소환사', '큐 타입', '주 포지션', '티어', '찾는 포지션', '한 줄 소개', '등록 일시', '만료 일시', ''];
     return (
         <Box sx={headerRowStyle}>
             {headers.map((text, i) => (
@@ -614,6 +679,21 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
         user.tag === currentUser.riotAccount?.accountTag;
 
     const [anchorEl, setAnchorEl] = useState(null);
+    const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(user.updatedAt));
+    const [expiryTime, setExpiryTime] = useState(() => formatTimeUntilExpiry(user.updatedAt));
+    const [expired, setExpired] = useState(() => isExpired(user.updatedAt));
+
+    useEffect(() => {
+        const updateTimes = () => {
+            setRelativeTime(formatRelativeTime(user.updatedAt));
+            setExpiryTime(formatTimeUntilExpiry(user.updatedAt));
+            setExpired(isExpired(user.updatedAt));
+        };
+
+        updateTimes();
+        const interval = setInterval(updateTimes, 60000);
+        return () => clearInterval(interval);
+    }, [user.updatedAt]);
 
     const handleEdit = async () => {
         setAnchorEl(null);
@@ -622,18 +702,13 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
         }
     };
 
-
     const handleDelete = async () => {
         if (window.confirm('정말로 게시글을 삭제하시겠습니까?')) {
             try {
                 await deleteMyDuoBoard();
                 toast.success('게시글이 삭제되었습니다.');
-
                 setAnchorEl(null);
-
-                // 삭제된 게시물 ID를 부모에게 전달
                 if (onDelete) onDelete(user.id);
-
             } catch (error) {
                 console.error('게시글 삭제 실패:', error);
                 toast.error('게시글 삭제에 실패했습니다.');
@@ -644,21 +719,18 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
         }
     };
 
-
-    const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(user.updatedAt));
-    useEffect(() => {
-        setRelativeTime(formatRelativeTime(user.updatedAt));
-    }, [user.updatedAt]);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setRelativeTime(formatRelativeTime(user.updatedAt));
-        }, 30000);
-
-        return () => clearInterval(interval);
-    }, [user.updatedAt]);
     return (
-        <Box onClick={() => onUserClick(user)} sx={itemRowStyle}>
+        <Box
+            onClick={() => onUserClick(user)}
+            sx={{
+                ...itemRowStyle,
+                opacity: expired ? 0.6 : 1,
+                backgroundColor: expired ? '#1a1a1a' : '#2B2C3C',
+                '&:hover': {
+                    backgroundColor: expired ? '#1e1e1e' : '#2E2E38'
+                }
+            }}
+        >
             <Box sx={{flex: columns[0]}}>
                 <SummonerInfo name={user.name} avatarUrl={user.avatarUrl} tag={user.tag} school={user.school}/>
             </Box>
@@ -703,13 +775,13 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
                 textAlign: 'center',
                 fontSize: {xs: '0.7rem', sm: '0.75rem'}
             }}>{relativeTime}</Box>
-            <Box sx={{flex: columns[7], textAlign: 'center'}}>
-                <Button variant="contained" sx={applyBtnStyle} onClick={(e) => {
-                    e.stopPropagation();
-                    onApplyDuo();
-                }}>
-                    신청
-                </Button>
+            <Box sx={{
+                flex: columns[7],
+                textAlign: 'center',
+                fontSize: {xs: '0.7rem', sm: '0.75rem'},
+                color: expired ? '#f44336' : expiryTime.includes('시간') ? '#ff9800' : '#f44336'
+            }}>
+                {expiryTime}
             </Box>
             <Box sx={{flex: columns[8], textAlign: 'right'}}>
                 {isMine && (
@@ -741,13 +813,11 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
                     </>
                 )}
             </Box>
-
-
         </Box>
     );
 }
 
-// 스타일 상수
+// 스타일 상수들
 const selectStyle = {
     backgroundColor: '#2c2c3a',
     color: '#fff',
@@ -795,14 +865,4 @@ const itemRowStyle = {
     borderBottom: '2px solid #12121a',
     cursor: 'pointer',
     '&:hover': {backgroundColor: '#2E2E38'},
-};
-
-const applyBtnStyle = {
-    backgroundColor: '#424254',
-    color: '#fff',
-    borderRadius: 0.8,
-    fontWeight: 'bold',
-    px: 2,
-    py: 1,
-    border: '1px solid #71717D',
 };

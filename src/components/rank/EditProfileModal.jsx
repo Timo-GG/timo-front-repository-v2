@@ -1,5 +1,3 @@
-/** 랭킹 페이지 내 정보 수정하기 모달창 */
-
 import React, {useState} from 'react';
 import {
     Dialog, Button, Typography, Box,
@@ -15,7 +13,6 @@ import {schoolDepartmentsJson} from '../../data/schoolDepartmentsJson.cleaned';
 import useAuthStore from '/src/storage/useAuthStore';
 import {getMyInfo} from '/src/apis/authAPI';
 
-
 const POSITION_LIST = ['nothing', 'top', 'jungle', 'mid', 'bottom', 'support'];
 
 export default function EditProfileModal({open, handleClose, userProfileData}) {
@@ -30,7 +27,6 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
     const [selectedMbti, setSelectedMbti] = useState([]);
     const [memo, setMemo] = useState('');
     const { setUserData } = useAuthStore();
-
 
     React.useEffect(() => {
         if (open && userProfileData) {
@@ -136,15 +132,26 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
     };
 
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <Box sx={{backgroundColor: '#31313D', p: 2,}}>
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            sx={{
+                '& .MuiDialog-paper': {
+                    margin: {xs: 1, sm: 3},
+                    maxHeight: {xs: '90vh', sm: 'none'}
+                }
+            }}
+        >
+            <Box sx={{backgroundColor: '#31313D', p: 2}}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                     <SummonerInfo
-                       name={userProfileData?.gameName || ''}
-                       tag={userProfileData?.tagLine || ''}
-                      avatarUrl={userProfileData?.profileIconUrl || '/assets/default.png'}
-                       />
+                    <SummonerInfo
+                        name={userProfileData?.gameName || ''}
+                        tag={userProfileData?.tagLine || ''}
+                        avatarUrl={userProfileData?.profileIconUrl || '/assets/default.png'}
+                    />
                     <IconButton onClick={handleClose} size="small">
                         <CloseIcon sx={{color: '#fff'}}/>
                     </IconButton>
@@ -154,9 +161,14 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
 
                 <Typography mb={1} color="#fff" fontSize="1rem">내 정보</Typography>
 
-                <Box display="flex" gap={3}>
+                {/* 반응형 레이아웃: 모바일에서는 세로 배치, 데스크톱에서는 가로 배치 */}
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: {xs: 'column', sm: 'row'},
+                    gap: {xs: 2, sm: 3}
+                }}>
                     {/* 왼쪽 영역 */}
-                    <Box flex={1}>
+                    <Box sx={{flex: 1}}>
                         <Typography mb={0.5} color="#aaa" sx={{
                             fontSize: '0.8rem',
                         }}>주 포지션</Typography>
@@ -254,7 +266,7 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
                     </Box>
 
                     {/* 오른쪽 영역 (MBTI) */}
-                    <Box flex={1}>
+                    <Box sx={{flex: 1}}>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                             <Typography color="#aaa" fontSize="0.8rem">MBTI</Typography>
                             <Box display="flex" alignItems="center">
@@ -277,27 +289,27 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
                         >
                             {['외향', '직관', '감성', '탐색'].map((label, i) => (
                                 <Typography key={i} sx={{
-                                    fontSize: '0.7rem',
+                                    fontSize: {xs: '0.6rem', sm: '0.7rem'},
                                     color: '#888',
                                     lineHeight: 1.2,
                                 }}>{label}</Typography>
                             ))}
                         </Box>
 
-                        {/* MBTI 버튼 */}
+                        {/* MBTI 버튼 - 반응형 크기 조정 */}
                         <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" rowGap={1} mb={0.5}>
                             {['E', 'N', 'F', 'P', 'I', 'S', 'T', 'J'].map((type) => (
                                 <Button
                                     key={type}
                                     onClick={() => toggleMbti(type)}
                                     sx={{
-                                        width: 50,
-                                        height: 50,
+                                        width: {xs: 40, sm: 50},
+                                        height: {xs: 40, sm: 50},
                                         bgcolor: selectedMbti.includes(type) ? '#42E6B5' : '#2A2B31',
                                         color: selectedMbti.includes(type) ? '#fff' : '#B7B7C9',
                                         borderRadius: 0.5,
                                         fontWeight: 'bold',
-                                        fontSize: '1.2rem',
+                                        fontSize: {xs: '1rem', sm: '1.2rem'},
                                         mx: 'auto',
                                         minWidth: 0,
                                         p: 0,
@@ -320,7 +332,7 @@ export default function EditProfileModal({open, handleClose, userProfileData}) {
                             {['내향', '현실', '이성', '계획'].map((label, i) => (
                                 <Typography key={i}
                                             sx={{
-                                                fontSize: '0.7rem',
+                                                fontSize: {xs: '0.6rem', sm: '0.7rem'},
                                                 color: '#888',
                                                 lineHeight: 1.2,
                                             }}>{label}</Typography>
