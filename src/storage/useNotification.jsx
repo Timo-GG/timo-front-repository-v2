@@ -3,14 +3,16 @@ import { create } from 'zustand';
 const useNotificationStore = create((set) => ({
     notifications: [],
     addNotification: (notification) =>
+
         set((state) => ({
+
             notifications: [
                 ...state.notifications,
                 {
-                    id: notification.id || Date.now(),  // 서버 id 우선, 없으면 로컬 id
+                    id: notification.id || '',  // 서버 id 우선, 없으면 로컬 id
                     message: notification.message,
                     redirectUrl: notification.redirectUrl || '',
-                    time: notification.time || new Date().toLocaleString(),
+                    time: notification.regDate ? new Date(notification.regDate) : new Date()
                 },
             ],
         })),
