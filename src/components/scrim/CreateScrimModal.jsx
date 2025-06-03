@@ -49,8 +49,22 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
             setMap(editScrim.queueType);
             setPeople(`${editScrim.headCount}:${editScrim.headCount}`);
             setMyPosition(editScrim.party?.[0]?.myPosition?.toLowerCase() || 'nothing');
-            setPartyMembers(editScrim.party?.slice(1) || []);
-            setSummonerInputs(editScrim.party?.slice(1).map(() => "") || []);
+            const mappedMembers = (editScrim.party || []).slice(1).map((m) => ({
+                gameName: m.gameName,
+                tagLine: m.tagLine,
+                profileUrl: m.profileUrl,
+                rankInfo: {
+                    tier: m.tier || 'Unranked',
+                    rank: m.rank || '',
+                    lp: m.lp ?? 0,
+                    wins: m.wins ?? 0,
+                    losses: m.losses ?? 0,
+                },
+                most3Champ: m.champions || [],
+                myPosition: (m.myPosition || 'NOTHING').toLowerCase(),
+            }));
+            setPartyMembers(mappedMembers);
+            setSummonerInputs(mappedMembers.map(() => ""));
         }
     }, [editScrim]);
 
@@ -120,13 +134,13 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                 tagLine: m.tagLine,
                 profileUrl: m.profileUrl || '/default.png',
                 rankInfo: {
-                    tier: m?.tier || 'Unranked',
-                    rank: m?.rank || '',
-                    lp: m?.lp || 0,
-                    wins: m?.wins || 0,
-                    losses: m?.losses || 0,
+                    tier: m.rankInfo?.tier || 'Unranked',
+                    rank: m.rankInfo?.rank || '',
+                    lp: m.rankInfo?.lp || 0,
+                    wins: m.rankInfo?.wins || 0,
+                    losses: m.rankInfo?.losses || 0,
                 },
-                most3Champ: m.champions || [],
+                most3Champ: m.most3Champ || [],
                 myPosition: m.myPosition?.toUpperCase() || 'NOTHING'
             }));
 
@@ -263,8 +277,6 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                         </Box>
                     </Box>
                 </Box>
-
-
 
                 <Box sx={{ overflowX: 'auto' }}>
                     {/* 테이블 전체를 감싸는 래퍼 */}
