@@ -63,7 +63,7 @@ export default function DuoDetailModal({
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <Box sx={{backgroundColor: '#2B2C3C'}}>
+            <Box sx={{backgroundColor: '#2B2C3C', p: {xs: 1.5, sm: 2}, mx: 1}}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center" sx={{p: 2, ml: 1, mr: 1}}>
                     <Box display="flex" alignItems="center" gap={1}>
@@ -89,10 +89,10 @@ export default function DuoDetailModal({
                 }}
             />
 
-            <Box sx={{backgroundColor: '#2B2C3C', p: 2, ml: 1, mr: 1}}>
+            <Box sx={{backgroundColor: '#2B2C3C', p: {xs: 1.5, sm: 2}, mx: 1}}>
                 {/* 대학교 / 학과 제목 */}
                 <Box sx={{textAlign: 'center', mb: 2}}>
-                    <Typography fontSize="1rem" color="#A5A5A5">
+                    <Typography fontSize={{xs: '0.9rem', sm: '1rem'}} color="#A5A5A5">
                         {`${school} ${department}`}
                     </Typography>
                 </Box>
@@ -102,11 +102,11 @@ export default function DuoDetailModal({
                     <Box
                         sx={{
                             backgroundColor: '#424254',
-                            p: 2,
+                            p: {xs: 1.5, sm: 2},
                             borderRadius: 0.8,
                             color: '#fff',
-                            fontSize: '0.9rem',
-                            lineHeight: 1.4,
+                            fontSize: {xs: '0.85rem', sm: '0.9rem'},
+                            lineHeight: 1.5,
                             textAlign: 'left',
                             minHeight: '60px',
                             whiteSpace: 'pre-line',
@@ -120,73 +120,49 @@ export default function DuoDetailModal({
                 <Box mb={3}>
                     <Box
                         display="grid"
-                        gridTemplateColumns={{xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)'}}
+                        gridTemplateColumns={{ xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }}
                         columnGap={2}
                         rowGap={2}
                         sx={{
                             backgroundColor: '#282830',
-                            p: 2,
+                            p: { xs: 1.5, sm: 2 },
                             borderRadius: 1,
                             fontSize: '0.85rem',
                             color: '#DDD',
                         }}
                     >
                         <Box>
-                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                                플레이 스타일
-                            </Typography>
-                            <Typography sx={{ fontSize: '0.85rem' }}>
-                                {playStyleDisplay[playStyle] || '-'}
-                            </Typography>
+                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>플레이 스타일</Typography>
+                            <Typography>{playStyleDisplay[playStyle] || '-'}</Typography>
                         </Box>
                         <Box>
-                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                                내 상태
-                            </Typography>
-                            <Typography sx={{ fontSize: '0.85rem' }}>
-                                {statusDisplay[status] || '-'}
-                            </Typography>
+                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>내 상태</Typography>
+                            <Typography>{statusDisplay[status] || '-'}</Typography>
                         </Box>
                         <Box>
-                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                                마이크
-                            </Typography>
-                            <Typography sx={{ fontSize: '0.85rem' }}>
-                                {mic || '-'}
-                            </Typography>
+                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>마이크</Typography>
+                            <Typography>{mic || '-'}</Typography>
                         </Box>
                         <Box>
-                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                                성별
-                            </Typography>
-                            <Typography sx={{ fontSize: '0.85rem' }}>
-                                {genderDisplay[gender] || '-'}
-                            </Typography>
+                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>성별</Typography>
+                            <Typography>{genderDisplay[gender] || '-'}</Typography>
                         </Box>
                         <Box>
-                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                                MBTI
-                            </Typography>
-                            <Typography sx={{ fontSize: '0.85rem' }}>
-                                {mbti === "UNKNOWN" ? "비밀" : mbti || '-'}
-                            </Typography>
+                            <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>MBTI</Typography>
+                            <Typography>{mbti === "UNKNOWN" ? "비밀" : mbti || '-'}</Typography>
                         </Box>
                         {!isMyPageView && (
                             <Box>
-                                <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                                    선호 스타일
-                                </Typography>
-                                <Typography sx={{ fontSize: '0.85rem' }}>
-                                    {playStyleDisplay[lookingForStyle] || '-'}
-                                </Typography>
+                                <Typography color="#888" sx={{ fontSize: '0.8rem', mb: 0.5 }}>선호 스타일</Typography>
+                                <Typography>{playStyleDisplay[lookingForStyle] || '-'}</Typography>
                             </Box>
                         )}
                     </Box>
                 </Box>
 
                 {/* 소환사 정보 테이블 - 가로 스크롤 적용 */}
-                <Box sx={{ overflowX: 'auto' }}>
-                    <Box sx={{ minWidth: '500px' }}>
+                <Box sx={{overflowX: 'auto'}}>
+                    <Box sx={{minWidth: '500px'}}>
                         {/* 테이블 헤더 */}
                         <Box
                             sx={{
@@ -209,30 +185,30 @@ export default function DuoDetailModal({
                         <Box
                             sx={{
                                 px: 0,
-                                py: { xs: 0.5, sm: 1.5 },
+                                py: {xs: 0.5, sm: 1.5},
                                 display: 'flex',
                                 alignItems: 'center',
                                 backgroundColor: theme.palette.background.paper,
                                 color: '#fff',
-                                fontSize: { xs: 11, sm: 14 },
+                                fontSize: {xs: 11, sm: 14},
                                 borderTop: '1px solid #3c3d4e',
                             }}
                         >
-                            <Box sx={{ width: '30%', minWidth: 100, display: 'flex', justifyContent: 'center' }}>
-                                <SummonerInfo name={name} tag={tag} avatarUrl={avatarUrl} />
+                            <Box sx={{width: '30%', minWidth: 100, display: 'flex', justifyContent: 'center'}}>
+                                <SummonerInfo name={name} tag={tag} avatarUrl={avatarUrl}/>
                             </Box>
-                            <Box sx={{ width: '20%', minWidth: 80, textAlign: 'center' }}>
-                                <PositionIcon position={position} iconSize={20} />
+                            <Box sx={{width: '20%', minWidth: 80, textAlign: 'center'}}>
+                                <PositionIcon position={position} iconSize={20}/>
                             </Box>
-                            <Box sx={{ width: '20%', minWidth: 80, textAlign: 'center' }}>
+                            <Box sx={{width: '20%', minWidth: 80, textAlign: 'center'}}>
                                 {tier ? (
-                                    <TierBadge tier={tier} score={leaguePoint} rank={rank} size="small" />
+                                    <TierBadge tier={tier} score={leaguePoint} rank={rank} size="small"/>
                                 ) : (
-                                    <TierBadge tier="unrank" size="small" />
+                                    <TierBadge tier="unrank" size="small"/>
                                 )}
                             </Box>
-                            <Box sx={{ width: '30%', minWidth: 100, textAlign: 'center' }}>
-                                <ChampionIconList championNames={champions || []} iconSize={20} />
+                            <Box sx={{width: '30%', minWidth: 100, textAlign: 'center'}}>
+                                <ChampionIconList championNames={champions || []} iconSize={20}/>
                             </Box>
                         </Box>
                     </Box>

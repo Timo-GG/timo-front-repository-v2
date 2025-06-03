@@ -21,7 +21,7 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-            <Box sx={{ backgroundColor: '#2B2C3C', pl: 3, pr: 3, pt: 2, pb: 1 }}>
+            <Box sx={{ backgroundColor: '#2B2C3C', p: { xs: 2, sm: 3 } }}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
                     {/* 왼쪽: 맵 + 내전 인원  */}
@@ -49,18 +49,18 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
 
             <Box sx={{ height: '1px', backgroundColor: '#171717' }} />
 
-            <DialogContent sx={{ backgroundColor: '#2B2C3C' }}>
+            <DialogContent sx={{ backgroundColor: '#2B2C3C', p: { xs: 2, sm: 3 } }}>
                 <Box textAlign="center" mb={2}>
-                    <Typography fontSize="1rem" color="#A5A5A5" sx={{ mb: 2 }}>
+                    <Typography fontSize={{ xs: '0.9rem', sm: '1rem' }} color="#A5A5A5" sx={{ mb: 2 }}>
                         {`${partyData.school || ''} ${partyData.department || ''}`}
                     </Typography>
                     <Box
                         sx={{
                             backgroundColor: '#424254',
-                            p: 1,
+                            p: { xs: 1, sm: 2 },
                             borderRadius: 0.8,
                             color: '#fff',
-                            fontSize: '0.85rem',
+                            fontSize: { xs: '0.8rem', sm: '0.85rem' },
                             lineHeight: 1.4,
                             textAlign: 'left',
                             display: '-webkit-box',
@@ -69,7 +69,7 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'normal',
-                            maxHeight: '3.6em', // 1.4rem * 2줄
+                            maxHeight: { xs: '3.2em', sm: '3.6em' }
                         }}
                     >
                         {partyData.message}
@@ -77,91 +77,95 @@ export default function ScrimDetailModal({ open, handleClose, partyId, scrims })
                 </Box>
 
                 {/* 테이블 헤더 */}
-                <Box
-                    display="flex"
-                    alignItems="center"
-                    px={1.5}
-                    py={0.5}
-                    color="#888"
-                    fontSize="0.85rem"
-                    sx={{ backgroundColor: "#282830" }}
-                >
-                    <Box width="30%">소환사 이름</Box>
-                    <Box width="15%" textAlign="center">티어</Box>
-                    <Box width="40%" textAlign="center">모스트 챔피언</Box>
-                    <Box width="8%" textAlign="center">포지션</Box>
-                </Box>
+                <Box sx={{ overflowX: 'auto' }}>
+                    <Box sx={{ minWidth: { xs: '600px', sm: 'auto' }, width: '100%' }}>
+                        <Box
+                            display="flex"
+                            alignItems="center"
+                            px={{ xs: 1, sm: 1.5 }}
+                            py={0.5}
+                            color="#888"
+                            fontSize={{ xs: '0.75rem', sm: '0.85rem' }}
+                            sx={{ backgroundColor: "#282830" }}
+                        >
+                            <Box width="30%">소환사</Box>
+                            <Box width="15%" textAlign="center">티어</Box>
+                            <Box width="40%" textAlign="center">모스트 챔피언</Box>
+                            <Box width="8%" textAlign="center">포지션</Box>
+                        </Box>
 
-                {/* 멤버 리스트 */}
-                <Box>
-                    {members.map((member, i) => {
-                        if (!member.gameName) return null;
+                        {/* 멤버 리스트 */}
+                        <Box>
+                            {members.map((member, i) => {
+                                if (!member.gameName) return null;
 
-                        // 작성자(글쓴이) 여부 판단
-                        const isAuthor =
-                            partyData.name === member.gameName &&
-                            partyData.tag === member.tagLine;
+                                // 작성자(글쓴이) 여부 판단
+                                const isAuthor =
+                                    partyData.name === member.gameName &&
+                                    partyData.tag === member.tagLine;
 
-                        return (
-                            <Box
-                                key={i}
-                                display="flex"
-                                alignItems="center"
-                                px={1.5}
-                                py={0.5}
-                                borderTop="1px solid #393946"
-                            >
-                                {/* 소환사 이름 영역 */}
-                                <Box width="30%" display="flex" alignItems="center" gap={1}>
-                                    {/* 감싼 래퍼(Box)를 position: relative 로 설정 */}
-                                    <Box sx={{ position: 'relative', display: 'inline-block' }}>
-                                        <SummonerInfo
-                                            name={member.gameName}
-                                            avatarUrl={member.profileUrl}
-                                            tag={member.tagLine}
-                                            copyable
-                                        />
-                                        {/* 작성자일 경우만 별 표시 */}
-                                        {isAuthor && (
-                                            <Box
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    // 원하는 위치 조정 (예: 살짝 더 위/왼쪽으로 옮기려면 transform 사용)
-                                                    transform: 'translate(-30%, -30%)',
-                                                    color: '#42E6B5',
-                                                    fontSize: '1.2rem',
-                                                    fontWeight: 'bold',
-                                                }}
-                                            >
-                                                *
+                                return (
+                                    <Box
+                                        key={i}
+                                        display="flex"
+                                        alignItems="center"
+                                        px={{ xs: 1, sm: 1.5 }}
+                                        py={{ xs: 0.5, sm: 1 }}
+                                        borderTop="1px solid #393946"
+                                    >
+                                        {/* 소환사 이름 영역 */}
+                                        <Box width="30%" display="flex" alignItems="center" gap={1}>
+                                            {/* 감싼 래퍼(Box)를 position: relative 로 설정 */}
+                                            <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                                                <SummonerInfo
+                                                    name={member.gameName}
+                                                    avatarUrl={member.profileUrl}
+                                                    tag={member.tagLine}
+                                                    copyable
+                                                />
+                                                {/* 작성자일 경우만 별 표시 */}
+                                                {isAuthor && (
+                                                    <Box
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: 0,
+                                                            left: 0,
+                                                            // 원하는 위치 조정 (예: 살짝 더 위/왼쪽으로 옮기려면 transform 사용)
+                                                            transform: 'translate(-30%, -30%)',
+                                                            color: '#42E6B5',
+                                                            fontSize: '1.2rem',
+                                                            fontWeight: 'bold',
+                                                        }}
+                                                    >
+                                                        *
+                                                    </Box>
+                                                )}
                                             </Box>
-                                        )}
+                                        </Box>
+
+
+                                        {/* 티어 */}
+                                        <Box width="15%" textAlign="center">
+                                            {member.tier
+                                                ? <TierBadge tier={member.tier} score={member.lp} rank={member.rank} />
+                                                : <TierBadge tier='unrank' />
+                                            }
+                                        </Box>
+
+                                        {/* 모스트 챔피언 */}
+                                        <Box width="40%" display="flex" justifyContent="center">
+                                            <ChampionIconList championNames={member.champions || []} />
+                                        </Box>
+
+                                        {/* 포지션 */}
+                                        <Box width="8%" textAlign="center">
+                                            <PositionIcon position={member.myPosition} />
+                                        </Box>
                                     </Box>
-                                </Box>
-
-
-                                {/* 티어 */}
-                                <Box width="15%" textAlign="center">
-                                    {member.tier
-                                        ? <TierBadge tier={member.tier} score={member.lp} rank={member.rank} />
-                                        : <TierBadge tier='unrank' />
-                                    }
-                                </Box>
-
-                                {/* 모스트 챔피언 */}
-                                <Box width="40%" display="flex" justifyContent="center">
-                                    <ChampionIconList championNames={member.champions || []} />
-                                </Box>
-
-                                {/* 포지션 */}
-                                <Box width="8%" textAlign="center">
-                                    <PositionIcon position={member.myPosition} />
-                                </Box>
-                            </Box>
-                        );
-                    })}
+                                );
+                            })}
+                        </Box>
+                    </Box>
                 </Box>
             </DialogContent>
         </Dialog>
