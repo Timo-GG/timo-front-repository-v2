@@ -2,8 +2,11 @@ import axios from 'axios';
 import useAuthStore from '../storage/useAuthStore';
 import { refreshToken as refreshTokenAPI } from './authAPI';
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8080/api/v1',
+
+    baseURL: `${baseUrl}/api/v1`,
     headers: {
         'Content-Type': 'application/json',
     },

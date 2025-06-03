@@ -11,8 +11,12 @@ export default function NotificationListener() {
             console.warn('❗ accessToken이 없습니다. SSE 연결 생략.');
             return;
         }
+        // 환경 변수에서 API_BASE_URL 가져오기 (예: http://localhost:8080 또는 https://api.timo.kr)
+        const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-        const eventSource = new EventSource(`http://localhost:8080/api/v1/notifications/subscribe?token=${accessToken}`);
+        // subscribe API 엔드포인트
+        const subscribeUrl = `${baseUrl}/api/v1/notifications/subscribe?token=${accessToken}`;
+        const eventSource = new EventSource(subscribeUrl);
 
         eventSource.onopen = () => {
             console.log('✅ SSE 연결됨');
@@ -40,7 +44,7 @@ export default function NotificationListener() {
                 id: data.id,
                 message: data.message,             // 서버에서 내려준 기본 메시지 그대로 사용
                 redirectUrl: data.redirectUrl,
-                time: new Date().toLocaleString(),
+                time: data.regDate,
             });
         });
 

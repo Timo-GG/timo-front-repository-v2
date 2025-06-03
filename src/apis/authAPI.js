@@ -46,8 +46,9 @@ export async function refreshToken() {
     if (!refreshToken) {
         throw new Error('No refresh token available');
     }
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-    const res = await axios.post('http://localhost:8080/api/v1/auth/refresh', null, {
+    const res = await axios.post(`${baseUrl}/api/v1/auth/refresh`, null, {
         headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Refresh-Token': `Bearer ${refreshToken}`,

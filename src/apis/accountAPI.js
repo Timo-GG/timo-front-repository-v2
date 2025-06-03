@@ -46,3 +46,17 @@ export const fetchRecentMatchFull = async (gameName, tagLine) => {
     });
     return response.data.data;
 };
+
+export const updateUserAgreement = async () => {
+    const response = await axiosInstance.put('/members/userAgreement', null, {
+        withAuth: true,
+    });
+    return response.data;
+}
+
+export const deleteAccount = async () => {
+    const response = await axiosInstance.delete('/members/userAgreement/soft', {
+        withAuth: true,
+    });
+    return response.data;
+}
