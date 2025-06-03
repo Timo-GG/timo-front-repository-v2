@@ -147,6 +147,7 @@ export default function ScrimPage() {
             );
             return { ...old, content: newContent };
         });
+        queryClient.invalidateQueries(['scrimBoards']);
         queryClient.invalidateQueries(['hasMyScrimBoard']);
         toast.success("게시글이 수정되었습니다.");
     };
