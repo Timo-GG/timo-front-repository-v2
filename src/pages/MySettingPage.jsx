@@ -107,8 +107,13 @@ export default function MySettingPage() {
                     console.error('⚠️ 랭킹 등록 실패', e);
                 }
             }
-        } catch {
-            setSummonerStatusMsg('소환사 인증 중 오류가 발생했습니다.');
+        } catch (error) {
+            console.log("error : ", error);
+            const apiMsg =
+                error.response?.data?.message ||
+                '소환사 인증 중 오류가 발생했습니다.';
+            setSummonerStatusMsg(apiMsg);
+
         }
     }
 
@@ -122,13 +127,14 @@ export default function MySettingPage() {
             } catch (e) {
                 console.error('⚠️ 레디스 랭킹 삭제 실패', e);
             }
-            const {data: {data: profile}} = await getMyInfo();
+            const { data: profile } = await getMyInfo();
             setUserData(profile);                  // 로컬 프로필 갱신
             setRiotAccountInput('');
             setIsSummonerVerified(false);
             setSummonerStatusMsg('소환사 계정이 해제되었습니다.');
-        } catch {
-            setSummonerStatusMsg('소환사 해제 중 오류가 발생했습니다.');
+        } catch(error){
+            console.error('소환사 계정 해제 중 오류 발생:', error);
+            setSummonerStatusMsg('소환사 계정 해제 중 오류가 발생했습니다.');
         }
     }
 
@@ -235,7 +241,7 @@ export default function MySettingPage() {
 
             // refresh profile
             const refreshed = await getMyInfo();
-            const profile = refreshed.data.data;
+            const profile = refreshed.data;
             setUserData(profile);
             setShowVerificationInput(false);
             setEmailSent(false);
