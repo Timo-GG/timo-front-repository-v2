@@ -17,6 +17,7 @@ import useAuthStore from './storage/useAuthStore';
 import { connectSocket, disconnectSocket } from './socket/socket';
 import useOnlineStore from './storage/useOnlineStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Footer from "./components/Footer.jsx";
 
 function App() {
     const { accessToken, userData, initializeAuth } = useAuthStore();
@@ -118,6 +119,7 @@ function App() {
                     <Route path="/auth/callback/:provider" element={<AuthCallback />} />
                     <Route path="/chat" element={<ChatRouteWrapper />} />
                 </Routes>
+                <Footer />
             </Router>
         </QueryClientProvider>
     );

@@ -5,6 +5,8 @@ import {
     TextField,
     Button,
     useTheme,
+    Checkbox,
+    FormControlLabel
 } from '@mui/material';
 import {useNavigate} from 'react-router-dom';
 import {updateUsername, verifyAccount, resetRiotAccount, registerRanking} from '../apis/accountAPI';
@@ -12,6 +14,7 @@ import {deleteMyRanking} from '../apis/rankAPI';
 import {requestUnivVerification, verifyUnivCode, checkUniv, updateUnivAccount} from '../apis/univAPI';
 import {getMyInfo} from '../apis/authAPI';
 import useAuthStore from '../storage/useAuthStore';
+import TermsModal from '../components/TermsModal';
 
 export default function SignupPage() {
     const theme = useTheme();
@@ -40,7 +43,41 @@ export default function SignupPage() {
     const [nicknameStatus, setNicknameStatus] = useState('');
     const [nicknameError, setNicknameError] = useState('');
 
-    const [isRankingLoading, setIsRankingLoading] = useState(false);
+    const [termsAgreed, setTermsAgreed] = useState(false);
+    const [privacyAgreed, setPrivacyAgreed] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalType, setModalType] = useState('');
+
+    const openModal = (type) => {
+        setModalType(type);
+        setModalOpen(true);
+    };
+
+    const handleNext = () => {
+        if (!termsAgreed || !privacyAgreed) {
+            alert('서비스 이용약관과 개인정보 수집·이용에 모두 동의해주세요.');
+            return;
+        }
+
+        // 양쪽 인증 완료 시 비동기로 랭킹 등록
+        if (isSummonerVerified && isUniversityVerified) {
+            (async () => {
+                try {
+                    const info = await getMyInfo();
+                    const puuid = info.data.riotAccount?.puuid;
+                    if (puuid) {
+                        registerRanking(puuid); // await 제거 - 비동기로 처리
+                    }
+                } catch (err) {
+                    console.error('랭킹 등록 실패:', err);
+                }
+            })();
+        }
+
+        navigate('/profile-setup', {
+            state: {nickname, summonerName, university, schoolEmail, oauthEmail},
+        });
+    };
 
     // 초기 사용자 정보 로드
     useEffect(() => {
@@ -57,6 +94,8 @@ export default function SignupPage() {
                     setSummonerName(`${accountName}#${accountTag}`);
                     setIsSummonerVerified(true);
                     setSummonerVerified(true);
+                    setSummonerStatusMsg('✔️ 이미 인증이 완료된 소환사 계정입니다.');
+                    console.log('이미 인증이 완료된 소환사 계정입니다.');
                 }
 
                 if (profile.certifiedUnivInfo) {
@@ -66,33 +105,15 @@ export default function SignupPage() {
                     setIsUniversityLocked(true);
                     setIsUniversityValid(true);
                     setIsUniversityVerified(true);
+                    setUniversityStatus('✔️ 이미 인증이 완료된 대학교 계정입니다.');
+                    setEmailError(''); // 이메일 에러 초기화
+                    console.log('이미 인증이 완료된 대학교 계정입니다.');
                 }
             } catch (err) {
                 console.error('유저 정보 불러오기 실패:', err);
             }
         })();
     }, []);
-
-    // 양쪽 인증 완료 시 랭킹 자동 등록
-    useEffect(() => {
-        if (isSummonerVerified && isUniversityVerified) {
-            setIsRankingLoading(true);
-            (async () => {
-                try {
-                    const info = await getMyInfo();
-                    const puuid = info.data.riotAccount?.puuid;
-                    if (puuid) await registerRanking(puuid);
-                } catch (err) {
-                    console.error('랭킹 등록 실패:', err);
-                } finally {
-                    setIsRankingLoading(false);
-                    navigate('/profile-setup', {
-                        state: { nickname, summonerName, university, schoolEmail, oauthEmail },
-                    });
-                }
-            })();
-        }
-    }, [isSummonerVerified, isUniversityVerified]);
 
     // 소환사 인증/해제 핸들러
     const handleSummonerToggle = useCallback(async () => {
@@ -122,10 +143,15 @@ export default function SignupPage() {
                 setIsSummonerVerified(true);
                 setSummonerVerified(true);
                 setSummonerStatusMsg('✔️ 소환사 인증 완료');
-                const { data: profile } = await getMyInfo()
+                const {data: profile} = await getMyInfo()
                 setUserData(profile);
-            } catch {
-                setSummonerStatusMsg('소환사 인증 중 오류가 발생했습니다.');
+            } catch (error) {
+                if (error.response && error.response.status === 400) {
+                    const errorMessage = error.response.data?.message || '소환사 인증 중 오류가 발생했습니다.';
+                    setSummonerStatusMsg(errorMessage);
+                } else {
+                    setSummonerStatusMsg('소환사 인증 중 오류가 발생했습니다.');
+                }
             }
         }
     }, [isSummonerVerified, summonerName]);
@@ -133,17 +159,33 @@ export default function SignupPage() {
     // 대학교 확인/해제 핸들러
     const handleUniversityCheck = useCallback(async () => {
         if (isUniversityLocked) {
-            // 해제
-            setIsUniversityLocked(false);
-            setIsUniversityValid(false);
-            setIsUniversityVerified(false);
-            setUniversity('');
-            setSchoolEmail('');
-            setEmailError('');
-            setEmailSent(false);
-            setShowVerificationInput(false);
+            try {
+                // 대학 이메일 초기화 API 호출
+                await updateUnivAccount({univName: null, univEmail: null});
+
+                // 상태 초기화
+                setIsUniversityLocked(false);
+                setIsUniversityValid(false);
+                setIsUniversityVerified(false);
+                setUniversity('');
+                setSchoolEmail('');
+                setEmailError('');
+                setEmailSent(false);
+                setShowVerificationInput(false);
+                setUniversityStatus('');
+
+                // 사용자 정보 업데이트
+                const {data: profile} = await getMyInfo();
+                setUserData(profile);
+
+                console.log('대학교 인증이 해제되었습니다.');
+            } catch (error) {
+                console.error('대학교 해제 실패:', error);
+                setUniversityStatus('대학교 해제 중 오류가 발생했습니다.');
+            }
             return;
         }
+
         try {
             const res = await checkUniv({univName: university});
             if (res.success) {
@@ -158,8 +200,36 @@ export default function SignupPage() {
         }
     }, [isUniversityLocked, university]);
 
-    // 학교 이메일 등록 핸들러
+// 학교 이메일 등록/해제 핸들러도 수정
     const handleEmailRegister = useCallback(async () => {
+        // 이미 인증된 상태라면 해제 처리
+        if (isUniversityVerified) {
+            try {
+                // 대학 이메일 초기화 API 호출
+                await updateUnivAccount({univName: null, univEmail: null});
+                // 상태 초기화
+                setIsUniversityVerified(false);
+                setIsUniversityLocked(false);
+                setIsUniversityValid(false);
+                setUniversity('');
+                setSchoolEmail('');
+                setEmailError('');
+                setEmailSent(false);
+                setShowVerificationInput(false);
+                setUniversityStatus('');
+
+                // 사용자 정보 업데이트
+                const {data: profile} = await getMyInfo();
+                setUserData(profile);
+
+                console.log('학교 이메일 인증이 해제되었습니다.');
+            } catch (error) {
+                console.error('학교 이메일 해제 실패:', error);
+                setEmailError('학교 이메일 해제 중 오류가 발생했습니다.');
+            }
+            return;
+        }
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(schoolEmail)) {
             setEmailError('올바르지 않은 이메일 입니다.');
@@ -172,42 +242,37 @@ export default function SignupPage() {
                 setEmailSent(true);
                 setShowVerificationInput(true);
             } else if (res.errorCode === 903) {
-                // 이미 인증된 사용자
                 await updateUnivAccount({univName: university, univEmail: schoolEmail});
                 setIsUniversityVerified(true);
                 setShowVerificationInput(false);
-                const { data: profile } = await getMyInfo()
+                const {data: profile} = await getMyInfo()
                 setUserData(profile);
-                alert('이미 인증이 완료된 학교 계정입니다.');
             } else if (res.errorCode === 902) {
-                // 이미 사용중인 학교 계정
                 setEmailError('이미 사용중인 학교 계정입니다.');
             } else {
                 setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
             }
         } catch (error) {
-            // 네트워크 에러나 기타 예외 처리
             if (error.response && error.response.status === 400) {
-                // 400 에러의 경우 백엔드 메시지 사용
                 const errorMessage = error.response.data?.message || '요청 처리 중 오류가 발생했습니다.';
                 setEmailError(errorMessage);
             } else {
                 setEmailError('네트워크 오류가 발생했습니다.');
             }
         }
-    }, [university, schoolEmail]);
-
+    }, [university, schoolEmail, isUniversityVerified]);
 
     // 인증 코드 확인 핸들러
     const handleVerificationConfirm = useCallback(async () => {
         try {
             await verifyUnivCode(verificationCode, {univName: university, univEmail: schoolEmail});
             await updateUnivAccount({univName: university, univEmail: schoolEmail});
-            const { data: profile } = await getMyInfo()
+            const {data: profile} = await getMyInfo()
             setUserData(profile);
             setIsUniversityVerified(true);
             setShowVerificationInput(false);
             setEmailSent(false);
+            setEmailError(''); // 에러 메시지 초기화
         } catch {
             setVerificationError('인증코드가 올바르지 않거나 만료되었습니다.');
         }
@@ -280,8 +345,8 @@ export default function SignupPage() {
                         onClick={async () => {
                             try {
                                 await updateUsername(nickname);
-                                const res = await getMyInfo(); // 닉네임 수정 후 다시 유저 정보 조회
-                                setUserData(res.data); // Zustand에 유저 정보 갱신
+                                const res = await getMyInfo();
+                                setUserData(res.data);
                                 setNicknameStatus('닉네임이 성공적으로 변경되었습니다.');
                                 setNicknameError('');
                             } catch (err) {
@@ -290,7 +355,6 @@ export default function SignupPage() {
                                 setNicknameStatus('');
                             }
                         }}
-
                         sx={{
                             height: '100%',
                             borderRadius: '0 12px 12px 0',
@@ -319,7 +383,6 @@ export default function SignupPage() {
                     </Typography>
                 )}
             </Box>
-
 
             {/* 소환사 이름 */}
             <Box>
@@ -446,36 +509,46 @@ export default function SignupPage() {
                             setEmailError('');
                             setEmailSent(false);
                         }}
-                        disabled={!isUniversityValid}
+                        disabled={!isUniversityValid || isUniversityVerified}
                         variant="outlined"
                         placeholder="학교 이메일 입력"
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 height: '100%',
-                                borderRadius: '12px 0 0 12px',
-                                backgroundColor: theme.palette.background.input,
+                                borderRadius: isUniversityVerified ? '12px' : '12px 0 0 12px', // 버튼이 없으면 전체 둥글게
+                                backgroundColor: (!isUniversityValid || isUniversityVerified)
+                                    ? theme.palette.background.inputDisabled
+                                    : theme.palette.background.input,
                                 border: `1px solid ${theme.palette.border.main}`,
                                 '& fieldset': {borderColor: 'transparent'},
-                                '& input': {color: theme.palette.text.primary, padding: '12px 14px'},
+                                '& input': {
+                                    color: (!isUniversityValid || isUniversityVerified)
+                                        ? theme.palette.text.disabled
+                                        : theme.palette.text.primary,
+                                    padding: '12px 14px'
+                                },
                             },
                         }}
                     />
-                    <Button
-                        onClick={handleEmailRegister}
-                        disabled={!isUniversityValid}
-                        sx={{
-                            height: '100%',
-                            borderRadius: '0 12px 12px 0',
-                            backgroundColor: theme.palette.background.input,
-                            color: theme.palette.text.secondary,
-                            border: `1px solid ${theme.palette.border.main}`,
-                            borderLeft: 'none',
-                            px: 3,
-                            minWidth: '80px',
-                        }}
-                    >
-                        등록
-                    </Button>
+                    {/* 인증 완료 시 버튼 숨기기 */}
+                    {!isUniversityVerified && (
+                        <Button
+                            onClick={handleEmailRegister}
+                            disabled={!isUniversityValid}
+                            sx={{
+                                height: '100%',
+                                borderRadius: '0 12px 12px 0',
+                                backgroundColor: theme.palette.background.input,
+                                color: theme.palette.text.secondary,
+                                border: `1px solid ${theme.palette.border.main}`,
+                                borderLeft: 'none',
+                                px: 3,
+                                minWidth: '80px',
+                            }}
+                        >
+                            등록
+                        </Button>
+                    )}
                 </Box>
                 <Box sx={{minHeight: 20, mt: 1}}>
                     {emailError && (
@@ -488,8 +561,14 @@ export default function SignupPage() {
                             인증코드를 전송하였습니다.
                         </Typography>
                     )}
+                    {!emailError && !emailSent && isUniversityVerified && (
+                        <Typography variant="caption" color={theme.palette.success.main}>
+                            ✔️ 이미 인증이 완료된 학교 계정입니다.
+                        </Typography>
+                    )}
                 </Box>
             </Box>
+
 
             {/* 인증 코드 */}
             {showVerificationInput && (
@@ -531,39 +610,100 @@ export default function SignupPage() {
                                 minWidth: '80px',
                             }}
                         >
-                            다음
+                            확인
                         </Button>
                     </Box>
                 </Box>
             )}
-            {isRankingLoading && (
-                <Box sx={{textAlign: 'center', mt: 4}}>
-                    <Typography>랭킹을 등록 중입니다...</Typography>
-                </Box>
-            )}
-            {!isRankingLoading && (
-                <Box>
-                    <Button
-                        variant="contained"
-                        fullWidth
-                        sx={{
-                            height: '56px',
-                            borderRadius: '12px',
-                            backgroundColor: theme.palette.primary.main,
-                            color: 'white',
-                            fontWeight: 'bold',
-                            mt: 4,
-                        }}
-                        onClick={() =>
-                            navigate('/profile-setup', {
-                                state: { nickname, summonerName, university, schoolEmail, oauthEmail },
-                            })
-                        }
-                    >
-                        다음
-                    </Button>
-                </Box>
-            )}
+
+            {/* 개인정보 동의 */}
+            <Box sx={{ mt: 3 }}>
+                <Typography color="text.secondary" sx={{ mb: 2 }}>개인정보 동의</Typography>
+
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={termsAgreed}
+                            onChange={(e) => setTermsAgreed(e.target.checked)}
+                            sx={{
+                                color: theme.palette.text.secondary,
+                                '&.Mui-checked': {
+                                    color: theme.palette.primary.main,
+                                },
+                            }}
+                        />
+                    }
+                    label={
+                        <Typography variant="body2" sx={{color: theme.palette.text.secondary}}>
+                            <span
+                                onClick={() => openModal('terms')}
+                                style={{
+                                    textDecoration: 'underline',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                서비스 이용약관
+                            </span>에 동의합니다. (필수)
+                        </Typography>
+                    }
+                    sx={{mb: 1, alignItems: 'flex-start'}}
+                />
+
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={privacyAgreed}
+                            onChange={(e) => setPrivacyAgreed(e.target.checked)}
+                            sx={{
+                                color: theme.palette.text.secondary,
+                                '&.Mui-checked': {
+                                    color: theme.palette.primary.main,
+                                },
+                            }}
+                        />
+                    }
+                    label={
+                        <Typography variant="body2" sx={{color: theme.palette.text.secondary}}>
+                            <span
+                                onClick={() => openModal('privacy')}
+                                style={{
+                                    textDecoration: 'underline',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                개인정보 수집·이용
+                            </span>에 동의합니다. (필수)
+                        </Typography>
+                    }
+                    sx={{mb: 1, alignItems: 'flex-start'}}
+                />
+            </Box>
+
+            {/* 다음 버튼 */}
+            <Button
+                variant="contained"
+                fullWidth
+                sx={{
+                    height: '56px',
+                    borderRadius: '12px',
+                    backgroundColor: theme.palette.primary.main,
+                    color: 'white',
+                    fontWeight: 'bold',
+                    mt: 4,
+                }}
+                onClick={handleNext}
+            >
+                다음
+            </Button>
+
+            {/* 모달 */}
+            <TermsModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                type={modalType}
+            />
         </Box>
     );
 }
