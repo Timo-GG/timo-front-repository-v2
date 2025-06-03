@@ -179,13 +179,24 @@ export default function SignupPage() {
                 const { data: profile } = await getMyInfo()
                 setUserData(profile);
                 alert('이미 인증이 완료된 학교 계정입니다.');
+            } else if (res.errorCode === 902) {
+                // 이미 사용중인 학교 계정
+                setEmailError('이미 사용중인 학교 계정입니다.');
             } else {
                 setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
             }
-        } catch {
-            setEmailError('네트워크 오류가 발생했습니다.');
+        } catch (error) {
+            // 네트워크 에러나 기타 예외 처리
+            if (error.response && error.response.status === 400) {
+                // 400 에러의 경우 백엔드 메시지 사용
+                const errorMessage = error.response.data?.message || '요청 처리 중 오류가 발생했습니다.';
+                setEmailError(errorMessage);
+            } else {
+                setEmailError('네트워크 오류가 발생했습니다.');
+            }
         }
     }, [university, schoolEmail]);
+
 
     // 인증 코드 확인 핸들러
     const handleVerificationConfirm = useCallback(async () => {
