@@ -254,11 +254,20 @@ export default function SignupPage() {
                 setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
             }
         } catch (error) {
-            if (error.response && error.response.status === 400) {
-                const errorMessage = error.response.data?.message || '요청 처리 중 오류가 발생했습니다.';
-                setEmailError(errorMessage);
-            } else {
+            console.error('handleEmailRegister에서 잡힌 에러:', error);
+            // 네트워크 오류인지, CORS 오류인지, 다른 에러인지 확인
+            if (error.response) {
+                // 서버가 응답은 주었지만, 4xx/5xx 상태 코드
+                console.error('서버 응답 상태:', error.response.status, error.response.data);
+                setEmailError(error.response.data?.message || '서버 오류가 발생했습니다.');
+            } else if (error.request) {
+                // 요청은 나갔지만 응답을 못 받은 상태 (네트워크 오류 혹은 CORS)
+                console.error('요청이 나갔으나 응답이 없습니다:', error.request);
                 setEmailError('네트워크 오류가 발생했습니다.');
+            } else {
+                // 요청 설정 중에 발생한 에러
+                console.error('요청 설정 중 예외 발생:', error.message);
+                setEmailError('예기치 못한 오류가 발생했습니다.');
             }
         }
     }, [university, schoolEmail, isUniversityVerified]);
