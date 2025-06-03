@@ -115,7 +115,7 @@ export default function Header() {
         {label: '랭킹', path: '/ranking'},
         {label: '내전', path: '/scrim'},
         {label: '듀오 찾기', path: '/duo'},
-        {label: '마이페이지', path: '/mypage'},
+        // {label: '마이페이지', path: '/mypage'},
     ];
 
     useEffect(() => {
@@ -124,12 +124,13 @@ export default function Header() {
         async function loadUnreadNotifications() {
             try {
                 const unreadList = await fetchUnreadNotifications();
+
                 unreadList.forEach((noti) => {
-                    console.log('📅 알림 데이터:', noti);
+                    console.log('서버 regDate:', noti.regDate); // 여기서 console.log 해야 regDate가 찍힘
                     addNotification({
                         id: noti.id,
                         message: noti.message,
-                        time: new Date().toLocaleTimeString(),
+                        time: new Date(noti.regDate),
                         redirectUrl: noti.redirectUrl,
                     });
                 });
@@ -293,6 +294,8 @@ export default function Header() {
                                     } else {
                                         isActive = location.pathname === item.path;
                                     }
+
+
                                     return (
                                         <Typography
                                             key={item.path}
