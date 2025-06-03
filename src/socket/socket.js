@@ -14,11 +14,14 @@ export const connectSocket = (accessToken) => {
         socket = null;
     }
 
+
+    const baseUrl = import.meta.env.VITE_SOCKET_BASE_URL;
+
     const query = accessToken
         ? { token: accessToken }
         : { guest: 'true' };
 
-    socket = io('ws://localhost:8085', {
+    socket = io(`${baseUrl}`, {
         transports: ['websocket'],
         query,
         forceNew: true, // 새로운 연결 강제
