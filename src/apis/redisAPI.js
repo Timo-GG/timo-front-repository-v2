@@ -32,8 +32,17 @@ export const refreshScrimBoard = async () => {
     return response.data;
 };
 
+/**
+ * [Update] 게시글 수정 로직
+ */
 export const updateDuoBoard = async (dto) => {
     const response = await axiosInstance.put('/matching/duo', dto, {
+        withAuth: true,
+    });
+    return response.data;
+};
+export const updateScrimBoard = async (dto) => {
+    const response = await axiosInstance.put('/matching/scrim', dto, {
         withAuth: true,
     });
     return response.data;
