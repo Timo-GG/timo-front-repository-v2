@@ -163,15 +163,20 @@ export default function ScrimPage() {
 
     return (
         <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
-            <Container maxWidth="lg" sx={{px: 0}}>
+            <Container maxWidth="lg" sx={{px: {xs: 1, sm: 3}}}>
                 <Box sx={{
                     backgroundColor: theme.palette.background.paper,
                     p: 1,
                     borderTopLeftRadius: 10,
                     borderTopRightRadius: 10
                 }}>
-                    <Tabs value={tab} onChange={handleTabChange} textColor="inherit"
-                          TabIndicatorProps={{style: {backgroundColor: '#ffffff'}}}>
+                    <Tabs
+                        value={tab}
+                        onChange={handleTabChange}
+                        textColor="inherit"
+                        TabIndicatorProps={{ style: { backgroundColor: '#ffffff' } }}
+                        sx={{ px: { xs: 1, sm: 2 } }}
+                    >
                         <Tab label="전체 대학교" sx={{
                             fontSize: '1.1rem',
                             color: tab === 0 ? '#ffffff' : '#B7B7C9',
@@ -184,6 +189,7 @@ export default function ScrimPage() {
                         }}/>
                     </Tabs>
                 </Box>
+
                 <Box sx={{height: '1px', backgroundColor: '#171717', width: '100%'}}/>
 
                 <Box sx={{p: 2, backgroundColor: theme.palette.background.paper}}>
@@ -222,8 +228,8 @@ export default function ScrimPage() {
                     </Box>
                 </Box>
 
-                <Box>
-                    <Box sx={{overflow: 'hidden'}}>
+                <Box sx={{overflowX: {xs: 'auto', sm: 'visible'}}}>
+                    <Box sx={{minWidth: {xs: '900px', sm: 'auto'}}}>
                         <Box sx={{
                             px: 3,
                             py: 1,
@@ -231,7 +237,7 @@ export default function ScrimPage() {
                             justifyContent: 'space-between',
                             backgroundColor: '#28282F',
                             color: '#999',
-                            fontSize: 14,
+                            fontSize: {xs: 12, sm: 14},
                             fontWeight: 500
                         }}>
                             <Box width="15%" textAlign="center">소환사</Box>
@@ -281,38 +287,43 @@ export default function ScrimPage() {
                                         <Box width="10%"
                                              textAlign="center">{tab === 0 ? row.school : row.department}</Box>
                                         <Box width="20%" textAlign="center">
-                                            <Box sx={{
-                                                backgroundColor: '#424254',
-                                                p: 1,
-                                                borderRadius: 1,
-                                                color: '#fff',
-                                                fontSize: '0.85rem',
-                                                lineHeight: 1.4,
-                                                textAlign: 'left',
-                                                display: '-webkit-inline-box',
-                                                WebkitBoxOrient: 'vertical',
-                                                WebkitLineClamp: 2,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'normal',
-                                                maxHeight: '3.6em'
-                                            }}>{row.message}</Box>
+                                            <Box
+                                                sx={{
+                                                    backgroundColor: '#424254',
+                                                    p: 1,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.85rem',
+                                                    lineHeight: 1.4,
+                                                    textAlign: 'left',
+                                                    display: '-webkit-inline-box',
+                                                    WebkitBoxOrient: 'vertical',
+                                                    WebkitLineClamp: 2,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'normal',
+                                                    maxHeight: { xs: '3.2em', sm: '3.6em' }
+                                                }}
+                                            >{row.message}</Box>
                                         </Box>
                                         <Box width="10%" textAlign="center">{formatRelativeTime(row.updatedAt)}</Box>
                                         <Box width="10%" textAlign="center">
-                                            <Button sx={{
-                                                backgroundColor: '#424254',
-                                                color: '#fff',
-                                                borderRadius: 0.8,
-                                                fontWeight: 'bold',
-                                                px: 2,
-                                                py: 1,
-                                                border: '1px solid #71717D'
-                                            }} onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedScrim(row);
-                                                setApplyOpen(true);
-                                            }}>신청</Button>
+                                            <Button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedScrim(row);
+                                                    setApplyOpen(true);
+                                                }}
+                                                sx={{
+                                                    backgroundColor: '#424254',
+                                                    color: '#fff',
+                                                    borderRadius: 0.8,
+                                                    fontWeight: 'bold',
+                                                    px: 2,
+                                                    py: { xs: 0.8, sm: 1 },
+                                                    fontSize: { xs: '0.8rem', sm: '0.95rem' },
+                                                    border: '1px solid #71717D'
+                                                }}
+                                            >신청</Button>
                                         </Box>
                                         <Box width="2%" textAlign="center">
                                             {isMine && (
