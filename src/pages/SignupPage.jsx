@@ -9,7 +9,7 @@ import {
     FormControlLabel
 } from '@mui/material';
 import {useNavigate} from 'react-router-dom';
-import {updateUsername, verifyAccount, resetRiotAccount, registerRanking} from '../apis/accountAPI';
+import {updateUsername, verifyAccount, resetRiotAccount, registerRanking, updateUserAgreement} from '../apis/accountAPI';
 import {deleteMyRanking} from '../apis/rankAPI';
 import {requestUnivVerification, verifyUnivCode, checkUniv, updateUnivAccount} from '../apis/univAPI';
 import {getMyInfo} from '../apis/authAPI';
@@ -43,6 +43,7 @@ export default function SignupPage() {
     const [nicknameStatus, setNicknameStatus] = useState('');
     const [nicknameError, setNicknameError] = useState('');
 
+    const [allAgreed, setAllAgreed] = useState(false);
     const [termsAgreed, setTermsAgreed] = useState(false);
     const [privacyAgreed, setPrivacyAgreed] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
@@ -277,6 +278,12 @@ export default function SignupPage() {
             setVerificationError('인증코드가 올바르지 않거나 만료되었습니다.');
         }
     }, [verificationCode, university, schoolEmail]);
+
+    useEffect(() => {
+        if (termsAgreed && privacyAgreed) {
+            updateUserAgreement();
+        }
+    }, [termsAgreed, privacyAgreed, updateUserAgreement]);
 
     return (
         <Box

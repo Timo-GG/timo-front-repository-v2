@@ -58,12 +58,8 @@ export default function Header() {
         const socket = getSocket();
         const memberId = userData?.memberId;
         if (socket && socket.connected && memberId) {
-            console.log('📤 [Header] leave_online 이벤트 발송:', memberId);
             socket.emit('leave_online', { memberId });
         }
-
-        // ❌ disconnectSocket() 제거 - App.js에서 관리
-        // disconnectSocket();
 
         // Zustand 상태 초기화
         logout();

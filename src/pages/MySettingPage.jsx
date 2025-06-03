@@ -9,14 +9,18 @@ import {
 } from '@mui/material';
 import WithdrawConfirmDialog from '../components/WithdrawConfirmDialog';
 import useAuthStore from '../storage/useAuthStore';
-import {updateUsername, verifyAccount, resetRiotAccount, registerRanking} from '../apis/accountAPI';
+import {updateUsername, verifyAccount, resetRiotAccount, registerRanking, deleteAccount} from '../apis/accountAPI';
 import {checkUniv, requestUnivVerification, verifyUnivCode, updateUnivAccount} from '../apis/univAPI';
 import {getMyInfo} from '../apis/authAPI';
 import {deleteMyRanking} from '../apis/rankAPI';
+import {getSocket} from "../socket/socket.js";
+import {useNavigate} from "react-router-dom";
+import useNotificationStore from "../storage/useNotification.jsx";
 
 export default function MySettingPage() {
     const theme = useTheme();
-    const {userData, setUserData} = useAuthStore();
+    const {userData, setUserData, logout} = useAuthStore();
+    const clearNotifications = useNotificationStore((state) => state.clearNotifications);
 
     // ━━━━━━━━━━━ 기본 프로필 관련 상태 ━━━━━━━━━━━
     const [username, setUsername] = useState('');
@@ -30,7 +34,6 @@ export default function MySettingPage() {
 
     // ━━━━━━━━━━━ 학교명 확인 관련 상태 ━━━━━━━━━━━
     const [univName, setUnivName] = useState('');
-    const [univNameError, setUnivNameError] = useState(''); // 필요하면 에러 메시지 표시
     const [isUnivNameValid, setIsUnivNameValid] = useState(false);
     const [isUnivNameLocked, setIsUnivNameLocked] = useState(false);
     const [univNameStatus, setUnivNameStatus] = useState('');
@@ -46,6 +49,9 @@ export default function MySettingPage() {
 
     // ━━━━━━━━━━━ 계정 탈퇴 다이얼로그 ━━━━━━━━━━━
     const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
+
+    const navigate = useNavigate();
+
 
     // ━━━━━━━━━━━ userData 로부터 초기값 세팅 ━━━━━━━━━━━
     useEffect(() => {
@@ -272,6 +278,26 @@ export default function MySettingPage() {
     // ━━━━━━━━━━━ 회원 탈퇴 핸들러 ━━━━━━━━━━━
     const handleWithdraw = () => {
         setIsWithdrawDialogOpen(false);
+        deleteAccount();
+        const socket = getSocket();
+        const memberId = userData?.memberId;
+        if (socket && socket.connected && memberId) {
+            console.log('📤 [Header] leave_online 이벤트 발송:', memberId);
+            socket.emit('leave_online', { memberId });
+        }
+
+        // Zustand 상태 초기화
+        logout();
+
+        // 알림 상태 초기화
+        clearNotifications();
+
+        // 로컬스토리지에서 토큰 제거
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+
+        // 홈으로 이동
+        navigate('/');
         alert('탈퇴가 완료되었습니다.');
     };
 

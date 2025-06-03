@@ -32,16 +32,17 @@ export default function AuthCallback() {
                 // 토큰 저장
                 login(accessToken, refreshToken);
 
-                // 회원가입 페이지로 이동할지, 홈으로 갈지 결정
-                if (newUser) {
+                // 사용자 정보 가져오기
+                const userInfo = await getMyInfo();
+                console.log('내 정보:', userInfo);
+                setUserData(userInfo.data);
+
+                // term이 null이면 약관 동의가 필요한 사용자 -> 회원가입 페이지로 이동
+                if (userInfo.data.term === null) {
+                    console.log('약관 동의가 필요한 사용자입니다.');
                     navigate('/signup');
                 } else {
                     console.log('로그인 성공');
-
-                    // 사용자 정보 가져오기
-                    const userInfo = await getMyInfo();
-                    console.log('내 정보:', userInfo);
-                    setUserData(userInfo.data);
 
                     // 저장된 리다이렉트 경로 확인
                     const redirectPath = localStorage.getItem('redirectAfterLogin');
