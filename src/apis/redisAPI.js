@@ -41,7 +41,7 @@ export const updateDuoBoard = async (dto) => {
     });
     return response.data;
 };
-export const updateSCrimBoard = async (dto) => {
+export const updateScrimBoard = async (dto) => {
     const response = await axiosInstance.put('/matching/scrim', dto, {
         withAuth: true,
     });

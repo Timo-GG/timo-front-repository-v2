@@ -12,7 +12,7 @@ import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import ChampionIconList from '../champion/ChampionIconList';
 import useAuthStore from "../../storage/useAuthStore.jsx";
 import {fetchCompactPlayerHistory} from "../../apis/compactPlayerHistory.js";
-import {createScrimBoard} from "../../apis/redisAPI.js";
+import {createScrimBoard, updateScrimBoard} from "../../apis/redisAPI.js";
 
 const defaultMember = {
     gameName: '',
@@ -29,86 +29,70 @@ const defaultMember = {
     myPosition: 'NOTHING',
 };
 
-export default function CreateScrimModal({ open, handleClose, onCreateScrim, currentTab }) {
+export default function CreateScrimModal({ open, handleClose, onCreateScrim, currentTab, onUpdateScrim, editScrim }) {
     const [memo, setMemo] = useState('');
     const [map, setMap] = useState('소환사 협곡');
     const [people, setPeople] = useState('5:5');
     const [myPosition, setMyPosition] = useState('nothing');
-    // partyMembers: 입력받은 나머지 멤버들 (작성자는 따로 포함)
-    const initialLimit = people === '3:3' ? 2 : 4;
-    const [partyMembers, setPartyMembers] = useState(
-        Array(initialLimit).fill(null).map(() => ({ ...defaultMember, rankInfo: { ...defaultMember.rankInfo } }))
-    );
+    const [partyMembers, setPartyMembers] = useState([]);
     const [errors, setErrors] = useState({});
-    const [summonerInputs, setSummonerInputs] = useState(Array(initialLimit).fill(""));
+    const [summonerInputs, setSummonerInputs] = useState([]);
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const { userData: me } = useAuthStore();
+    const riot = me?.riotAccount;
 
-    // people 상태 변경 시 멤버 입력 슬롯 길이 재설정
     useEffect(() => {
-        const newLimit = people === '3:3' ? 2 : 4;
-        setPartyMembers(
-            Array(newLimit).fill(null).map(() => ({ ...defaultMember, rankInfo: { ...defaultMember.rankInfo } }))
-        );
-        setSummonerInputs(Array(newLimit).fill(""));
+        if (editScrim) {
+            setMemo(editScrim.message);
+            setMap(editScrim.queueType);
+            setPeople(`${editScrim.headCount}:${editScrim.headCount}`);
+            setMyPosition(editScrim.party?.[0]?.myPosition?.toLowerCase() || 'nothing');
+            setPartyMembers(editScrim.party?.slice(1) || []);
+            setSummonerInputs(editScrim.party?.slice(1).map(() => "") || []);
+        }
+    }, [editScrim]);
+
+    useEffect(() => {
+        const limit = people === '3:3' ? 2 : 4;
+        if (!editScrim) {
+            setPartyMembers(Array(limit).fill({ ...defaultMember }));
+            setSummonerInputs(Array(limit).fill(""));
+        }
     }, [people]);
 
-    // 각 슬롯의 입력값 검증 및 등록 (형식: "소환사이름#태그")
+    console.log(partyMembers);
+
+    // 팀원 정보 입력값 검증 및 등록 (형식: "소환사이름#태그")
     const handleVerifySummoner = async (index) => {
         const input = summonerInputs[index];
-        if (!input.includes('#')) {
-            setErrors(prev => ({ ...prev, [index]: '형식이 올바르지 않습니다 (예: 소환사이름#태그)' }));
-            return;
-        }
-
-        const [gameName, tagLine] = input.split('#').map(s => s.trim());
-        if (!gameName || !tagLine) {
-            setErrors(prev => ({ ...prev, [index]: '형식이 올바르지 않습니다 (예: 소환사이름#태그)' }));
-            return;
-        }
-
+        if (!input.includes('#')) return setErrors(prev => ({ ...prev, [index]: '형식 오류' }));
+        const [gameName, tagLine] = input.split('#');
         try {
             const { avatarUrl, rankInfo, most3Champ } = await fetchCompactPlayerHistory({ gameName, tagLine });
-
             const updated = [...partyMembers];
             updated[index] = {
                 gameName,
                 tagLine,
-                profileUrl: avatarUrl || '/default.png',
-                rankInfo: {
-                    tier: rankInfo?.tier || 'UNRANKED',
-                    rank: rankInfo?.rank || '',
-                    lp: rankInfo?.lp || 0,
-                    wins: rankInfo?.wins || 0,
-                    losses: rankInfo?.losses || 0,
-                },
-                most3Champ: most3Champ || [],
+                profileUrl: avatarUrl || 'default.png',
+                rankInfo,
+                most3Champ,
                 myPosition: 'NOTHING'
             };
             setPartyMembers(updated);
-
             const updatedInputs = [...summonerInputs];
             updatedInputs[index] = '';
             setSummonerInputs(updatedInputs);
-            setErrors(prev => ({ ...prev, [index]: '' }));
-        } catch (error) {
-            console.error("API 요청 실패:", error);
-            setErrors(prev => ({ ...prev, [index]: '소환사 정보를 가져오는 데 실패했습니다.' }));
+        } catch {
+            setErrors(prev => ({ ...prev, [index]: '불러오기 실패' }));
         }
     };
 
-    const partyLimit = people === '3:3' ? 2 : 4;
-    const members = partyMembers.slice(0, partyLimit);
-
-    const { userData: me } = useAuthStore();
-    const riot = me?.riotAccount;
-
-    // "등록" 버튼 클릭 시: 작성자 정보를 자동 포함하여 전체 멤버 배열(fullMembers) 구성
+    // 등록 or 수정 버튼 클릭
     const handleSubmit = async () => {
         const mapCode = map === '소환사 협곡' ? 'RIFT' : 'ABYSS';
         const headCount = people === '3:3' ? 3 : 5;
-
         const gameName = riot?.accountName || '';
         const tagLine = riot?.accountTag || '';
 
@@ -131,37 +115,38 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                 myPosition: myPosition?.toUpperCase() || 'NOTHING'
             };
 
-            // 멤버들 가공
             const formattedMembers = partyMembers.slice(0, headCount - 1).map(m => ({
                 gameName: m.gameName,
                 tagLine: m.tagLine,
                 profileUrl: m.profileUrl || '/default.png',
                 rankInfo: {
-                    tier: m.rankInfo?.tier || 'Unranked',
-                    rank: m.rankInfo?.rank || '',
-                    lp: m.rankInfo?.lp || 0,
-                    wins: m.rankInfo?.wins || 0,
-                    losses: m.rankInfo?.losses || 0,
+                    tier: m?.tier || 'Unranked',
+                    rank: m?.rank || '',
+                    lp: m?.lp || 0,
+                    wins: m?.wins || 0,
+                    losses: m?.losses || 0,
                 },
-                most3Champ: m.most3Champ || [],
+                most3Champ: m.champions || [],
                 myPosition: m.myPosition?.toUpperCase() || 'NOTHING'
             }));
 
             const requestBody = {
-                memberId: me?.memberId,
+                ...(editScrim ? { boardUUID: editScrim.id } : { memberId: me?.memberId }),
                 mapCode,
                 memo,
                 headCount,
                 partyInfo: [author, ...formattedMembers]
             };
 
-            const res = await createScrimBoard(requestBody);
+            const res = editScrim
+                ? await updateScrimBoard(requestBody)
+                : await createScrimBoard(requestBody);
+
             const formatted = transformScrimForFrontend(res.data);
-            console.log('스크림 생성 완료:', res);
-            onCreateScrim?.(formatted);
+            editScrim ? onUpdateScrim?.(formatted) : onCreateScrim?.(formatted);;
             handleClose();
         } catch (e) {
-            console.error('스크림 생성 실패:', e);
+            console.error('스크림 요청 처리 실패:', e);
         }
     };
 
@@ -190,7 +175,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
             <Box sx={{ backgroundColor: '#31313E', pl: 3, pr: 3, pt: 2, pb: 1 }}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography fontSize="1.1rem" fontWeight="bold" color="#fff">파티 생성하기</Typography>
+                    <Typography color="#fff" fontWeight="bold">{editScrim ? '파티 수정하기' : '파티 생성하기'}</Typography>
                     <IconButton onClick={handleClose}>
                         <CloseIcon sx={{ color: '#aaa' }} />
                     </IconButton>
@@ -295,7 +280,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                         </Box>
 
                         {/* 각 멤버 슬롯 렌더링 */}
-                        {members.map((member, i) => (
+                        {partyMembers.map((member, i) => (
                             <Box key={i} display="flex" alignItems="center" px={1.5} py={1.2} borderTop="1px solid #393946">
                                 <Box width="25%" display="flex" alignItems="center" gap={1}>
                                     {member.gameName ? (
@@ -411,7 +396,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                         취소
                     </Button>
                     <Button fullWidth onClick={handleSubmit} sx={{ bgcolor: '#42E6B5', color: '#000', height: 48, fontWeight: 'bold' }}>
-                        <Typography fontWeight="bold" color="white">등록</Typography>
+                        <Typography fontWeight="bold" color="white">{editScrim ? '수정' : '등록'}</Typography>
                     </Button>
                 </Box>
             </Box>

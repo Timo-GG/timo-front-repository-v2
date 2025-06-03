@@ -134,7 +134,7 @@ export default function ScrimPage() {
     const handleEditScrim = (id) => {
         const found = scrims.find(scrim => scrim.id === id);
         setEditScrim(found || null);
-        setApplyOpen(true);
+        setOpen(true);
         handleClose();
     };
 
@@ -351,14 +351,12 @@ export default function ScrimPage() {
                     </Box>
                 </Box>
             </Container>
-            <CreateScrimModal open={open} handleClose={() => setOpen(false)} onCreateScrim={handleAddScrim}
-                              currentTab={tab}/>
-            <ApplyScrimModal open={applyOpen}
-                             handleClose={() => {
-                                 setApplyOpen(false);
-                                 setEditScrim(null);
-                                 setSelectedScrim(null);
-                             }} targetScrim={selectedScrim} editScrim={editScrim} onUpdateScrim={handleUpdateScrim}/>
+            <CreateScrimModal open={open}
+                              handleClose={() => {
+                                  setOpen(false);
+                                  setEditScrim(null);
+                              }} onCreateScrim={handleAddScrim}
+                              currentTab={tab} editScrim={editScrim} onUpdateScrim={handleUpdateScrim}/>
             <ScrimDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} partyId={selectedPartyId}
                               scrims={scrims}/>
             <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)}/>
