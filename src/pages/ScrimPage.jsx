@@ -134,7 +134,7 @@ export default function ScrimPage() {
     const handleEditScrim = (id) => {
         const found = scrims.find(scrim => scrim.id === id);
         setEditScrim(found || null);
-        setApplyOpen(true);
+        setOpen(true);
         handleClose();
     };
 
@@ -147,6 +147,7 @@ export default function ScrimPage() {
             );
             return { ...old, content: newContent };
         });
+        queryClient.invalidateQueries(['scrimBoards']);
         queryClient.invalidateQueries(['hasMyScrimBoard']);
         toast.success("게시글이 수정되었습니다.");
     };
@@ -174,8 +175,8 @@ export default function ScrimPage() {
                         value={tab}
                         onChange={handleTabChange}
                         textColor="inherit"
-                        TabIndicatorProps={{ style: { backgroundColor: '#ffffff' } }}
-                        sx={{ px: { xs: 1, sm: 2 } }}
+                        TabIndicatorProps={{style: {backgroundColor: '#ffffff'}}}
+                        sx={{px: {xs: 1, sm: 2}}}
                     >
                         <Tab label="전체 대학교" sx={{
                             fontSize: '1.1rem',
@@ -254,6 +255,17 @@ export default function ScrimPage() {
                             <Box sx={{textAlign: 'center', py: 4, color: '#fff'}}>
                                 <CircularProgress sx={{color: '#A35AFF'}}/>
                             </Box>
+                        ) : scrims.length === 0 ? (
+                            <Box sx={{
+                                textAlign: 'center',
+                                py: 4,
+                                color: '#666',
+                                backgroundColor: '#2B2C3C',
+                                borderBottomLeftRadius: 10,
+                                borderBottomRightRadius: 10
+                            }}>
+                                <Typography>등록된 내전 게시물이 없습니다.</Typography>
+                            </Box>
                         ) : (
                             scrims.map((row) => {
                                 const isMine = row.name === riot?.accountName && row.tag === riot?.accountTag;
@@ -301,13 +313,13 @@ export default function ScrimPage() {
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'normal',
-                                                    maxHeight: { xs: '3.2em', sm: '3.6em' }
+                                                    maxHeight: {xs: '3.2em', sm: '3.6em'}
                                                 }}
                                             >{row.message}</Box>
                                         </Box>
                                         <Box width="10%" textAlign="center">{formatRelativeTime(row.updatedAt)}</Box>
                                         <Box width="10%" textAlign="center" sx={{
-                                            fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                            fontSize: {xs: '0.7rem', sm: '0.75rem'},
                                             color: getExpiryColor(row.updatedAt)
                                         }}>{formatTimeUntilExpiry(row.updatedAt)}</Box>
                                         <Box width="2%" textAlign="center">
@@ -340,14 +352,12 @@ export default function ScrimPage() {
                     </Box>
                 </Box>
             </Container>
-            <CreateScrimModal open={open} handleClose={() => setOpen(false)} onCreateScrim={handleAddScrim}
-                              currentTab={tab}/>
-            <ApplyScrimModal open={applyOpen}
-                             handleClose={() => {
-                                 setApplyOpen(false);
-                                 setEditScrim(null);
-                                 setSelectedScrim(null);
-                             }} targetScrim={selectedScrim} editScrim={editScrim} onUpdateScrim={handleUpdateScrim}/>
+            <CreateScrimModal open={open}
+                              handleClose={() => {
+                                  setOpen(false);
+                                  setEditScrim(null);
+                              }} onCreateScrim={handleAddScrim}
+                              currentTab={tab} editScrim={editScrim} onUpdateScrim={handleUpdateScrim}/>
             <ScrimDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} partyId={selectedPartyId}
                               scrims={scrims}/>
             <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)}/>
