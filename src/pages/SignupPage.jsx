@@ -11,7 +11,13 @@ import {
 import {useNavigate} from 'react-router-dom';
 import {updateUsername, verifyAccount, resetRiotAccount, registerRanking, updateUserAgreement} from '../apis/accountAPI';
 import {deleteMyRanking} from '../apis/rankAPI';
-import {requestUnivVerification, verifyUnivCode, checkUniv, updateUnivAccount} from '../apis/univAPI';
+import {
+    requestUnivVerification,
+    verifyUnivCode,
+    checkUniv,
+    updateUnivAccount,
+    deleteUnivAccount
+} from '../apis/univAPI';
 import {getMyInfo} from '../apis/authAPI';
 import useAuthStore from '../storage/useAuthStore';
 import TermsModal from '../components/TermsModal';
@@ -96,7 +102,6 @@ export default function SignupPage() {
                     setIsSummonerVerified(true);
                     setSummonerVerified(true);
                     setSummonerStatusMsg('✔️ 이미 인증이 완료된 소환사 계정입니다.');
-                    console.log('이미 인증이 완료된 소환사 계정입니다.');
                 }
 
                 if (profile.certifiedUnivInfo) {
@@ -108,7 +113,6 @@ export default function SignupPage() {
                     setIsUniversityVerified(true);
                     setUniversityStatus('✔️ 이미 인증이 완료된 대학교 계정입니다.');
                     setEmailError(''); // 이메일 에러 초기화
-                    console.log('이미 인증이 완료된 대학교 계정입니다.');
                 }
             } catch (err) {
                 console.error('유저 정보 불러오기 실패:', err);
@@ -201,12 +205,13 @@ export default function SignupPage() {
         }
     }, [isUniversityLocked, university]);
 
-// 학교 이메일 등록/해제 핸들러도 수정
+    // 학교 이메일 등록/해제 핸들러도 수정
     const handleEmailRegister = useCallback(async () => {
         // 이미 인증된 상태라면 해제 처리
         if (isUniversityVerified) {
             try {
                 // 대학 이메일 초기화 API 호출
+                await deleteUnivAccount();
                 await updateUnivAccount({univName: null, univEmail: null});
                 // 상태 초기화
                 setIsUniversityVerified(false);
@@ -237,35 +242,28 @@ export default function SignupPage() {
             return;
         }
         setEmailError('');
+
         try {
             const res = await requestUnivVerification({univName: university, univEmail: schoolEmail});
             if (res.success) {
                 setEmailSent(true);
                 setShowVerificationInput(true);
-            } else if (res.errorCode === 903) {
-                await updateUnivAccount({univName: university, univEmail: schoolEmail});
-                setIsUniversityVerified(true);
-                setShowVerificationInput(false);
-                const {data: profile} = await getMyInfo()
-                setUserData(profile);
             } else if (res.errorCode === 902) {
-                setEmailError('이미 사용중인 학교 계정입니다.');
+                setEmailError(res.message);
+            } else if (res.errorCode === 1001) {
+                setEmailError(res.message);
             } else {
                 setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
             }
         } catch (error) {
             console.error('handleEmailRegister에서 잡힌 에러:', error);
-            // 네트워크 오류인지, CORS 오류인지, 다른 에러인지 확인
             if (error.response) {
-                // 서버가 응답은 주었지만, 4xx/5xx 상태 코드
                 console.error('서버 응답 상태:', error.response.status, error.response.data);
                 setEmailError(error.response.data?.message || '서버 오류가 발생했습니다.');
             } else if (error.request) {
-                // 요청은 나갔지만 응답을 못 받은 상태 (네트워크 오류 혹은 CORS)
                 console.error('요청이 나갔으나 응답이 없습니다:', error.request);
                 setEmailError('네트워크 오류가 발생했습니다.');
             } else {
-                // 요청 설정 중에 발생한 에러
                 console.error('요청 설정 중 예외 발생:', error.message);
                 setEmailError('예기치 못한 오류가 발생했습니다.');
             }
@@ -579,7 +577,7 @@ export default function SignupPage() {
                     )}
                     {!emailError && !emailSent && isUniversityVerified && (
                         <Typography variant="caption" color={theme.palette.success.main}>
-                            ✔️ 이미 인증이 완료된 학교 계정입니다.
+                            ✔️ 인증 완료되었습니다.
                         </Typography>
                     )}
                 </Box>
