@@ -70,10 +70,8 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
 
     useEffect(() => {
         const limit = people === '3:3' ? 2 : 4;
-        if (!editScrim) {
-            setPartyMembers(Array(limit).fill({ ...defaultMember }));
-            setSummonerInputs(Array(limit).fill(""));
-        }
+        setPartyMembers(Array(limit).fill({ ...defaultMember }));
+        setSummonerInputs(Array(limit).fill(""));
     }, [people]);
 
     console.log(partyMembers);
@@ -157,7 +155,8 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                 : await createScrimBoard(requestBody);
 
             const formatted = transformScrimForFrontend(res.data);
-            editScrim ? onUpdateScrim?.(formatted) : onCreateScrim?.(formatted);;
+
+            editScrim ? onUpdateScrim?.(formatted) : onCreateScrim?.(formatted);
             handleClose();
         } catch (e) {
             console.error('스크림 요청 처리 실패:', e);
