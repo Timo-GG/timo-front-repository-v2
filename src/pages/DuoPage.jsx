@@ -300,9 +300,22 @@ export default function DuoPage() {
         }
     };
 
-    const filteredUsers = displayedUsers.filter(u =>
-        positionFilter === 'nothing' || u.position?.toLowerCase() === positionFilter
-    );
+    const filteredUsers = displayedUsers.filter(u => {
+        // 포지션 필터
+        const positionMatch = positionFilter === 'nothing' || u.position?.toLowerCase() === positionFilter;
+
+        // 큐 타입 필터
+        const queueMatch = rankType === 'all' ||
+            (rankType === 'solo' && u.queueType === '랭크') ||
+            (rankType === 'normal' && u.queueType === '일반') ||
+            (rankType === 'aram' && u.queueType === '칼바람');
+
+        // 티어 필터
+        const tierMatch = schoolFilter === 'all' ||
+            u.tier?.toLowerCase() === schoolFilter.toLowerCase();
+
+        return positionMatch && queueMatch && tierMatch;
+    });
 
     return (
         <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>

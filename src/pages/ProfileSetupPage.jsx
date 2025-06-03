@@ -96,8 +96,11 @@ export default function ProfileSetupPage() {
 
     return (
         <Box sx={{ backgroundColor: '#12121a', minHeight: '100vh', px: 2, py: 6, maxWidth: 460, mx: 'auto' }}>
-            <Typography variant="h5" fontWeight="bold" color="#fff" mb={3}>
+            <Typography variant="h5" fontWeight="bold" color="#fff" mb={1}>
                 내 정보 (선택사항)
+            </Typography>
+            <Typography fontSize="0.75rem" color="#888" mb={3}>
+                랭킹페이지 > 내 정보 수정하기에서 변경할 수 있습니다.
             </Typography>
 
             {/* 주 포지션 */}

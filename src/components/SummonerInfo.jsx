@@ -1,5 +1,5 @@
 import React from 'react';
-import {Box, Avatar, Typography, IconButton, Tooltip} from '@mui/material';
+import {Box, Avatar, Typography, IconButton, Tooltip, useMediaQuery} from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 export default function SummonerInfo({
@@ -19,6 +19,11 @@ export default function SummonerInfo({
     const encodedName = encodeURIComponent(name);
     const encodedTag = encodeURIComponent(tag.replace(/\s/g, ''));
     const opggUrl = `https://op.gg/ko/lol/summoners/kr/${encodedName}-${encodedTag}`;
+
+    const isMobile = useMediaQuery('(max-width:768px)');
+    const displaySchool = isMobile
+        ? school.replace('서울과학기술대학교', '서울과기대')
+        : school;
 
     return (
         <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
@@ -62,7 +67,8 @@ export default function SummonerInfo({
                         sx={{lineHeight: 1.2, whiteSpace: 'nowrap'}}
                         noWrap
                     >
-                        #{tag}{school ? ` | ${school}` : ''}
+                        #{tag}{displaySchool ? ` | ${displaySchool}` : ''}
+
                     </Typography>
 
                     {copyable && (

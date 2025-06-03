@@ -12,7 +12,7 @@ export default function TableItem({ received, user, onRequestUpdate }) {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate(); // 추가
     const columns = [1.5, 1, 1.5, 1.5, 2, 0.5, 1, 1.5];
-    console.log("user : ", user);
+
     const handleAccept = async (event) => {
         event.stopPropagation();
         if (isLoading) return;
