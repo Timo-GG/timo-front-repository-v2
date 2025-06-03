@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import {
     Dialog, Box, Typography, TextField, Select, MenuItem,
-    Button, IconButton, Avatar
+    Button, IconButton, Avatar, useTheme, useMediaQuery
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SummonerInfo from '../SummonerInfo';
 import TierBadge from '../TierBadge';
 import PositionFilterBar from '/src/components/duo/PositionFilterBar';
 import ChampionIconList from '../champion/ChampionIconList';
-import theme from '../../theme';
 import useAuthStore from "../../storage/useAuthStore.jsx";
 import {fetchCompactPlayerHistory} from "../../apis/compactPlayerHistory.js";
 import {createScrimBoard} from "../../apis/redisAPI.js";
@@ -42,6 +41,9 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
     );
     const [errors, setErrors] = useState({});
     const [summonerInputs, setSummonerInputs] = useState(Array(initialLimit).fill(""));
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     // people 상태 변경 시 멤버 입력 슬롯 길이 재설정
     useEffect(() => {
@@ -218,8 +220,14 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                 />
 
                 {/* 설정 영역 */}
-                <Box display="flex" gap={2} alignItems="flex-end" mb={2}>
-                    <Box display="flex" flexDirection="column" justifyContent="flex-end">
+                <Box
+                    display="flex"
+                    flexDirection="column"
+                    gap={isMobile ? 1.5 : 2}
+                    mb={2}
+                >
+                    {/* 포지션 */}
+                    <Box display="flex" flexDirection="column">
                         <Typography fontSize="0.85rem" color="#aaa" mb={0.5}>나의 포지션</Typography>
                         <PositionFilterBar
                             positionFilter={myPosition}
@@ -229,143 +237,171 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                         />
                     </Box>
 
-                    <Select value={map} onChange={e => setMap(e.target.value)} sx={{
-                        minWidth: 120,
-                        bgcolor: '#31313D',
-                        color: '#fff',
-                        '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-                        '& .MuiSelect-icon': { color: '#7B7B8E' },
-                    }}>
-                        <MenuItem value="소환사 협곡">소환사 협곡</MenuItem>
-                        <MenuItem value="칼바람 나락">칼바람 나락</MenuItem>
-                    </Select>
-                    <Select value={people} onChange={e => setPeople(e.target.value)} sx={{
-                        minWidth: 80,
-                        bgcolor: '#31313D',
-                        color: '#fff',
-                        '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-                        '& .MuiSelect-icon': { color: '#7B7B8E' },
-                    }}>
-                        <MenuItem value="5:5">5 : 5</MenuItem>
-                        <MenuItem value="3:3">3 : 3</MenuItem>
-                    </Select>
-                </Box>
-
-                {/* 멤버 입력 테이블 헤더 */}
-                <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem"
-                    sx={{ backgroundColor: "#28282F" }}>
-                    <Box width="25%">소환사 이름</Box>
-                    <Box width="10%" textAlign="center">티어</Box>
-                    <Box width="20%" textAlign="center">모스트 챔피언</Box>
-                    <Box width="45%" textAlign="center">포지션</Box>
-                </Box>
-
-                {/* 각 멤버 슬롯 렌더링 */}
-                {members.map((member, i) => (
-                    <Box key={i} display="flex" alignItems="center" px={1.5} py={1.2} borderTop="1px solid #393946">
-                        <Box width="25%" display="flex" alignItems="center" gap={1}>
-                            {member.gameName ? (
-                                <>
-                                    <Avatar src={member.profileUrl} sx={{ width: 32, height: 32 }} />
-                                    <Box>
-                                        <Typography fontSize="0.9rem" color="#fff">{member.gameName}</Typography>
-                                        <Typography fontSize="0.75rem" color="#888">#{member.tagLine}</Typography>
-                                    </Box>
-                                </>
-                            ) : (
-                                <Box sx={{ display: 'flex', height: '40px', width: '100%' }}>
-                                    <TextField
-                                        fullWidth
-                                        placeholder="소환사 이름#태그"
-                                        variant="outlined"
-                                        value={summonerInputs[i] || ""}
-                                        onChange={(e) => {
-                                            const newInputs = [...summonerInputs];
-                                            newInputs[i] = e.target.value;
-                                            setSummonerInputs(newInputs);
-                                        }}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                height: '100%',
-                                                borderRadius: '10px 0 0 10px',
-                                                backgroundColor: theme.palette.background.input,
-                                                border: `1px solid ${theme.palette.border.main}`,
-                                                '& fieldset': { borderColor: 'transparent' },
-                                                '& input': {
-                                                    color: theme.palette.text.primary,
-                                                    padding: '10px 12px',
-                                                    fontSize: '0.875rem',
-                                                }
-                                            }
-                                        }}
-                                    />
-                                    <Button
-                                        onClick={() => handleVerifySummoner(i)}
-                                        sx={{
-                                            height: '100%',
-                                            borderRadius: '0 10px 10px 0',
-                                            backgroundColor: theme.palette.background.input,
-                                            color: theme.palette.text.secondary,
-                                            border: `1px solid ${theme.palette.border.main}`,
-                                            borderLeft: 'none',
-                                            px: 2,
-                                            minWidth: '64px',
-                                            fontSize: '0.75rem',
-                                        }}
-                                    >
-                                        등록
-                                    </Button>
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Box width="10%" textAlign="center">
-                            <TierBadge
-                                tier={(member.rankInfo?.tier || 'unrank').toLowerCase()}
-                                score={member.rankInfo?.lp || 0}
-                                rank={member.rankInfo?.rank}
-                            />
-                        </Box>
-
-                        <Box width="20%" display="flex" justifyContent="center">
-                            <ChampionIconList championNames={member.most3Champ || []} />
-                        </Box>
-
-                        <Box width="45%" display="flex" justifyContent="space-between" alignItems="center">
-                            <PositionFilterBar
-                                positionFilter={member.myPosition || 'nothing'}
-                                onPositionClick={(pos) => {
-                                    const updated = [...partyMembers];
-                                    updated[i] = { ...updated[i], myPosition: pos };
-                                    setPartyMembers(updated);
+                    {/* 맵 + 인원 선택 */}
+                    <Box display="flex" flexDirection="row" gap={2}>
+                        {/* 맵 */}
+                        <Box display="flex" flexDirection="column" flex={1}>
+                            <Typography fontSize="0.85rem" color="#aaa" mb={0.5}>맵</Typography>
+                            <Select
+                                value={map}
+                                onChange={e => setMap(e.target.value)}
+                                sx={{
+                                    bgcolor: '#31313D',
+                                    color: '#fff',
+                                    width: '100%',
+                                    '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
+                                    '& .MuiSelect-icon': { color: '#7B7B8E' },
                                 }}
-                                selectedColor="#42E6B5"
-                                unselectedColor="#31313E"
-                            />
-                            {member.gameName && (
-                                <Button
-                                    onClick={() => {
-                                        const updated = [...partyMembers];
-                                        updated[i] = defaultMember;
-                                        setPartyMembers(updated);
-                                    }}
-                                    sx={{
-                                        ml: 1,
-                                        minWidth: 0,
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: '50%',
-                                        color: '#aaa',
-                                        fontSize: '0.8rem',
-                                        '&:hover': { backgroundColor: '#3a3a4a' }
-                                    }}
-                                >
-                                    ✕
-                                </Button>
-                            )}
+                            >
+                                <MenuItem value="소환사 협곡">소환사 협곡</MenuItem>
+                                <MenuItem value="칼바람 나락">칼바람 나락</MenuItem>
+                            </Select>
+                        </Box>
+
+                        {/* 인원 */}
+                        <Box display="flex" flexDirection="column" flex={1}>
+                            <Typography fontSize="0.85rem" color="#aaa" mb={0.5}>인원</Typography>
+                            <Select
+                                value={people}
+                                onChange={e => setPeople(e.target.value)}
+                                sx={{
+                                    bgcolor: '#31313D',
+                                    color: '#fff',
+                                    width: '100%',
+                                    '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
+                                    '& .MuiSelect-icon': { color: '#7B7B8E' },
+                                }}
+                            >
+                                <MenuItem value="5:5">5 : 5</MenuItem>
+                                <MenuItem value="3:3">3 : 3</MenuItem>
+                            </Select>
                         </Box>
                     </Box>
-                ))}
+                </Box>
+
+
+
+                <Box sx={{ overflowX: 'auto' }}>
+                    {/* 테이블 전체를 감싸는 래퍼 */}
+                    <Box minWidth="720px">
+
+                        {/* 멤버 입력 테이블 헤더 */}
+                        <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem"
+                             sx={{ backgroundColor: "#28282F" }}>
+                            <Box width="25%">소환사 이름</Box>
+                            <Box width="10%" textAlign="center">티어</Box>
+                            <Box width="20%" textAlign="center">모스트 챔피언</Box>
+                            <Box width="45%" textAlign="center">포지션</Box>
+                        </Box>
+
+                        {/* 각 멤버 슬롯 렌더링 */}
+                        {members.map((member, i) => (
+                            <Box key={i} display="flex" alignItems="center" px={1.5} py={1.2} borderTop="1px solid #393946">
+                                <Box width="25%" display="flex" alignItems="center" gap={1}>
+                                    {member.gameName ? (
+                                        <>
+                                            <Avatar src={member.profileUrl} sx={{ width: 32, height: 32 }} />
+                                            <Box>
+                                                <Typography fontSize="0.9rem" color="#fff">{member.gameName}</Typography>
+                                                <Typography fontSize="0.75rem" color="#888">#{member.tagLine}</Typography>
+                                            </Box>
+                                        </>
+                                    ) : (
+                                        <Box sx={{ display: 'flex', height: '40px', width: '100%' }}>
+                                            <TextField
+                                                fullWidth
+                                                placeholder="소환사 이름#태그"
+                                                variant="outlined"
+                                                value={summonerInputs[i] || ""}
+                                                onChange={(e) => {
+                                                    const newInputs = [...summonerInputs];
+                                                    newInputs[i] = e.target.value;
+                                                    setSummonerInputs(newInputs);
+                                                }}
+                                                sx={{
+                                                    '& .MuiOutlinedInput-root': {
+                                                        height: '100%',
+                                                        borderRadius: '10px 0 0 10px',
+                                                        backgroundColor: theme.palette.background.input,
+                                                        border: `1px solid ${theme.palette.border.main}`,
+                                                        '& fieldset': { borderColor: 'transparent' },
+                                                        '& input': {
+                                                            color: theme.palette.text.primary,
+                                                            padding: '10px 12px',
+                                                            fontSize: '0.875rem',
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                onClick={() => handleVerifySummoner(i)}
+                                                sx={{
+                                                    height: '100%',
+                                                    borderRadius: '0 10px 10px 0',
+                                                    backgroundColor: theme.palette.background.input,
+                                                    color: theme.palette.text.secondary,
+                                                    border: `1px solid ${theme.palette.border.main}`,
+                                                    borderLeft: 'none',
+                                                    px: 2,
+                                                    minWidth: '64px',
+                                                    fontSize: '0.75rem',
+                                                }}
+                                            >
+                                                등록
+                                            </Button>
+                                        </Box>
+                                    )}
+                                </Box>
+
+                                <Box width="10%" textAlign="center">
+                                    <TierBadge
+                                        tier={(member.rankInfo?.tier || 'unrank').toLowerCase()}
+                                        score={member.rankInfo?.lp || 0}
+                                        rank={member.rankInfo?.rank}
+                                    />
+                                </Box>
+
+                                <Box width="20%" display="flex" justifyContent="center">
+                                    <ChampionIconList championNames={member.most3Champ || []} />
+                                </Box>
+
+                                <Box width="45%" display="flex" justifyContent="space-between" alignItems="center">
+                                    <PositionFilterBar
+                                        positionFilter={member.myPosition || 'nothing'}
+                                        onPositionClick={(pos) => {
+                                            const updated = [...partyMembers];
+                                            updated[i] = { ...updated[i], myPosition: pos };
+                                            setPartyMembers(updated);
+                                        }}
+                                        selectedColor="#42E6B5"
+                                        unselectedColor="#31313E"
+                                    />
+                                    {member.gameName && (
+                                        <Button
+                                            onClick={() => {
+                                                const updated = [...partyMembers];
+                                                updated[i] = defaultMember;
+                                                setPartyMembers(updated);
+                                            }}
+                                            sx={{
+                                                ml: 1,
+                                                minWidth: 0,
+                                                width: 28,
+                                                height: 28,
+                                                borderRadius: '50%',
+                                                color: '#aaa',
+                                                fontSize: '0.8rem',
+                                                '&:hover': { backgroundColor: '#3a3a4a' }
+                                            }}
+                                        >
+                                            ✕
+                                        </Button>
+                                    )}
+                                </Box>
+                            </Box>
+                        ))}
+                    </Box>
+                </Box>
 
                 <Box display="flex" gap={2} mt={4}>
                     <Button fullWidth onClick={handleClose} sx={{
