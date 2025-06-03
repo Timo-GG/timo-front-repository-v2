@@ -53,6 +53,22 @@ export const formatTimeUntilExpiry = (createdAt) => {
     }
 };
 
+export const getExpiryColor = (updatedAt) => {
+    const expiry = calculateExpiryTime(updatedAt);
+    const now = new Date();
+    const timeDiff = expiry.getTime() - now.getTime();
+
+    if (timeDiff <= 0) {
+        return '#f44336'; // 만료됨
+    }
+
+    if (timeDiff <= 15 * 60 * 1000) {
+        return '#ff9800'; // 15분 이하 경고
+    }
+
+    return '#42E6B5'; // 정상 상태
+};
+
 export const isExpired = (createdAt) => {
     const now = new Date();
     const expiry = calculateExpiryTime(createdAt);
