@@ -48,7 +48,33 @@ export default function Footer() {
                     </Link>
                 </Typography>
 
-                {/* 두 번째 줄: 저작권 */}
+                {/* 두 번째 줄: 이용약관과 개인정보 처리방침 */}
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: '#B7B7C9',
+                        mb: 1,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        textAlign: 'center',
+                        lineHeight: 1.5
+                    }}
+                >
+                    <Link
+                        href="/tos"
+                        sx={{ color: '#B7B7C9', textDecoration: 'none', '&:hover': { color: '#fff' } }}
+                    >
+                        이용약관
+                    </Link>
+                    <span style={{ margin: '0 8px' }}>|</span>
+                    <Link
+                        href="/privacy"
+                        sx={{ color: '#B7B7C9', textDecoration: 'none', '&:hover': { color: '#fff' } }}
+                    >
+                        개인정보 처리방침
+                    </Link>
+                </Typography>
+
+                {/* 세 번째 줄: 저작권 */}
                 <Typography
                     variant="body2"
                     sx={{
@@ -62,7 +88,7 @@ export default function Footer() {
                     © 2025 TIMO.GG. All rights reserved.
                 </Typography>
 
-                {/* 세 번째 줄: 면책조항 */}
+                {/* 네 번째 줄: 면책조항 */}
                 <Typography
                     variant="caption"
                     sx={{

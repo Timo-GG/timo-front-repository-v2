@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import MainPage from './pages/MainPage';
 import SearchPage from './pages/SearchPage';
@@ -18,13 +18,27 @@ import { connectSocket, disconnectSocket } from './socket/socket';
 import useOnlineStore from './storage/useOnlineStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Footer from "./components/Footer.jsx";
+import TermsModal from './components/TermsModal';
 
-function App() {
+// Router 내부에서 사용할 컴포넌트 분리
+function AppContent() {
     const { accessToken, userData, initializeAuth } = useAuthStore();
     const { setOnlineCount } = useOnlineStore();
-    const queryClient = new QueryClient();
     const socketRef = useRef(null);
     const isJoinedRef = useRef(false);
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const isPrivacyModalOpen = location.pathname === '/privacy';
+    const isTermsModalOpen = location.pathname === '/tos';
+
+    const closeModal = () => {
+        if (isPrivacyModalOpen) {
+            navigate('/'); // 개인정보 처리방침 모달 닫기
+        } else if (isTermsModalOpen) {
+            navigate('/'); // 이용약관 모달 닫기
+        }
+    };
 
     // ✅ 앱 시작 시 토큰 복원
     useEffect(() => {
@@ -90,7 +104,7 @@ function App() {
             socketRef.current = null;
             isJoinedRef.current = false;
         };
-    }, [accessToken, userData?.memberId]); // setOnlineCount 제거
+    }, [accessToken, userData?.memberId]);
 
     function ChatRouteWrapper() {
         const location = useLocation();
@@ -101,25 +115,45 @@ function App() {
     }
 
     return (
+        <>
+            <Header />
+            <NotificationListener />
+            <Routes>
+                <Route path="/" element={<MainPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/mysetting" element={<MySettingPage />} />
+                <Route path="/ranking" element={<RankingPage />} />
+                <Route path="/mypage" element={<MyPage />} />
+                <Route path="/duo" element={<DuoPage />} />
+                <Route path="/scrim" element={<ScrimPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/profile-setup" element={<ProfileSetup />} />
+                <Route path="/test" element={<TestPage />} />
+                <Route path="/auth/callback/:provider" element={<AuthCallback />} />
+                <Route path="/chat" element={<ChatRouteWrapper />} />
+            </Routes>
+            <Footer />
+            <TermsModal
+                open={isPrivacyModalOpen}
+                onClose={closeModal}
+                type="privacy"
+            />
+            <TermsModal
+                open={isTermsModalOpen}
+                onClose={closeModal}
+                type="terms"
+            />
+        </>
+    );
+}
+
+function App() {
+    const queryClient = new QueryClient();
+
+    return (
         <QueryClientProvider client={queryClient}>
             <Router>
-                <Header />
-                <NotificationListener />
-                <Routes>
-                    <Route path="/" element={<MainPage />} />
-                    <Route path="/search" element={<SearchPage />} />
-                    <Route path="/mysetting" element={<MySettingPage />} />
-                    <Route path="/ranking" element={<RankingPage />} />
-                    <Route path="/mypage" element={<MyPage />} />
-                    <Route path="/duo" element={<DuoPage />} />
-                    <Route path="/scrim" element={<ScrimPage />} />
-                    <Route path="/signup" element={<SignupPage />} />
-                    <Route path="/profile-setup" element={<ProfileSetup />} />
-                    <Route path="/test" element={<TestPage />} />
-                    <Route path="/auth/callback/:provider" element={<AuthCallback />} />
-                    <Route path="/chat" element={<ChatRouteWrapper />} />
-                </Routes>
-                <Footer />
+                <AppContent />
             </Router>
         </QueryClientProvider>
     );
