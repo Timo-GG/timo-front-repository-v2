@@ -9,7 +9,8 @@ import {
     Tab,
     Menu,
     MenuItem,
-    CircularProgress
+    CircularProgress,
+    useMediaQuery
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SummonerInfo from '../components/SummonerInfo';
@@ -34,6 +35,7 @@ import LoginModal from '../components/login/LoginModal';
 
 export default function ScrimPage() {
     const theme = useTheme();
+    const isMobile = useMediaQuery('(max-width:768px)');
     const [tab, setTab] = useState(0);
     const [open, setOpen] = useState(false);
     const [applyOpen, setApplyOpen] = useState(false);
@@ -50,6 +52,12 @@ export default function ScrimPage() {
     const queryClient = useQueryClient();
     const [loginOpen, setLoginOpen] = useState(false);
     const [requiredOpen, setRequiredOpen] = useState(false);
+
+    // 모바일에서 대학교명 치환 함수
+    const replaceMobileUnivName = (text) => {
+        if (!text) return text;
+        return isMobile ? text.replace('서울과학기술대학교', '서울과기대') : text;
+    };
 
     const handleTabChange = (event, newValue) => {
         if (!isLoggedIn) return setLoginOpen(true);
@@ -196,8 +204,9 @@ export default function ScrimPage() {
                     <Box sx={{ml: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                         <Box>
                             <Typography variant="h7" color="#42E6B5">콜로세움 게시판</Typography>
-                            <Typography variant="h5" fontWeight="bold"
-                                        color="white">{tab === 0 ? '전체 대학교' : userData.certifiedUnivInfo.univName}</Typography>
+                            <Typography variant="h5" fontWeight="bold" color="white">
+                                {tab === 0 ? '전체 대학교' : replaceMobileUnivName(userData?.certifiedUnivInfo?.univName)}
+                            </Typography>
                         </Box>
                         <Button
                             sx={{
@@ -213,7 +222,6 @@ export default function ScrimPage() {
                             onClick={() => {
                                 if (!isLoggedIn) return setLoginOpen(true);
                                 if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
-
                                 if (hasExistingScrimBoard) {
                                     handleRefreshScrim();
                                 } else {
@@ -284,8 +292,9 @@ export default function ScrimPage() {
                                             <TierBadge tier={row.party?.[0]?.tier} score={row.party?.[0]?.lp}
                                                        rank={row.party?.[0]?.rank}/>
                                         </Box>
-                                        <Box width="10%"
-                                             textAlign="center">{tab === 0 ? row.school : row.department}</Box>
+                                        <Box width="10%" textAlign="center">
+                                            {tab === 0 ? replaceMobileUnivName(row.school) : row.department}
+                                        </Box>
                                         <Box width="20%" textAlign="center">
                                             <Box
                                                 sx={{

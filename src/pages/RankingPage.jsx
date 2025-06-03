@@ -12,6 +12,7 @@ import {
     Container,
     Avatar,
     Pagination,
+    useMediaQuery
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import useAuthStore from '../storage/useAuthStore';
@@ -30,6 +31,7 @@ import SummonerInfo from '../components/SummonerInfo';
 
 export default function RankingPage() {
     const theme = useTheme();
+    const isMobile = useMediaQuery('(max-width:768px)');
     const {accessToken, userData} = useAuthStore();
 
     const [tab, setTab] = React.useState(0);
@@ -44,6 +46,12 @@ export default function RankingPage() {
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
     const [searchTarget, setSearchTarget] = React.useState(null);
     const rowRefs = React.useRef({});
+
+    // 모바일에서 대학교명 치환 함수
+    const replaceMobileUnivName = (text) => {
+        if (!text) return text;
+        return isMobile ? text.replace('서울과학기술대학교', '서울과기대') : text;
+    };
 
     const {
         data: responseData = {},
@@ -125,7 +133,6 @@ export default function RankingPage() {
 
             setCurrentPage(page);
             setSearchTarget(`${name.toLowerCase()}#${tag.toLowerCase().replace(/\s+/g, '')}`);
-
         } catch (err) {
             alert('해당 소환사를 찾을 수 없습니다.');
         }
@@ -175,7 +182,7 @@ export default function RankingPage() {
                         <Box>
                             <Typography variant="h7" color="#42E6B5">콜로세움 순위표</Typography>
                             <Typography variant="h5" fontWeight="bold" color="white">
-                                {tab === 0 ? '전체 대학교' : myUniversity}
+                                {tab === 0 ? '전체 대학교' : replaceMobileUnivName(myUniversity)}
                             </Typography>
                         </Box>
 
@@ -197,7 +204,7 @@ export default function RankingPage() {
                                 <IconButton
                                     onClick={handleSearch}
                                     sx={{
-                                        padding: '2px', // 기본 패딩 줄이기
+                                        padding: '2px',
                                         '&:hover': {
                                             backgroundColor: 'rgba(255, 255, 255, 0.04)'
                                         }
@@ -315,7 +322,7 @@ export default function RankingPage() {
                                             <TierBadge tier={row.tier} score={row.lp} rank={row.rank}/>
                                         </Box>
                                         <Box width="10%" textAlign="center">
-                                            {tab === 0 ? row.university : row.department}
+                                            {tab === 0 ? replaceMobileUnivName(row.university) : row.department}
                                         </Box>
                                         <Box width="10%" textAlign="center">
                                             <ChampionIconList championNames={row.champions}/>
