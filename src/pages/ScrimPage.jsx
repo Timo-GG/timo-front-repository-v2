@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
+import {useLocation} from 'react-router-dom';
 import {
     Box,
     Typography,
@@ -13,6 +14,7 @@ import {
     useMediaQuery
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SummonerInfo from '../components/SummonerInfo';
 import TierBadge from '../components/TierBadge';
 import CreateScrimModal from '/src/components/scrim/CreateScrimModal';
@@ -23,7 +25,7 @@ import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import {
     deleteMyScrimBoard,
-    fetchAllScrimBoards,
+    fetchAllScrimBoards, fetchScrimBoard,
     fetchUnivScrimBoards,
     isExistMyScimBoard,
     refreshScrimBoard
@@ -47,11 +49,29 @@ export default function ScrimPage() {
     const [selectedScrim, setSelectedScrim] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-    const {isLoggedIn, userData} = useAuthStore();
-    const riot = userData?.riotAccount || {};
+    const [hasExistingBoard, setHasExistingBoard] = useState(false);
+    const [isCheckingBoard, setIsCheckingBoard] = useState(true); // 추가: 게시물 확인 중 상태
+
+    const location = useLocation();
+    const userData = useAuthStore(state => state.userData);
+    const {isLoggedIn} = useAuthStore();
+    const myMemberId = userData?.memberId;
     const queryClient = useQueryClient();
     const [loginOpen, setLoginOpen] = useState(false);
     const [requiredOpen, setRequiredOpen] = useState(false);
+
+    // 페이징 관련 상태 추가
+    const [allScrims, setAllScrims] = useState([]);
+    const [displayedScrims, setDisplayedScrims] = useState([]);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const pageSize = 50;
+
+    const [editingScrim, setEditingScrim] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
+
+    const isUserLoggedIn = Boolean(userData?.memberId);
 
     // 모바일에서 대학교명 치환 함수
     const replaceMobileUnivName = (text) => {
@@ -63,49 +83,88 @@ export default function ScrimPage() {
         if (!isLoggedIn) return setLoginOpen(true);
         if (newValue === 1 && !userData?.certifiedUnivInfo) return setRequiredOpen(true);
         setTab(newValue);
+        // 탭 변경 시 페이징 상태 초기화
+        setCurrentPage(0);
+        setHasMore(true);
     };
 
+    // 기존 게시물 존재 여부 확인 쿼리
     const {
-        data: hasExistingScrimBoard,
-        refetch: refetchScrimBoardExistence
+        data: hasExistingScrimBoardData,
+        isLoading: isCheckingExistingBoard,
+        refetch: refetchBoardStatus
     } = useQuery({
         queryKey: ['hasMyScrimBoard'],
         queryFn: isExistMyScimBoard,
-        enabled: isLoggedIn && !!userData?.memberId,
-        refetchInterval: 10000
+        enabled: isUserLoggedIn,
+        refetchInterval: 10000,
+        staleTime: 0,
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
     });
+
+    // 로그아웃 시 상태 초기화
+    useEffect(() => {
+        if (!isUserLoggedIn) {
+            setIsCheckingBoard(false);
+            setHasExistingBoard(false);
+        }
+    }, [isUserLoggedIn]);
+
+    // 페이지 진입 시 데이터 새로고침 (로그인된 경우만)
+    useEffect(() => {
+        if (isUserLoggedIn) {
+            setIsCheckingBoard(true);
+            refetchBoardStatus();
+        }
+    }, [location.pathname]);
+
+    // React Query 결과 처리
+    useEffect(() => {
+        if (!isCheckingExistingBoard && isUserLoggedIn) {
+            setIsCheckingBoard(false);
+            setHasExistingBoard(hasExistingScrimBoardData || false);
+        }
+    }, [hasExistingScrimBoardData, isCheckingExistingBoard, isUserLoggedIn]);
 
     const handleRefreshScrim = async () => {
         try {
             setIsRefreshing(true);
-            const now = new Date().toISOString();
+            const currentTime = new Date().toISOString();
 
-            queryClient.setQueryData(['scrimBoards', tab], old => {
-                if (!old || !old.content) return old;
-                const updatedContent = old.content.map(item => {
-                    if (item.name === riot.accountName && item.tag === riot.accountTag) {
-                        return {...item, updatedAt: now};
-                    }
-                    return item;
-                }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-                return {...old, content: updatedContent};
-            });
+            if (myMemberId) {
+                setDisplayedScrims(prev => {
+                    const updated = prev.map(scrim => {
+                        if (scrim.memberId === myMemberId) {
+                            return {...scrim, updatedAt: currentTime};
+                        }
+                        return scrim;
+                    });
+                    return updated.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                });
+            }
 
             await refreshScrimBoard();
+            queryClient.invalidateQueries(['scrimBoards']);
             toast.success('스크림 게시글이 끌어올려졌습니다!');
+            setHasExistingBoard(true);
+
         } catch (err) {
             console.error("스크림 끌어올리기 실패", err);
             toast.error("끌어올리기에 실패했습니다.");
+            queryClient.invalidateQueries(['scrimBoards']);
+
+            if (err.response?.status === 401) {
+                setLoginOpen(true);
+            }
         } finally {
             setIsRefreshing(false);
-            queryClient.invalidateQueries(['scrimBoards']);
-            queryClient.invalidateQueries(['hasMyScrimBoard']);
         }
     };
 
-    const pageSize = 30;
-    const {data: scrimData, isLoading} = useQuery({
-        queryKey: ['scrimBoards', tab],
+    // 초기 데이터 로드
+    const {data: initialData, isLoading} = useQuery({
+        queryKey: ['scrimBoards', tab, 0],
         queryFn: () =>
             tab === 0
                 ? fetchAllScrimBoards(0, pageSize)
@@ -114,7 +173,43 @@ export default function ScrimPage() {
         refetchInterval: 5000,
     });
 
-    const scrims = scrimData?.content || [];
+    // 초기 데이터 설정
+    useEffect(() => {
+        if (initialData && initialData.content) {
+            setAllScrims(initialData.content);
+            setDisplayedScrims(initialData.content);
+            setHasMore(initialData.content.length === pageSize && !initialData.last);
+        }
+    }, [initialData, pageSize]);
+
+    // 더 많은 데이터 로드
+    const handleLoadMore = async () => {
+        if (isLoadingMore || !hasMore) return;
+
+        setIsLoadingMore(true);
+        try {
+            const nextPage = currentPage + 1;
+            const moreData = tab === 0
+                ? await fetchAllScrimBoards(nextPage, pageSize)
+                : await fetchUnivScrimBoards(nextPage, pageSize, userData.certifiedUnivInfo?.univName || '');
+
+            if (moreData && moreData.content && moreData.content.length > 0) {
+                setAllScrims(prev => [...prev, ...moreData.content]);
+                setDisplayedScrims(prev => [...prev, ...moreData.content]);
+                setCurrentPage(nextPage);
+                setHasMore(!moreData.last && moreData.content.length === pageSize);
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error('더 많은 데이터 로드 실패:', error);
+            toast.error('데이터를 불러오는데 실패했습니다.');
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
+    const scrims = displayedScrims || [];
 
     const handleAddScrim = () => {
         queryClient.invalidateQueries(['scrimBoards']);
@@ -139,11 +234,16 @@ export default function ScrimPage() {
         }
     };
 
-    const handleEditScrim = (id) => {
-        const found = scrims.find(scrim => scrim.id === id);
-        setEditScrim(found || null);
-        setOpen(true);
-        handleClose();
+    const handleEditScrim = async (boardUUID) => {
+        try {
+            const scrimData = await fetchScrimBoard(boardUUID);
+            setEditingScrim(scrimData);
+            setIsEditMode(true);
+            setOpen(true);
+        } catch (error) {
+            console.error('스크림 게시글 조회 실패:', error);
+            toast.error('게시글 정보를 불러오는데 실패했습니다.');
+        }
     };
 
     const handleUpdateScrim = (updatedData) => {
@@ -155,7 +255,6 @@ export default function ScrimPage() {
             );
             return {...old, content: newContent};
         });
-        queryClient.invalidateQueries(['scrimBoards']);
         queryClient.invalidateQueries(['hasMyScrimBoard']);
         toast.success("게시글이 수정되었습니다.");
     };
@@ -169,6 +268,74 @@ export default function ScrimPage() {
         setAnchorEl(null);
         setMenuTargetId(null);
     };
+
+    const handleModalClose = () => {
+        setOpen(false);
+        setEditingScrim(null);
+        setIsEditMode(false);
+    };
+
+    const handleModalSuccess = async (newScrimData) => {
+        try {
+            if (isEditMode) {
+                setDisplayedScrims(prev =>
+                    prev.map(scrim =>
+                        scrim.id === newScrimData.id ? newScrimData : scrim
+                    )
+                );
+                setAllScrims(prev =>
+                    prev.map(scrim =>
+                        scrim.id === newScrimData.id ? newScrimData : scrim
+                    )
+                );
+                toast.success('게시글이 수정되었습니다.');
+            } else {
+                setHasExistingBoard(true);
+                if (newScrimData) {
+                    setDisplayedScrims(prev => {
+                        const exists = prev.some(scrim => scrim.id === newScrimData.id);
+                        if (!exists) {
+                            return [newScrimData, ...prev];
+                        }
+                        return prev;
+                    });
+                    setAllScrims(prev => {
+                        const exists = prev.some(scrim => scrim.id === newScrimData.id);
+                        if (!exists) {
+                            return [newScrimData, ...prev];
+                        }
+                        return prev;
+                    });
+                }
+            }
+
+            queryClient.cancelQueries(['scrimBoards']);
+            setTimeout(() => {
+                queryClient.invalidateQueries(['scrimBoards']);
+            }, 1000);
+
+        } catch (error) {
+            console.log('게시물 상태 업데이트 실패:', error);
+        }
+    };
+
+    const handleEditScrimFromMenu = (id) => {
+        const found = scrims.find(scrim => scrim.id === id);
+        if (found) {
+            handleEditScrim(found.boardUUID || found.id);
+        }
+        handleClose();
+    };
+
+    // 버튼 텍스트 및 비활성화 상태 결정
+    const getButtonText = () => {
+        if (!isUserLoggedIn) return '파티 생성하기';
+        if (isCheckingBoard) return '확인 중...';
+        if (isRefreshing) return '끌어올리는 중...';
+        return hasExistingBoard ? '게시물 끌어올리기' : '파티 생성하기';
+    };
+
+    const isButtonDisabled = isRefreshing || isCheckingBoard;
 
     return (
         <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
@@ -211,19 +378,24 @@ export default function ScrimPage() {
                         </Box>
                         <Button
                             sx={{
-                                background: hasExistingScrimBoard
+                                background: hasExistingBoard
                                     ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
                                     : 'linear-gradient(90deg, #46CFA7 0%, #42E6B5 100%)',
                                 color: '#fff',
                                 borderRadius: 0.5,
                                 fontWeight: 'bold',
                                 px: 2,
-                                py: 1.4
+                                py: 1.4,
+                                '&:disabled': {
+                                    background: '#666',
+                                    color: '#999'
+                                }
                             }}
+                            disabled={isButtonDisabled}
                             onClick={() => {
-                                if (!isLoggedIn) return setLoginOpen(true);
+                                if (!isUserLoggedIn) return setLoginOpen(true);
                                 if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
-                                if (hasExistingScrimBoard) {
+                                if (hasExistingBoard) {
                                     handleRefreshScrim();
                                 } else {
                                     setOpen(true);
@@ -231,7 +403,7 @@ export default function ScrimPage() {
                             }}
                         >
                             <Typography variant="h7" fontWeight="bold" color="white">
-                                {isRefreshing ? '끌어올리는 중...' : hasExistingScrimBoard ? '게시물 끌어올리기' : '파티 생성하기'}
+                                {getButtonText()}
                             </Typography>
                         </Button>
                     </Box>
@@ -276,7 +448,7 @@ export default function ScrimPage() {
                             </Box>
                         ) : (
                             scrims.map((row) => {
-                                const isMine = row.name === riot?.accountName && row.tag === riot?.accountTag;
+                                const isMine = row.memberId === myMemberId;
                                 return (
                                     <Box key={row.id} onClick={() => {
                                         setSelectedPartyId(row.id);
@@ -348,7 +520,7 @@ export default function ScrimPage() {
                                                           onClose={handleClose}>
                                                         <MenuItem onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleEditScrim(row.id);
+                                                            handleEditScrimFromMenu(row.id);
                                                         }}>수정</MenuItem>
                                                         <MenuItem onClick={(e) => {
                                                             e.stopPropagation();
@@ -364,13 +536,71 @@ export default function ScrimPage() {
                         )}
                     </Box>
                 </Box>
+
+                {/* Load More 버튼 */}
+                {hasMore && (
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        mt: 3,
+                        mb: 2
+                    }}>
+                        <Button
+                            onClick={handleLoadMore}
+                            disabled={isLoadingMore}
+                            sx={{
+                                backgroundColor: '#2B2C3C',
+                                color: '#fff',
+                                border: '1px solid #424254',
+                                borderRadius: 4,
+                                px: 1,
+                                py: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                '&:hover': {
+                                    backgroundColor: '#424254',
+                                },
+                                '&:disabled': {
+                                    backgroundColor: '#1a1a1a',
+                                    color: '#666',
+                                }
+                            }}
+                        >
+                            {isLoadingMore ? (
+                                <CircularProgress size={20} sx={{color: '#A35AFF'}}/>
+                            ) : (
+                                <KeyboardArrowDownIcon sx={{fontSize: 18}}/>
+                            )}
+                        </Button>
+                    </Box>
+                )}
+
+                {!hasMore && displayedScrims.length > 0 && (
+                    <Box sx={{
+                        textAlign: 'center',
+                        py: 3,
+                        color: '#666',
+                        fontSize: '0.9rem'
+                    }}>
+                        모든 게시물을 확인했습니다.
+                    </Box>
+                )}
             </Container>
-            <CreateScrimModal open={open}
-                              handleClose={() => {
-                                  setOpen(false);
-                                  setEditScrim(null);
-                              }} onCreateScrim={handleAddScrim}
-                              currentTab={tab} editScrim={editScrim} onUpdateScrim={handleUpdateScrim}/>
+            <CreateScrimModal
+                open={open}
+                handleClose={handleModalClose}
+                onCreateScrim={handleModalSuccess}
+                currentTab={tab}
+                editData={editingScrim}
+                isEditMode={isEditMode}
+            />
+            <ApplyScrimModal open={applyOpen}
+                             handleClose={() => {
+                                 setApplyOpen(false);
+                                 setEditScrim(null);
+                                 setSelectedScrim(null);
+                             }} targetScrim={selectedScrim} editScrim={editScrim} onUpdateScrim={handleUpdateScrim}/>
             <ScrimDetailModal open={detailOpen} handleClose={() => setDetailOpen(false)} partyId={selectedPartyId}
                               scrims={scrims}/>
             <ConfirmRequiredDialog open={requiredOpen} onClose={() => setRequiredOpen(false)}/>
