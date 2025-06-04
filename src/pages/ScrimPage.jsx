@@ -72,7 +72,6 @@ export default function ScrimPage() {
     const [isEditMode, setIsEditMode] = useState(false);
 
     const isUserLoggedIn = Boolean(userData?.memberId);
-
     // 모바일에서 대학교명 치환 함수
     const replaceMobileUnivName = (text) => {
         if (!text) return text;

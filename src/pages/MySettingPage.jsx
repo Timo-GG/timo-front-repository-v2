@@ -58,7 +58,6 @@ export default function MySettingPage() {
 
     const navigate = useNavigate();
 
-
     // ━━━━━━━━━━━ userData 로부터 초기값 세팅 ━━━━━━━━━━━
     useEffect(() => {
         if (!userData) return;
@@ -224,7 +223,6 @@ export default function MySettingPage() {
             }
             return;
         }
-
         // 이메일 형식 체크
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(univEmail)) {
             setEmailError('올바른 이메일을 입력해주세요.');
@@ -322,7 +320,7 @@ export default function MySettingPage() {
                 }}
             >
                 <Typography variant="h5" fontWeight="bold" mb={4} color="text.primary">
-                    내 계정
+                    내 계정 설정
                 </Typography>
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
