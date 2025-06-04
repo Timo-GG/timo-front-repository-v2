@@ -75,3 +75,36 @@ export const isExpired = (createdAt) => {
     return now.getTime() > expiry.getTime();
 };
 
+export const canRefreshBoard = (updatedAt) => {
+    if (!updatedAt) return true;
+
+    const now = new Date();
+    const lastUpdate = new Date(updatedAt);
+    const diffInMinutes = Math.floor((now - lastUpdate) / (1000 * 60));
+
+    return diffInMinutes >= 15; // 15분 이상 경과했으면 true
+};
+
+export const getRefreshCooldownTime = (updatedAt) => {
+    if (!updatedAt) return null;
+
+    const now = new Date();
+    const lastUpdate = new Date(updatedAt);
+    const diffInMs = now - lastUpdate;
+    const cooldownMs = 15 * 60 * 1000; // 15분
+    const remainingMs = cooldownMs - diffInMs;
+
+    if (remainingMs <= 0) return null;
+
+    const minutes = Math.floor(remainingMs / (1000 * 60));
+    const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+
+    return { minutes, seconds, totalMs: remainingMs };
+};
+
+export const formatCooldownTime = (cooldownTime) => {
+    if (!cooldownTime) return '';
+
+    const { minutes, seconds } = cooldownTime;
+    return `${minutes}분 ${seconds}초 후 끌어올리기`;
+};

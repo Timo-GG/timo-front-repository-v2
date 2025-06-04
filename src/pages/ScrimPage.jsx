@@ -30,7 +30,14 @@ import {
     isExistMyScimBoard,
     refreshScrimBoard
 } from '../apis/redisAPI.js';
-import {formatRelativeTime, formatTimeUntilExpiry, getExpiryColor} from '../utils/timeUtils';
+import {
+    canRefreshBoard,
+    formatCooldownTime,
+    formatRelativeTime,
+    formatTimeUntilExpiry,
+    getExpiryColor,
+    getRefreshCooldownTime
+} from '../utils/timeUtils';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {toast} from "react-toastify";
 import LoginModal from '../components/login/LoginModal';
@@ -50,7 +57,11 @@ export default function ScrimPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const [hasExistingBoard, setHasExistingBoard] = useState(false);
-    const [isCheckingBoard, setIsCheckingBoard] = useState(true); // 추가: 게시물 확인 중 상태
+    const [isCheckingBoard, setIsCheckingBoard] = useState(true);
+
+    // 쿨다운 관련 상태 추가
+    const [cooldownTime, setCooldownTime] = useState(null);
+    const [canRefresh, setCanRefresh] = useState(true);
 
     const location = useLocation();
     const userData = useAuthStore(state => state.userData);
@@ -72,6 +83,35 @@ export default function ScrimPage() {
     const [isEditMode, setIsEditMode] = useState(false);
 
     const isUserLoggedIn = Boolean(userData?.memberId);
+
+    // 내 게시물의 updatedAt 찾기
+    const myBoardData = displayedScrims.find(scrim => scrim.memberId === myMemberId);
+    const myUpdatedAt = myBoardData?.updatedAt;
+
+    // 쿨다운 시간 실시간 업데이트
+    useEffect(() => {
+        if (!myUpdatedAt || !hasExistingBoard) {
+            setCooldownTime(null);
+            setCanRefresh(true);
+            return;
+        }
+
+        const updateCooldown = () => {
+            const canRefreshNow = canRefreshBoard(myUpdatedAt);
+            const cooldown = getRefreshCooldownTime(myUpdatedAt);
+
+            setCanRefresh(canRefreshNow);
+            setCooldownTime(cooldown);
+        };
+
+        // 즉시 실행
+        updateCooldown();
+
+        // 1초마다 업데이트
+        const interval = setInterval(updateCooldown, 1000);
+
+        return () => clearInterval(interval);
+    }, [myUpdatedAt, hasExistingBoard]);
 
     // 모바일에서 대학교명 치환 함수
     const replaceMobileUnivName = (text) => {
@@ -128,6 +168,11 @@ export default function ScrimPage() {
     }, [hasExistingScrimBoardData, isCheckingExistingBoard, isUserLoggedIn]);
 
     const handleRefreshScrim = async () => {
+        if (!canRefresh) {
+            toast.warning('15분 후에 다시 끌어올릴 수 있습니다.');
+            return;
+        }
+
         try {
             setIsRefreshing(true);
             const currentTime = new Date().toISOString();
@@ -332,10 +377,99 @@ export default function ScrimPage() {
         if (!isUserLoggedIn) return '파티 생성하기';
         if (isCheckingBoard) return '확인 중...';
         if (isRefreshing) return '끌어올리는 중...';
+
+        // 쿨다운 중이면 남은 시간 표시
+        if (hasExistingBoard && cooldownTime) {
+            return formatCooldownTime(cooldownTime);
+        }
+
         return hasExistingBoard ? '게시물 끌어올리기' : '파티 생성하기';
     };
 
-    const isButtonDisabled = isRefreshing || isCheckingBoard;
+    const isButtonDisabled = isRefreshing || isCheckingBoard || (hasExistingBoard && !canRefresh);
+
+    const getButtonStyle = () => {
+        // 쿨다운 중일 때 시간에 따른 색깔 변화
+        if (hasExistingBoard && cooldownTime) {
+            const { totalMs } = cooldownTime;
+            const maxCooldown = 15 * 60 * 1000; // 15분
+            const progress = (maxCooldown - totalMs) / maxCooldown; // 0~1 사이 값
+
+            // 시간 경과에 따른 색깔 변화 (회색 → 주황색 → 원래색)
+            if (progress < 0.3) {
+                // 초기 4.5분: 회색
+                return {
+                    background: '#666',
+                    color: '#999',
+                    cursor: 'not-allowed',
+                    '&:hover': {
+                        background: '#666',
+                    },
+                    '&:disabled': {
+                        background: '#666',
+                        color: '#999'
+                    }
+                };
+            } else if (progress < 0.8) {
+                // 중간 7.5분: 주황색으로 변화
+                const orangeIntensity = (progress - 0.3) / 0.5; // 0~1
+                const red = Math.floor(255 * orangeIntensity + 102 * (1 - orangeIntensity));
+                const green = Math.floor(165 * orangeIntensity + 102 * (1 - orangeIntensity));
+                const blue = 102;
+
+                return {
+                    background: `rgb(${red}, ${green}, ${blue})`,
+                    color: '#fff',
+                    cursor: 'not-allowed',
+                    '&:hover': {
+                        background: `rgb(${red}, ${green}, ${blue})`,
+                    },
+                    '&:disabled': {
+                        background: `rgb(${red}, ${green}, ${blue})`,
+                        color: '#fff'
+                    }
+                };
+            } else {
+                // 마지막 3분: 원래 색깔로 변화
+                const finalIntensity = (progress - 0.8) / 0.2; // 0~1
+                const baseColor = hasExistingBoard
+                    ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                    : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)';
+
+                return {
+                    background: baseColor,
+                    opacity: 0.5 + 0.5 * finalIntensity, // 50%에서 100%로
+                    color: '#fff',
+                    cursor: 'not-allowed',
+                    '&:hover': {
+                        background: baseColor,
+                        opacity: 0.5 + 0.5 * finalIntensity,
+                    },
+                    '&:disabled': {
+                        background: baseColor,
+                        opacity: 0.5 + 0.5 * finalIntensity,
+                        color: '#fff'
+                    }
+                };
+            }
+        }
+
+        // 기본 스타일 (쿨다운이 아닐 때)
+        return {
+            background: hasExistingBoard && isLoggedIn
+                ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
+            '&:hover': {
+                background: hasExistingBoard && isLoggedIn
+                    ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
+                    : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
+            },
+            '&:disabled': {
+                background: '#666',
+                color: '#999'
+            }
+        };
+    };
 
     return (
         <Box sx={{backgroundColor: theme.palette.background.default, minHeight: '100vh', pt: 5}}>
@@ -378,18 +512,11 @@ export default function ScrimPage() {
                         </Box>
                         <Button
                             sx={{
-                                background: hasExistingBoard
-                                    ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
-                                    : 'linear-gradient(90deg, #46CFA7 0%, #42E6B5 100%)',
-                                color: '#fff',
                                 borderRadius: 0.5,
                                 fontWeight: 'bold',
                                 px: 2,
                                 py: 1.4,
-                                '&:disabled': {
-                                    background: '#666',
-                                    color: '#999'
-                                }
+                                ...getButtonStyle()
                             }}
                             disabled={isButtonDisabled}
                             onClick={() => {

@@ -29,7 +29,13 @@ import {useQuery} from '@tanstack/react-query';
 import {fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards, deleteMyDuoBoard, fetchDuoBoard} from '../apis/redisAPI';
 import {getMyInfo} from '../apis/authAPI';
 import {useQueryClient} from '@tanstack/react-query';
-import {formatRelativeTime, formatTimeUntilExpiry, getExpiryColor, isExpired} from '../utils/timeUtils';
+import {
+    canRefreshBoard, formatCooldownTime,
+    formatRelativeTime,
+    formatTimeUntilExpiry,
+    getExpiryColor, getRefreshCooldownTime,
+    isExpired
+} from '../utils/timeUtils';
 import {toast} from 'react-toastify';
 
 export default function DuoPage() {
@@ -68,6 +74,38 @@ export default function DuoPage() {
     const queryClient = useQueryClient();
 
     const isUserLoggedIn = Boolean(userData?.memberId);
+
+    const myBoardData = displayedUsers.find(user => user.memberId === currentUser?.memberId);
+    const myUpdatedAt = myBoardData?.updatedAt;
+
+    const [cooldownTime, setCooldownTime] = useState(null);
+    const [canRefresh, setCanRefresh] = useState(true);
+
+    useEffect(() => {
+        if (!myUpdatedAt || !hasExistingBoard) {
+            setCooldownTime(null);
+            setCanRefresh(true);
+            return;
+        }
+
+        const updateCooldown = () => {
+            const canRefreshNow = canRefreshBoard(myUpdatedAt);
+            const cooldown = getRefreshCooldownTime(myUpdatedAt);
+
+            setCanRefresh(canRefreshNow);
+            setCooldownTime(cooldown);
+        };
+
+        // 즉시 실행
+        updateCooldown();
+
+        // 1초마다 업데이트
+        const interval = setInterval(updateCooldown, 1000);
+
+        return () => clearInterval(interval);
+    }, [myUpdatedAt, hasExistingBoard]);
+
+
 
     // 기존 게시물 존재 여부 확인 쿼리
     const {
@@ -134,7 +172,6 @@ export default function DuoPage() {
                 try {
                     const updated = await getMyInfo();
                     setUserData(updated.data);
-                    console.log('사용자 정보 업데이트 성공:', updated.data);
                 } catch (error) {
                     console.log('사용자 정보 업데이트 실패:', error);
                 }
@@ -151,7 +188,6 @@ export default function DuoPage() {
 
     useEffect(() => {
         if (initialData && initialData.content && !isCreatingBoard) {
-            console.log('폴링 데이터로 상태 업데이트:', initialData);
             setAllDuoUsers(initialData.content);
             setDisplayedUsers(initialData.content);
             setHasMore(initialData.content.length === pageSize && !initialData.last);
@@ -183,6 +219,11 @@ export default function DuoPage() {
     };
 
     const handleRefresh = async () => {
+        if (!canRefresh) {
+            toast.warning('15분 후에 다시 끌어올릴 수 있습니다.');
+            return;
+        }
+
         try {
             setIsRefreshing(true);
             const currentTime = new Date().toISOString();
@@ -363,6 +404,8 @@ export default function DuoPage() {
                     isLoggedIn={isUserLoggedIn}
                     isRefreshing={isRefreshing}
                     isCheckingBoard={isCheckingBoard} // 추가 prop
+                    canRefresh={canRefresh}
+                    cooldownTime={cooldownTime}
                 />
 
                 {/* 테이블 영역 - 가로 스크롤 적용 */}
@@ -541,17 +584,22 @@ function FilterBar({
                        hasExistingBoard,
                        isLoggedIn,
                        isRefreshing,
-                       isCheckingBoard // 추가 prop
+                       isCheckingBoard,
+                       canRefresh,
+                       cooldownTime
                    }) {
     const getButtonText = () => {
         if (!isLoggedIn) return '듀오등록하기';
-        if (isCheckingBoard) return '확인 중...'; // 추가
+        if (isCheckingBoard) return '확인 중...';
         if (isRefreshing) return '끌어올리는 중...';
+
+        // 쿨다운 중이면 남은 시간 표시
+        if (hasExistingBoard && cooldownTime) {
+            return formatCooldownTime(cooldownTime);
+        }
+
         return hasExistingBoard ? '게시물 끌어올리기' : '듀오등록하기';
     };
-
-    const isButtonDisabled = isRefreshing || isCheckingBoard; // 수정
-
     const tierOptions = [
         {value: 'all', label: '전체 티어'},
         {value: 'iron', label: '아이언'},
@@ -565,16 +613,101 @@ function FilterBar({
         {value: 'grandmaster', label: '그랜드마스터'},
         {value: 'challenger', label: '챌린저'}
     ];
+    const isButtonDisabled = isRefreshing || isCheckingBoard || (hasExistingBoard && !canRefresh);
+
+    const getButtonStyle = () => {
+        // 쿨다운 중일 때 시간에 따른 색깔 변화
+        if (hasExistingBoard && cooldownTime) {
+            const { totalMs } = cooldownTime;
+            const maxCooldown = 15 * 60 * 1000; // 15분
+            const progress = (maxCooldown - totalMs) / maxCooldown; // 0~1 사이 값
+
+            // 시간 경과에 따른 색깔 변화 (회색 → 주황색 → 원래색)
+            if (progress < 0.3) {
+                // 초기 4.5분: 회색
+                return {
+                    background: '#666',
+                    color: '#999',
+                    cursor: 'not-allowed',
+                    '&:hover': {
+                        background: '#666',
+                    },
+                    '&:disabled': {
+                        background: '#666',
+                        color: '#999'
+                    }
+                };
+            } else if (progress < 0.8) {
+                // 중간 7.5분: 주황색으로 변화
+                const orangeIntensity = (progress - 0.3) / 0.5; // 0~1
+                const red = Math.floor(255 * orangeIntensity + 102 * (1 - orangeIntensity));
+                const green = Math.floor(165 * orangeIntensity + 102 * (1 - orangeIntensity));
+                const blue = 102;
+
+                return {
+                    background: `rgb(${red}, ${green}, ${blue})`,
+                    color: '#fff',
+                    cursor: 'not-allowed',
+                    '&:hover': {
+                        background: `rgb(${red}, ${green}, ${blue})`,
+                    },
+                    '&:disabled': {
+                        background: `rgb(${red}, ${green}, ${blue})`,
+                        color: '#fff'
+                    }
+                };
+            } else {
+                // 마지막 3분: 원래 색깔로 변화
+                const finalIntensity = (progress - 0.8) / 0.2; // 0~1
+                const baseColor = hasExistingBoard
+                    ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                    : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)';
+
+                return {
+                    background: baseColor,
+                    opacity: 0.5 + 0.5 * finalIntensity, // 50%에서 100%로
+                    color: '#fff',
+                    cursor: 'not-allowed',
+                    '&:hover': {
+                        background: baseColor,
+                        opacity: 0.5 + 0.5 * finalIntensity,
+                    },
+                    '&:disabled': {
+                        background: baseColor,
+                        opacity: 0.5 + 0.5 * finalIntensity,
+                        color: '#fff'
+                    }
+                };
+            }
+        }
+
+        // 기본 스타일 (쿨다운이 아닐 때)
+        return {
+            background: hasExistingBoard && isLoggedIn
+                ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
+                : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
+            '&:hover': {
+                background: hasExistingBoard && isLoggedIn
+                    ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
+                    : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
+            },
+            '&:disabled': {
+                background: '#666',
+                color: '#999'
+            }
+        };
+    };
 
     return (
         <Box sx={{mb: 3}}>
-            {/* 데스크톱: 한 줄로 배치 */}
+            {/* 데스크톱 버전 */}
             <Box sx={{
                 display: {xs: 'none', sm: 'flex'},
                 alignItems: 'center',
                 gap: 2
             }}>
                 <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick}/>
+
                 <FormControl variant="outlined" size="small" sx={{height: 48, minWidth: 120}}>
                     <Select
                         value={rankType}
@@ -587,6 +720,7 @@ function FilterBar({
                         <MenuItem value="aram">칼바람</MenuItem>
                     </Select>
                 </FormControl>
+
                 <FormControl variant="outlined" size="small" sx={{height: 48, minWidth: 140}}>
                     <Select
                         value={schoolFilter}
@@ -600,23 +734,13 @@ function FilterBar({
                         ))}
                     </Select>
                 </FormControl>
+
                 <Button
                     variant="contained"
-                    disabled={isButtonDisabled} // 수정
+                    disabled={isButtonDisabled}
                     sx={{
                         ...registerBtnStyle,
-                        background: hasExistingBoard && isLoggedIn
-                            ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
-                            : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
-                        '&:hover': {
-                            background: hasExistingBoard && isLoggedIn
-                                ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
-                                : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
-                        },
-                        '&:disabled': {
-                            background: '#666',
-                            color: '#999'
-                        }
+                        ...getButtonStyle()
                     }}
                     onClick={onRegisterDuo}
                 >
@@ -624,14 +748,12 @@ function FilterBar({
                 </Button>
             </Box>
 
-            {/* 모바일: 두 줄로 분리 */}
+            {/* 모바일 버전 */}
             <Box sx={{display: {xs: 'block', sm: 'none'}}}>
-                {/* 첫 번째 줄: 포지션 필터 */}
                 <Box sx={{mb: 2}}>
                     <PositionFilterBar positionFilter={positionFilter} onPositionClick={onPositionClick}/>
                 </Box>
 
-                {/* 두 번째 줄: 큐타입, 티어, 등록버튼 */}
                 <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
@@ -675,27 +797,16 @@ function FilterBar({
 
                     <Button
                         variant="contained"
-                        disabled={isButtonDisabled} // 수정
+                        disabled={isButtonDisabled}
                         sx={{
                             fontWeight: 'bold',
                             height: 40,
                             px: 2,
-                            background: hasExistingBoard && isLoggedIn
-                                ? 'linear-gradient(90deg, #FF8A5A 0%, #FFB85A 100%)'
-                                : 'linear-gradient(90deg, #A35AFF 0%, #FF5AC8 100%)',
                             color: '#fff',
                             fontSize: '0.85rem',
                             borderRadius: 0.8,
                             minWidth: 100,
-                            '&:hover': {
-                                background: hasExistingBoard && isLoggedIn
-                                    ? 'linear-gradient(90deg, #FF9B6B 0%, #FFC96B 100%)'
-                                    : 'linear-gradient(90deg, #B36BFF 0%, #FF6BD5 100%)',
-                            },
-                            '&:disabled': {
-                                background: '#666',
-                                color: '#999'
-                            }
+                            ...getButtonStyle()
                         }}
                         onClick={onRegisterDuo}
                     >
