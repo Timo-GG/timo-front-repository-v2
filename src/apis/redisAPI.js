@@ -8,14 +8,12 @@ export const isExistMyBoard = async () => {
     const response = await axiosInstance.get('/matching/duo/exists', {
         withAuth: true,
     });
-    console.log("isExist : ", response.data.data);
     return response.data.data;
 }
 export const isExistMyScimBoard = async () => {
     const response = await axiosInstance.get('/matching/scrim/exists', {
         withAuth: true,
     });
-    console.log("isExist : ", response.data.data);
     return response.data.data;
 }
 
