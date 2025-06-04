@@ -1,6 +1,6 @@
 /** 내전 파티 생성하기 모달창 */
 
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     Dialog, Box, Typography, TextField, Select, MenuItem,
     Button, IconButton, Avatar, useTheme, useMediaQuery
@@ -29,7 +29,15 @@ const defaultMember = {
     myPosition: 'NOTHING',
 };
 
-export default function CreateScrimModal({ open, handleClose, onCreateScrim, currentTab, onUpdateScrim, editScrim }) {
+export default function CreateScrimModal({
+                                             open,
+                                             handleClose,
+                                             onCreateScrim,
+                                             currentTab,
+                                             onUpdateScrim,
+                                             editData,
+                                             isEditMode
+                                         }) {
     const [memo, setMemo] = useState('');
     const [map, setMap] = useState('소환사 협곡');
     const [people, setPeople] = useState('5:5');
@@ -40,16 +48,19 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { userData: me } = useAuthStore();
+    const {userData: me} = useAuthStore();
     const riot = me?.riotAccount;
 
     useEffect(() => {
-        if (editScrim) {
-            setMemo(editScrim.message);
-            setMap(editScrim.queueType);
-            setPeople(`${editScrim.headCount}:${editScrim.headCount}`);
-            setMyPosition(editScrim.party?.[0]?.myPosition?.toLowerCase() || 'nothing');
-            const mappedMembers = (editScrim.party || []).slice(1).map((m) => ({
+        if (isEditMode && editData && open) {
+            // 기존 데이터로 폼 초기화
+            setMemo(editData.message || '');
+            setMap(editData.queueType || '소환사 협곡');
+            setPeople(`${editData.headCount}:${editData.headCount}` || '5:5');
+            setMyPosition(editData.party?.[0]?.myPosition?.toLowerCase() || 'nothing');
+
+            // 파티 멤버 설정 (첫 번째는 작성자이므로 제외)
+            const mappedMembers = (editData.party || []).slice(1).map((m) => ({
                 gameName: m.gameName,
                 tagLine: m.tagLine,
                 profileUrl: m.profileUrl,
@@ -65,12 +76,25 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
             }));
             setPartyMembers(mappedMembers);
             setSummonerInputs(mappedMembers.map(() => ""));
+        } else if (!isEditMode && open) {
+            // 생성 모드일 때 초기화
+            resetForm();
         }
-    }, [editScrim]);
+    }, [isEditMode, editData, open]);
+
+    const resetForm = () => {
+        setMemo('');
+        setMap('소환사 협곡');
+        setPeople('5:5');
+        setMyPosition('nothing');
+        setPartyMembers([]);
+        setSummonerInputs([]);
+        setErrors({});
+    };
 
     useEffect(() => {
         const limit = people === '3:3' ? 2 : 4;
-        setPartyMembers(Array(limit).fill({ ...defaultMember }));
+        setPartyMembers(Array(limit).fill({...defaultMember}));
         setSummonerInputs(Array(limit).fill(""));
     }, [people]);
 
@@ -79,10 +103,10 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
     // 팀원 정보 입력값 검증 및 등록 (형식: "소환사이름#태그")
     const handleVerifySummoner = async (index) => {
         const input = summonerInputs[index];
-        if (!input.includes('#')) return setErrors(prev => ({ ...prev, [index]: '형식 오류' }));
+        if (!input.includes('#')) return setErrors(prev => ({...prev, [index]: '형식 오류'}));
         const [gameName, tagLine] = input.split('#');
         try {
-            const { avatarUrl, rankInfo, most3Champ } = await fetchCompactPlayerHistory({ gameName, tagLine });
+            const {avatarUrl, rankInfo, most3Champ} = await fetchCompactPlayerHistory({gameName, tagLine});
             const updated = [...partyMembers];
             updated[index] = {
                 gameName,
@@ -97,7 +121,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
             updatedInputs[index] = '';
             setSummonerInputs(updatedInputs);
         } catch {
-            setErrors(prev => ({ ...prev, [index]: '불러오기 실패' }));
+            setErrors(prev => ({...prev, [index]: '불러오기 실패'}));
         }
     };
 
@@ -110,7 +134,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
 
         try {
             // 작성자 정보 최신화
-            const { avatarUrl, rankInfo, most3Champ } = await fetchCompactPlayerHistory({ gameName, tagLine });
+            const {avatarUrl, rankInfo, most3Champ} = await fetchCompactPlayerHistory({gameName, tagLine});
 
             const author = {
                 gameName,
@@ -143,21 +167,26 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
             }));
 
             const requestBody = {
-                ...(editScrim ? { boardUUID: editScrim.id } : { memberId: me?.memberId }),
+                ...(isEditMode ? {boardUUID: editData.boardUUID || editData.id} : {memberId: me?.memberId}),
                 mapCode,
                 memo,
                 headCount,
                 partyInfo: [author, ...formattedMembers]
             };
 
-            const res = editScrim
-                ? await updateScrimBoard(requestBody)
-                : await createScrimBoard(requestBody);
+            try {
+                const res = isEditMode
+                    ? await updateScrimBoard(requestBody)
+                    : await createScrimBoard(requestBody);
 
-            const formatted = transformScrimForFrontend(res.data);
+                const formatted = transformScrimForFrontend(res.data);
 
-            editScrim ? onUpdateScrim?.(formatted) : onCreateScrim?.(formatted);
-            handleClose();
+                // onCreateScrim 콜백 호출 (생성/수정 모두)
+                onCreateScrim?.(formatted);
+                handleClose();
+            } catch (e) {
+                console.error('스크림 요청 처리 실패:', e);
+            }
         } catch (e) {
             console.error('스크림 요청 처리 실패:', e);
         }
@@ -185,18 +214,18 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-            <Box sx={{ backgroundColor: '#31313E', pl: 3, pr: 3, pt: 2, pb: 1 }}>
+            <Box sx={{backgroundColor: '#31313E', pl: 3, pr: 3, pt: 2, pb: 1}}>
                 {/* 헤더 */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography color="#fff" fontWeight="bold">{editScrim ? '파티 수정하기' : '파티 생성하기'}</Typography>
+                    <Typography color="#fff" fontWeight="bold">{isEditMode ? '파티 수정하기' : '파티 생성하기'}</Typography>
                     <IconButton onClick={handleClose}>
-                        <CloseIcon sx={{ color: '#aaa' }} />
+                        <CloseIcon sx={{color: '#aaa'}}/>
                     </IconButton>
                 </Box>
             </Box>
-            <Box sx={{ height: '1px', backgroundColor: '#171717' }} />
+            <Box sx={{height: '1px', backgroundColor: '#171717'}}/>
 
-            <Box sx={{ backgroundColor: '#31313E', pl: 3, pr: 3, pb: 1 }}>
+            <Box sx={{backgroundColor: '#31313E', pl: 3, pr: 3, pb: 1}}>
                 {/* 메모 */}
                 <TextField
                     placeholder="저희랑 내전하실 분 구해요."
@@ -209,11 +238,11 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                         borderRadius: 1,
                         bgcolor: '#282830',
                         '& .MuiOutlinedInput-root': {
-                            '& fieldset': { borderColor: 'transparent' },
-                            '&:hover fieldset': { borderColor: 'transparent' },
-                            '&.Mui-focused fieldset': { borderColor: 'transparent' }
+                            '& fieldset': {borderColor: 'transparent'},
+                            '&:hover fieldset': {borderColor: 'transparent'},
+                            '&.Mui-focused fieldset': {borderColor: 'transparent'}
                         },
-                        input: { color: '#fff' }
+                        input: {color: '#fff'}
                     }}
                 />
 
@@ -247,8 +276,8 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                                     bgcolor: '#31313D',
                                     color: '#fff',
                                     width: '100%',
-                                    '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-                                    '& .MuiSelect-icon': { color: '#7B7B8E' },
+                                    '.MuiOutlinedInput-notchedOutline': {borderColor: '#424254'},
+                                    '& .MuiSelect-icon': {color: '#7B7B8E'},
                                 }}
                             >
                                 <MenuItem value="소환사 협곡">소환사 협곡</MenuItem>
@@ -266,8 +295,8 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                                     bgcolor: '#31313D',
                                     color: '#fff',
                                     width: '100%',
-                                    '.MuiOutlinedInput-notchedOutline': { borderColor: '#424254' },
-                                    '& .MuiSelect-icon': { color: '#7B7B8E' },
+                                    '.MuiOutlinedInput-notchedOutline': {borderColor: '#424254'},
+                                    '& .MuiSelect-icon': {color: '#7B7B8E'},
                                 }}
                             >
                                 <MenuItem value="5:5">5 : 5</MenuItem>
@@ -277,13 +306,13 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                     </Box>
                 </Box>
 
-                <Box sx={{ overflowX: 'auto' }}>
+                <Box sx={{overflowX: 'auto'}}>
                     {/* 테이블 전체를 감싸는 래퍼 */}
                     <Box minWidth="720px">
 
                         {/* 멤버 입력 테이블 헤더 */}
                         <Box display="flex" alignItems="center" px={1.5} py={1} color="#888" fontSize="0.85rem"
-                             sx={{ backgroundColor: "#28282F" }}>
+                             sx={{backgroundColor: "#28282F"}}>
                             <Box width="25%">소환사 이름</Box>
                             <Box width="10%" textAlign="center">티어</Box>
                             <Box width="20%" textAlign="center">모스트 챔피언</Box>
@@ -292,18 +321,21 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
 
                         {/* 각 멤버 슬롯 렌더링 */}
                         {partyMembers.map((member, i) => (
-                            <Box key={i} display="flex" alignItems="center" px={1.5} py={1.2} borderTop="1px solid #393946">
+                            <Box key={i} display="flex" alignItems="center" px={1.5} py={1.2}
+                                 borderTop="1px solid #393946">
                                 <Box width="25%" display="flex" alignItems="center" gap={1}>
                                     {member.gameName ? (
                                         <>
-                                            <Avatar src={member.profileUrl} sx={{ width: 32, height: 32 }} />
+                                            <Avatar src={member.profileUrl} sx={{width: 32, height: 32}}/>
                                             <Box>
-                                                <Typography fontSize="0.9rem" color="#fff">{member.gameName}</Typography>
-                                                <Typography fontSize="0.75rem" color="#888">#{member.tagLine}</Typography>
+                                                <Typography fontSize="0.9rem"
+                                                            color="#fff">{member.gameName}</Typography>
+                                                <Typography fontSize="0.75rem"
+                                                            color="#888">#{member.tagLine}</Typography>
                                             </Box>
                                         </>
                                     ) : (
-                                        <Box sx={{ display: 'flex', height: '40px', width: '100%' }}>
+                                        <Box sx={{display: 'flex', height: '40px', width: '100%'}}>
                                             <TextField
                                                 fullWidth
                                                 placeholder="소환사 이름#태그"
@@ -320,7 +352,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                                                         borderRadius: '10px 0 0 10px',
                                                         backgroundColor: theme.palette.background.input,
                                                         border: `1px solid ${theme.palette.border.main}`,
-                                                        '& fieldset': { borderColor: 'transparent' },
+                                                        '& fieldset': {borderColor: 'transparent'},
                                                         '& input': {
                                                             color: theme.palette.text.primary,
                                                             padding: '10px 12px',
@@ -358,7 +390,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                                 </Box>
 
                                 <Box width="20%" display="flex" justifyContent="center">
-                                    <ChampionIconList championNames={member.most3Champ || []} />
+                                    <ChampionIconList championNames={member.most3Champ || []}/>
                                 </Box>
 
                                 <Box width="45%" display="flex" justifyContent="space-between" alignItems="center">
@@ -366,7 +398,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                                         positionFilter={member.myPosition || 'nothing'}
                                         onPositionClick={(pos) => {
                                             const updated = [...partyMembers];
-                                            updated[i] = { ...updated[i], myPosition: pos };
+                                            updated[i] = {...updated[i], myPosition: pos};
                                             setPartyMembers(updated);
                                         }}
                                         selectedColor="#42E6B5"
@@ -387,7 +419,7 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                                                 borderRadius: '50%',
                                                 color: '#aaa',
                                                 fontSize: '0.8rem',
-                                                '&:hover': { backgroundColor: '#3a3a4a' }
+                                                '&:hover': {backgroundColor: '#3a3a4a'}
                                             }}
                                         >
                                             ✕
@@ -406,8 +438,9 @@ export default function CreateScrimModal({ open, handleClose, onCreateScrim, cur
                     }}>
                         취소
                     </Button>
-                    <Button fullWidth onClick={handleSubmit} sx={{ bgcolor: '#42E6B5', color: '#000', height: 48, fontWeight: 'bold' }}>
-                        <Typography fontWeight="bold" color="white">{editScrim ? '수정' : '등록'}</Typography>
+                    <Button fullWidth onClick={handleSubmit}
+                            sx={{bgcolor: '#42E6B5', color: '#000', height: 48, fontWeight: 'bold'}}>
+                        <Typography fontWeight="bold" color="white">{isEditMode ? '수정' : '등록'}</Typography>
                     </Button>
                 </Box>
             </Box>
