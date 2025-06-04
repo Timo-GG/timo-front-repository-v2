@@ -4,7 +4,6 @@ import { io } from 'socket.io-client';
 let socket = null;
 
 export const connectSocket = (accessToken) => {
-    console.log('🚀 connectSocket() 호출됨, accessToken:', !!accessToken);
 
     // 기존 소켓이 있으면 정리
     if (socket) {

@@ -65,7 +65,6 @@ function AppContent() {
 
             // ✅ 인증된 사용자라면 join_online 이벤트 발송 (선택적)
             if (accessToken && userData?.memberId && !isJoinedRef.current) {
-                console.log('join_online 이벤트 발송:', userData.memberId);
                 socket.emit('join_online', { memberId: userData.memberId });
                 isJoinedRef.current = true;
             }
