@@ -29,7 +29,7 @@ import {useQuery} from '@tanstack/react-query';
 import {fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards, deleteMyDuoBoard, fetchDuoBoard} from '../apis/redisAPI';
 import {getMyInfo} from '../apis/authAPI';
 import {useQueryClient} from '@tanstack/react-query';
-import {formatRelativeTime, formatTimeUntilExpiry, isExpired } from '../utils/timeUtils';
+import {formatRelativeTime, formatTimeUntilExpiry, getExpiryColor, isExpired} from '../utils/timeUtils';
 import {toast} from 'react-toastify';
 
 export default function DuoPage() {
@@ -740,7 +740,7 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
                 opacity: expired ? 0.6 : 1,
                 backgroundColor: expired ? '#1a1a1a' : '#2B2C3C',
                 '&:hover': {
-                    backgroundColor: expired ? '#1e1e1e' : '#2E2E38'
+                    backgroundColor: expired ? '#1e1e1e' : '#28282F'
                 }
             }}
         >
@@ -792,7 +792,7 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
                 flex: columns[7],
                 textAlign: 'center',
                 fontSize: {xs: '0.7rem', sm: '0.75rem'},
-                color: expired ? '#f44336' : expiryTime.includes('시간') ? '#ff9800' : '#f44336'
+                color: getExpiryColor(expiryTime)
             }}>
                 {expiryTime}
             </Box>

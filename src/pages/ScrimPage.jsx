@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
     Box,
     Typography,
@@ -18,7 +18,7 @@ import TierBadge from '../components/TierBadge';
 import CreateScrimModal from '/src/components/scrim/CreateScrimModal';
 import ApplyScrimModal from '/src/components/scrim/ApplyScrimModal';
 import ScrimDetailModal from '/src/components/scrim/ScrimDetailModal';
-import { useTheme } from '@mui/material/styles';
+import {useTheme} from '@mui/material/styles';
 import useAuthStore from '../storage/useAuthStore';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import {
@@ -29,8 +29,8 @@ import {
     refreshScrimBoard
 } from '../apis/redisAPI.js';
 import {formatRelativeTime, formatTimeUntilExpiry, getExpiryColor} from '../utils/timeUtils';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from "react-toastify";
+import {useQuery, useQueryClient} from '@tanstack/react-query';
+import {toast} from "react-toastify";
 import LoginModal from '../components/login/LoginModal';
 
 export default function ScrimPage() {
@@ -47,7 +47,7 @@ export default function ScrimPage() {
     const [selectedScrim, setSelectedScrim] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-    const { isLoggedIn, userData } = useAuthStore();
+    const {isLoggedIn, userData} = useAuthStore();
     const riot = userData?.riotAccount || {};
     const queryClient = useQueryClient();
     const [loginOpen, setLoginOpen] = useState(false);
@@ -84,11 +84,11 @@ export default function ScrimPage() {
                 if (!old || !old.content) return old;
                 const updatedContent = old.content.map(item => {
                     if (item.name === riot.accountName && item.tag === riot.accountTag) {
-                        return { ...item, updatedAt: now };
+                        return {...item, updatedAt: now};
                     }
                     return item;
                 }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-                return { ...old, content: updatedContent };
+                return {...old, content: updatedContent};
             });
 
             await refreshScrimBoard();
@@ -104,7 +104,7 @@ export default function ScrimPage() {
     };
 
     const pageSize = 30;
-    const { data: scrimData, isLoading } = useQuery({
+    const {data: scrimData, isLoading} = useQuery({
         queryKey: ['scrimBoards', tab],
         queryFn: () =>
             tab === 0
@@ -124,7 +124,7 @@ export default function ScrimPage() {
     const handleDeleteScrim = async (id) => {
         queryClient.setQueryData(['scrimBoards', tab], old => {
             if (!old || !old.content) return old;
-            return { ...old, content: old.content.filter(item => item.id !== id) };
+            return {...old, content: old.content.filter(item => item.id !== id)};
         });
 
         try {
@@ -151,9 +151,9 @@ export default function ScrimPage() {
         queryClient.setQueryData(['scrimBoards', tab], old => {
             if (!old || !old.content) return old;
             const newContent = old.content.map(item =>
-                item.id === updatedData.id ? { ...item, ...updatedData } : item
+                item.id === updatedData.id ? {...item, ...updatedData} : item
             );
-            return { ...old, content: newContent };
+            return {...old, content: newContent};
         });
         queryClient.invalidateQueries(['scrimBoards']);
         queryClient.invalidateQueries(['hasMyScrimBoard']);
@@ -292,7 +292,7 @@ export default function ScrimPage() {
                                         fontSize: 14,
                                         borderBottom: '2px solid #12121a',
                                         cursor: 'pointer',
-                                        '&:hover': {backgroundColor: '#2E2E38'}
+                                        '&:hover': {backgroundColor: '#28282F'}
                                     }}>
                                         <Box width="15%" display="flex">
                                             <SummonerInfo name={row.name} tag={row.tag} avatarUrl={row.avatarUrl}/>
@@ -326,7 +326,11 @@ export default function ScrimPage() {
                                                 }}
                                             >{row.message}</Box>
                                         </Box>
-                                        <Box width="10%" textAlign="center">{formatRelativeTime(row.updatedAt)}</Box>
+                                        <Box width="10%" textAlign="center"
+                                             sx={{
+                                                 fontSize: {xs: '0.7rem', sm: '0.75rem'}
+                                             }}
+                                        >{formatRelativeTime(row.updatedAt)}</Box>
                                         <Box width="10%" textAlign="center" sx={{
                                             fontSize: {xs: '0.7rem', sm: '0.75rem'},
                                             color: getExpiryColor(row.updatedAt)

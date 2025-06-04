@@ -301,12 +301,12 @@ export default function RankingPage() {
                                             borderBottom: '2px solid #12121a',
                                             cursor: 'pointer',
                                             color: '#fff',
-                                            backgroundColor: isHighlighted ? '#2E2E38' : theme.palette.background.paper,
+                                            backgroundColor: isHighlighted ? '#28282F' : theme.palette.background.paper,
                                             ...(isHighlighted
                                                 ? {}
                                                 : {
                                                     '&:hover': {
-                                                        backgroundColor: '#2E2E38',
+                                                        backgroundColor: '#28282F',
                                                     },
                                                 }),
                                         }}
