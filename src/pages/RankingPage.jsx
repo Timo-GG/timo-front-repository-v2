@@ -184,6 +184,17 @@ export default function RankingPage() {
                             <Typography variant="h5" fontWeight="bold" color="white">
                                 {tab === 0 ? '전체 대학교' : replaceMobileUnivName(myUniversity)}
                             </Typography>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: '#888888',
+                                    fontSize: '0.75rem',
+                                    display: 'block',
+                                    mt: 0.5
+                                }}
+                            >
+                                순위는 주기적으로 업데이트 됩니다.
+                            </Typography>
                         </Box>
 
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 2, width: {xs: '100%', sm: 'auto'}}}>
