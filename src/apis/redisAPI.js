@@ -83,6 +83,7 @@ export const fetchAllDuoBoards = async (page = 0, size = 10) => {
             const duoInfo = item.duoInfo || {};
             return {
                 id: item.boardUUID,
+                memberId: item.memberId,
                 name: riot.gameName,
                 tag: riot.tagLine,
                 avatarUrl: riot.profileUrl,
@@ -176,6 +177,52 @@ export const fetchDuoBoard = async (boardUUID) => {
     };
 };
 
+export const fetchScrimBoard = async (boardUUID) => {
+    const response = await axiosInstance.get(`/matching/scrim/${boardUUID}`, {
+        withAuth: true,
+    });
+
+    // 백엔드 응답을 프론트엔드 형식으로 변환
+    const item = response.data.data;
+    const member = item.memberInfo;
+    const riot = member?.riotAccount || {};
+    const partyInfo = item.partyInfo || [];
+
+    return {
+        id: item.boardUUID,
+        boardUUID: item.boardUUID,
+        name: riot.gameName,
+        tag: riot.tagLine,
+        avatarUrl: riot.profileUrl,
+        school: member.univName || '미인증',
+        department: member.department || '',
+        queueType: item.mapCode === 'RIFT' ? '소환사 협곡' : '칼바람 나락',
+        message: item.memo,
+        headCount: item.headCount || 5,
+        updatedAt: item.updatedAt,
+        type: '내전',
+        party: partyInfo.map(p => ({
+            gameName: p.gameName,
+            tagLine: p.tagLine,
+            profileUrl: p.profileUrl || '/default.png',
+            myPosition: p.myPosition?.toLowerCase() || 'nothing',
+            tier: p.rankInfo?.tier || 'unranked',
+            rank: p.rankInfo?.rank || '',
+            lp: p.rankInfo?.lp || 0,
+            wins: p.rankInfo?.wins || 0,
+            losses: p.rankInfo?.losses || 0,
+            champions: p.most3Champ || []
+        })),
+        // 수정용 원본 데이터
+        originalData: {
+            mapCode: item.mapCode,
+            memo: item.memo,
+            headCount: item.headCount,
+            partyInfo: item.partyInfo
+        }
+    };
+};
+
 export const fetchAllScrimBoards = async (page = 0, size = 10) => {
     const response = await axiosInstance.get(`/matching/scrim?page=${page}&size=${size}`);
 
@@ -190,6 +237,7 @@ export const fetchAllScrimBoards = async (page = 0, size = 10) => {
 
             return {
                 id: item.boardUUID,
+                memberId: item.memberId,
                 name: riot.gameName,
                 tag: riot.tagLine,
                 avatarUrl: riot.profileUrl,

@@ -42,7 +42,7 @@ export default function RankingPage() {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [requiredOpen, setRequiredOpen] = React.useState(false);
     const [loginOpen, setLoginOpen] = React.useState(false);
-    const itemsPerPage = 100;
+    const itemsPerPage = 50;
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
     const [searchTarget, setSearchTarget] = React.useState(null);
     const rowRefs = React.useRef({});
@@ -184,6 +184,17 @@ export default function RankingPage() {
                             <Typography variant="h5" fontWeight="bold" color="white">
                                 {tab === 0 ? '전체 대학교' : replaceMobileUnivName(myUniversity)}
                             </Typography>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: '#888888',
+                                    fontSize: '0.75rem',
+                                    display: 'block',
+                                    mt: 0.5
+                                }}
+                            >
+                                순위는 주기적으로 업데이트 됩니다.
+                            </Typography>
                         </Box>
 
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 2, width: {xs: '100%', sm: 'auto'}}}>
@@ -301,12 +312,12 @@ export default function RankingPage() {
                                             borderBottom: '2px solid #12121a',
                                             cursor: 'pointer',
                                             color: '#fff',
-                                            backgroundColor: isHighlighted ? '#2E2E38' : theme.palette.background.paper,
+                                            backgroundColor: isHighlighted ? '#28282F' : theme.palette.background.paper,
                                             ...(isHighlighted
                                                 ? {}
                                                 : {
                                                     '&:hover': {
-                                                        backgroundColor: '#2E2E38',
+                                                        backgroundColor: '#28282F',
                                                     },
                                                 }),
                                         }}

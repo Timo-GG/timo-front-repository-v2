@@ -85,7 +85,6 @@ const useAuthStore = create(
                         refreshToken: storedRefreshToken,
                         isLoggedIn: true
                     });
-                    console.log("토큰 복원 완료:", storedAccessToken);
                     return true;
                 }
                 return false;

@@ -29,7 +29,7 @@ import {useQuery} from '@tanstack/react-query';
 import {fetchAllDuoBoards, isExistMyBoard, refreshDuoBoards, deleteMyDuoBoard, fetchDuoBoard} from '../apis/redisAPI';
 import {getMyInfo} from '../apis/authAPI';
 import {useQueryClient} from '@tanstack/react-query';
-import {formatRelativeTime, formatTimeUntilExpiry, isExpired } from '../utils/timeUtils';
+import {formatRelativeTime, formatTimeUntilExpiry, getExpiryColor, isExpired} from '../utils/timeUtils';
 import {toast} from 'react-toastify';
 
 export default function DuoPage() {
@@ -44,7 +44,7 @@ export default function DuoPage() {
     const [currentPage, setCurrentPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const pageSize = 1;
+    const pageSize = 50;
 
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -52,6 +52,7 @@ export default function DuoPage() {
     const [currentBoardUUID, setCurrentBoardUUID] = useState(null);
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const [hasExistingBoard, setHasExistingBoard] = useState(false);
+    const [isCheckingBoard, setIsCheckingBoard] = useState(true); // 추가: 게시물 확인 중 상태
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const location = useLocation();
@@ -66,11 +67,54 @@ export default function DuoPage() {
 
     const queryClient = useQueryClient();
 
-    const isLoggedIn = () => {
-        return userData && (userData.accessToken || userData.memberId);
-    };
+    const isUserLoggedIn = Boolean(userData?.memberId);
 
-    // 기존 useEffect들은 동일하게 유지...
+    // 기존 게시물 존재 여부 확인 쿼리
+    const {
+        data: hasExistingBoardData,
+        isLoading: isCheckingExistingBoard,
+        refetch: refetchBoardStatus
+    } = useQuery({
+        queryKey: ['hasMyDuoBoard'],
+        queryFn: isExistMyBoard,
+        enabled: isUserLoggedIn,
+        refetchInterval: 10000,
+        staleTime: 0, // 캐시 무효화
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
+    });
+
+    // 로그아웃 시 상태 초기화
+    useEffect(() => {
+        if (!isUserLoggedIn) {
+            setIsCheckingBoard(false);
+            setHasExistingBoard(false);
+        }
+    }, [isUserLoggedIn]);
+
+// 페이지 진입 시 데이터 새로고침 (로그인된 경우만)
+    useEffect(() => {
+        if (isUserLoggedIn) {
+            setIsCheckingBoard(true);
+            refetchBoardStatus();
+        }
+    }, [location.pathname]);
+
+// React Query 결과 처리
+    useEffect(() => {
+        if (!isCheckingExistingBoard && isUserLoggedIn) {
+            setIsCheckingBoard(false);
+            setHasExistingBoard(hasExistingBoardData || false);
+        }
+    }, [hasExistingBoardData, isCheckingExistingBoard, isUserLoggedIn]);
+
+    useEffect(() => {
+        if (!isCheckingExistingBoard && isUserLoggedIn) {
+            setIsCheckingBoard(false);
+            setHasExistingBoard(hasExistingBoardData || false);
+        }
+    }, [hasExistingBoardData, isCheckingExistingBoard, isUserLoggedIn]);
+
     useEffect(() => {
         const handleAuthError = (event) => {
             console.log('인증 에러 발생:', event.detail);
@@ -86,7 +130,7 @@ export default function DuoPage() {
 
     useEffect(() => {
         const fetchAndUpdateUser = async () => {
-            if (isLoggedIn()) {
+            if (isUserLoggedIn) {
                 try {
                     const updated = await getMyInfo();
                     setUserData(updated.data);
@@ -98,24 +142,6 @@ export default function DuoPage() {
         };
         fetchAndUpdateUser();
     }, []);
-
-    useEffect(() => {
-        const checkExistingBoard = async () => {
-            if (isLoggedIn()) {
-                try {
-                    const exists = await isExistMyBoard();
-                    setHasExistingBoard(exists);
-                } catch (error) {
-                    console.log('기존 게시물 확인 실패:', error);
-                    setHasExistingBoard(false);
-                }
-            } else {
-                setHasExistingBoard(false);
-            }
-        };
-
-        checkExistingBoard();
-    }, [userData]);
 
     const {data: initialData, isLoading} = useQuery({
         queryKey: ['duoUsers', 0],
@@ -132,7 +158,6 @@ export default function DuoPage() {
         }
     }, [initialData, pageSize, isCreatingBoard]);
 
-    // 기존 핸들러 함수들은 동일하게 유지...
     const handleLoadMore = async () => {
         if (isLoadingMore || !hasMore) return;
 
@@ -193,8 +218,14 @@ export default function DuoPage() {
     };
 
     const handleRegisterDuo = () => {
-        if (!isLoggedIn()) {
+        if (!isUserLoggedIn) {
             setLoginModalOpen(true);
+            return;
+        }
+
+        // 라이엇 계정과 대학 인증 확인 추가
+        if (!userData?.riotAccount || !userData?.certifiedUnivInfo) {
+            setOpenConfirmDialog(true); // ConfirmRequiredDialog 모달 열기
             return;
         }
 
@@ -229,7 +260,7 @@ export default function DuoPage() {
     };
 
     const handleApplyDuo = (user, boardUUID) => {
-        if (!isLoggedIn()) {
+        if (!isUserLoggedIn) {
             setLoginModalOpen(true);
             return;
         }
@@ -243,7 +274,7 @@ export default function DuoPage() {
     };
 
     const handleModalSuccess = async (newBoardData) => {
-        if (isLoggedIn()) {
+        if (isUserLoggedIn) {
             try {
                 if (isEditMode) {
                     setDisplayedUsers(prev =>
@@ -329,8 +360,9 @@ export default function DuoPage() {
                     setSchoolFilter={setSchoolFilter}
                     onRegisterDuo={handleRegisterDuo}
                     hasExistingBoard={hasExistingBoard}
-                    isLoggedIn={isLoggedIn()}
+                    isLoggedIn={isUserLoggedIn}
                     isRefreshing={isRefreshing}
+                    isCheckingBoard={isCheckingBoard} // 추가 prop
                 />
 
                 {/* 테이블 영역 - 가로 스크롤 적용 */}
@@ -508,13 +540,17 @@ function FilterBar({
                        onRegisterDuo,
                        hasExistingBoard,
                        isLoggedIn,
-                       isRefreshing
+                       isRefreshing,
+                       isCheckingBoard // 추가 prop
                    }) {
     const getButtonText = () => {
         if (!isLoggedIn) return '듀오등록하기';
+        if (isCheckingBoard) return '확인 중...'; // 추가
         if (isRefreshing) return '끌어올리는 중...';
         return hasExistingBoard ? '게시물 끌어올리기' : '듀오등록하기';
     };
+
+    const isButtonDisabled = isRefreshing || isCheckingBoard; // 수정
 
     const tierOptions = [
         {value: 'all', label: '전체 티어'},
@@ -566,7 +602,7 @@ function FilterBar({
                 </FormControl>
                 <Button
                     variant="contained"
-                    disabled={isRefreshing}
+                    disabled={isButtonDisabled} // 수정
                     sx={{
                         ...registerBtnStyle,
                         background: hasExistingBoard && isLoggedIn
@@ -639,7 +675,7 @@ function FilterBar({
 
                     <Button
                         variant="contained"
-                        disabled={isRefreshing}
+                        disabled={isButtonDisabled} // 수정
                         sx={{
                             fontWeight: 'bold',
                             height: 40,
@@ -687,9 +723,7 @@ function DuoHeader() {
 
 function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit}) {
     const columns = [2, 1, 1, 1, 1, 3, 1, 1, 0.5];
-    const isMine = currentUser &&
-        user.name === currentUser.riotAccount?.accountName &&
-        user.tag === currentUser.riotAccount?.accountTag;
+    const isMine = user.memberId === currentUser.memberId;
 
     const [anchorEl, setAnchorEl] = useState(null);
     const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(user.updatedAt));
@@ -740,7 +774,7 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
                 opacity: expired ? 0.6 : 1,
                 backgroundColor: expired ? '#1a1a1a' : '#2B2C3C',
                 '&:hover': {
-                    backgroundColor: expired ? '#1e1e1e' : '#2E2E38'
+                    backgroundColor: expired ? '#1e1e1e' : '#28282F'
                 }
             }}
         >
@@ -792,7 +826,7 @@ function DuoItem({user, currentUser, onApplyDuo, onUserClick, onDelete, onEdit})
                 flex: columns[7],
                 textAlign: 'center',
                 fontSize: {xs: '0.7rem', sm: '0.75rem'},
-                color: expired ? '#f44336' : expiryTime.includes('시간') ? '#ff9800' : '#f44336'
+                color: getExpiryColor(expiryTime)
             }}>
                 {expiryTime}
             </Box>

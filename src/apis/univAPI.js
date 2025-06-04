@@ -27,6 +27,11 @@ export const checkUniv = async ({ univName }) => {
   return response.data;
 };
 
+export const deleteUnivAccount = async () => {
+  const res = await axiosInstance.delete('/auth/univ/delete/me', { withAuth: true });
+  return res.data;
+};
+
 export const updateUnivAccount = async (payload) => {
   const res = await axiosInstance.put(
       '/members/univ',

@@ -4,7 +4,6 @@ import { io } from 'socket.io-client';
 let socket = null;
 
 export const connectSocket = (accessToken) => {
-    console.log('🚀 connectSocket() 호출됨, accessToken:', !!accessToken);
 
     // 기존 소켓이 있으면 정리
     if (socket) {
@@ -14,11 +13,14 @@ export const connectSocket = (accessToken) => {
         socket = null;
     }
 
+
+    const baseUrl = import.meta.env.VITE_SOCKET_BASE_URL;
+
     const query = accessToken
         ? { token: accessToken }
         : { guest: 'true' };
 
-    socket = io('ws://localhost:8085', {
+    socket = io(`${baseUrl}`, {
         transports: ['websocket'],
         query,
         forceNew: true, // 새로운 연결 강제
@@ -26,7 +28,6 @@ export const connectSocket = (accessToken) => {
 
     // 기본 이벤트 리스너들
     socket.on('connect', () => {
-        console.log('✅ Socket 연결 성공! ID:', socket.id);
     });
 
     socket.on('disconnect', (reason) => {

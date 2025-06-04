@@ -10,7 +10,13 @@ import {
 import WithdrawConfirmDialog from '../components/WithdrawConfirmDialog';
 import useAuthStore from '../storage/useAuthStore';
 import {updateUsername, verifyAccount, resetRiotAccount, registerRanking, deleteAccount} from '../apis/accountAPI';
-import {checkUniv, requestUnivVerification, verifyUnivCode, updateUnivAccount} from '../apis/univAPI';
+import {
+    checkUniv,
+    requestUnivVerification,
+    verifyUnivCode,
+    updateUnivAccount,
+    deleteUnivAccount
+} from '../apis/univAPI';
 import {getMyInfo} from '../apis/authAPI';
 import {deleteMyRanking} from '../apis/rankAPI';
 import {getSocket} from "../socket/socket.js";
@@ -52,7 +58,6 @@ export default function MySettingPage() {
 
     const navigate = useNavigate();
 
-
     // ━━━━━━━━━━━ userData 로부터 초기값 세팅 ━━━━━━━━━━━
     useEffect(() => {
         if (!userData) return;
@@ -77,7 +82,6 @@ export default function MySettingPage() {
             setIsUnivEmailVerified(true);
             setIsUnivEmailSent(false);
             setShowUnivCodeInput(false);
-            setUnivNameStatus('✔️ 이미 인증된 대학교입니다.');
         } else {
             // 인증된 학교 정보가 없으면 모두 초기 상태
             setIsUnivNameValid(false);
@@ -153,7 +157,7 @@ export default function MySettingPage() {
         // 이미 “학교명 인증 완료” 상태라면 → 해제
         if (isUnivNameLocked) {
             try {
-                // 백엔드에 학교명 null 처리
+                await deleteUnivAccount();
                 await updateUnivAccount({univName: null, univEmail: null});
                 // UI 초기화
                 setIsUnivNameLocked(false);
@@ -200,6 +204,7 @@ export default function MySettingPage() {
         // 이미 이메일 인증된 상태라면 → 해제
         if (isUnivEmailVerified) {
             try {
+                await deleteUnivAccount();
                 await updateUnivAccount({univName: null, univEmail: null});
                 // UI 초기화
                 setIsUnivEmailVerified(false);
@@ -218,7 +223,6 @@ export default function MySettingPage() {
             }
             return;
         }
-
         // 이메일 형식 체크
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(univEmail)) {
             setEmailError('올바른 이메일을 입력해주세요.');
@@ -229,20 +233,12 @@ export default function MySettingPage() {
         try {
             const res = await requestUnivVerification({univName, univEmail});
             if (res.success) {
-                // 서버가 정상적으로 인증코드 전송해 줬으면
                 setIsUnivEmailSent(true);
                 setShowUnivCodeInput(true);
-            } else if (res.errorCode === 903) {
-                // 이미 인증되어 있는 이메일이라면 → 바로 update
-                await updateUnivAccount({univName, univEmail});
-                setIsUnivEmailVerified(true);
-                setShowUnivCodeInput(false);
-                // 프로필 동기화
-                const { data: profile } = await getMyInfo();
-                setUserData(profile);
-                setUnivNameStatus('✔️ 이미 인증이 완료된 학교 이메일입니다.');
             } else if (res.errorCode === 902) {
-                setEmailError('이미 사용중인 학교 이메일입니다.');
+                setEmailError(res.message);
+            } else if (res.errorCode === 1001) {
+                setEmailError(res.message);
             } else {
                 setEmailError('학교명 또는 이메일이 올바르지 않습니다.');
             }
@@ -549,10 +545,11 @@ export default function MySettingPage() {
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             height: '100%',
-                                            borderRadius: showUnivCodeInput ? '12px 0 0 12px' : '12px',
+                                            borderRadius: showUnivCodeInput ? '12px 0 0 12px' : '12px 0 0 12px',
                                             backgroundColor: theme.palette.background.input,
                                             border: `1px solid ${theme.palette.border.main}`,
-                                            '& fieldset': { borderColor: 'transparent' },
+                                            '& fieldset': { borderColor: 'transparent',
+                                            },
                                             '& input': { color: theme.palette.text.primary, padding: '12px 14px' },
                                         },
                                     }}
