@@ -29,7 +29,6 @@ export const connectSocket = (accessToken) => {
 
     // 기본 이벤트 리스너들
     socket.on('connect', () => {
-        console.log('✅ Socket 연결 성공! ID:', socket.id);
     });
 
     socket.on('disconnect', (reason) => {

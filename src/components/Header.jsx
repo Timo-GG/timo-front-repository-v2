@@ -126,7 +126,6 @@ export default function Header() {
                 const unreadList = await fetchUnreadNotifications();
 
                 unreadList.forEach((noti) => {
-                    console.log('서버 regDate:', noti.regDate); // 여기서 console.log 해야 regDate가 찍힘
                     addNotification({
                         id: noti.id,
                         message: noti.message,

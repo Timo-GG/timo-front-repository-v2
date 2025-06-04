@@ -40,22 +40,17 @@ function AppContent() {
         }
     };
 
-    // ✅ 앱 시작 시 토큰 복원
     useEffect(() => {
-        const restored = initializeAuth();
-        console.log("토큰 복원 결과:", restored);
+        initializeAuth();
     }, []);
 
     useEffect(() => {
-        console.log('🔄 소켓 연결 시작, accessToken:', !!accessToken, 'memberId:', userData?.memberId);
-
         const socket = connectSocket(accessToken);
         socketRef.current = socket;
         isJoinedRef.current = false;
 
         // 온라인 카운트 리스너 등록
         socket.on('online_count', (data) => {
-            console.log('[App] online_count 수신:', data);
             if (data && typeof data.count === 'number') {
                 setOnlineCount(data.count);
             }
@@ -70,7 +65,7 @@ function AppContent() {
 
             // ✅ 인증된 사용자라면 join_online 이벤트 발송 (선택적)
             if (accessToken && userData?.memberId && !isJoinedRef.current) {
-                console.log('📤 join_online 이벤트 발송:', userData.memberId);
+                console.log('join_online 이벤트 발송:', userData.memberId);
                 socket.emit('join_online', { memberId: userData.memberId });
                 isJoinedRef.current = true;
             }
@@ -78,17 +73,17 @@ function AppContent() {
 
         // 연결 해제 시 처리
         socket.on('disconnect', (reason) => {
-            console.log('❌ 소켓 연결 해제:', reason);
+            console.log('소켓 연결 해제:', reason);
             isJoinedRef.current = false;
         });
 
         // 정리 함수
         return () => {
-            console.log('🧹 소켓 정리 시작');
+            console.log('소켓 정리 시작');
 
             if (socketRef.current && socketRef.current.connected) {
                 if (accessToken && userData?.memberId && isJoinedRef.current) {
-                    console.log('📤 leave_online 이벤트 발송:', userData.memberId);
+                    console.log('leave_online 이벤트 발송:', userData.memberId);
                     socketRef.current.emit('leave_online', { memberId: userData.memberId });
                 }
             }
