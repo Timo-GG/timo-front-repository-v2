@@ -65,7 +65,7 @@ export default function DuoDetailModal({
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <Box sx={{backgroundColor: '#2B2C3C', p: {xs: 1.5, sm: 2}, mx: 1}}>
                 {/* 헤더 */}
-                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{p: 2, ml: 1, mr: 1}}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ml: 1, mr: 1}}>
                     <Box display="flex" alignItems="center" gap={1}>
                         <Typography fontSize="0.75rem" color="#888">
                             큐 타입
