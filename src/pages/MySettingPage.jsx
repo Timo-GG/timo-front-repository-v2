@@ -272,29 +272,50 @@ export default function MySettingPage() {
     }
 
     // ━━━━━━━━━━━ 회원 탈퇴 핸들러 ━━━━━━━━━━━
-    const handleWithdraw = () => {
+    const handleWithdraw = async () => {
         setIsWithdrawDialogOpen(false);
-        deleteAccount();
-        const socket = getSocket();
-        const memberId = userData?.memberId;
-        if (socket && socket.connected && memberId) {
-            console.log('📤 [Header] leave_online 이벤트 발송:', memberId);
-            socket.emit('leave_online', { memberId });
+
+        try {
+            // deleteUnivAccount 실패 시 무시하고 계속 진행
+            try {
+                await deleteUnivAccount();
+            } catch (univError) {
+                console.warn('⚠️ 대학 계정 삭제 실패 (무시하고 계속 진행):', univError.message);
+            }
+
+            // 메인 계정 삭제는 반드시 성공해야 함
+            try{
+                deleteMyRanking();
+            } catch (e) {
+                console.warn('랭킹 삭제 실패', e);
+            }
+            await deleteAccount();
+
+            const socket = getSocket();
+            const memberId = userData?.memberId;
+            if (socket && socket.connected && memberId) {
+                console.log('📤 [Header] leave_online 이벤트 발송:', memberId);
+                socket.emit('leave_online', { memberId });
+            }
+
+            // Zustand 상태 초기화
+            logout();
+
+            // 알림 상태 초기화
+            clearNotifications();
+
+            // 로컬스토리지에서 토큰 제거
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+
+            // 홈으로 이동
+            navigate('/');
+            alert('탈퇴가 완료되었습니다.');
+
+        } catch (error) {
+            console.error('❌ 계정 삭제 실패:', error);
+            alert('탈퇴 처리 중 오류가 발생했습니다.');
         }
-
-        // Zustand 상태 초기화
-        logout();
-
-        // 알림 상태 초기화
-        clearNotifications();
-
-        // 로컬스토리지에서 토큰 제거
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-
-        // 홈으로 이동
-        navigate('/');
-        alert('탈퇴가 완료되었습니다.');
     };
 
     return (
