@@ -5,7 +5,6 @@ export const fetchRankingList = async (page = 1, size = 10) => {
     const response = await axiosInstance.get('/ranking/top', {
         params: { offset, limit: size },
     });
-    console.log("response", response);
     const { list, totalCount } = response.data.data;
 
     return {

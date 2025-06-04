@@ -5,8 +5,6 @@ import { Box, Avatar } from '@mui/material';
 import { getChampionImageUrl } from '../../utils/championUtils';
 
 export default function ChampionIconList({ championNames = [] }) {
-  // 디버깅용 로그
-  console.log('ChampionIconList received:', championNames, typeof championNames);
 
   // 추가 안전장치
   if (!championNames || !Array.isArray(championNames)) {
