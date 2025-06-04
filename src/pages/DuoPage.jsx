@@ -223,6 +223,12 @@ export default function DuoPage() {
             return;
         }
 
+        // 라이엇 계정과 대학 인증 확인 추가
+        if (!userData?.riotAccount || !userData?.certifiedUnivInfo) {
+            setOpenConfirmDialog(true); // ConfirmRequiredDialog 모달 열기
+            return;
+        }
+
         if (hasExistingBoard) {
             handleRefresh();
         } else {
