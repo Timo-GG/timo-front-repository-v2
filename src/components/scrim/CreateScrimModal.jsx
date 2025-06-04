@@ -74,8 +74,16 @@ export default function CreateScrimModal({
                 most3Champ: m.champions || [],
                 myPosition: (m.myPosition || 'NOTHING').toLowerCase(),
             }));
-            setPartyMembers(mappedMembers);
-            setSummonerInputs(mappedMembers.map(() => ""));
+
+            // 필요한 만큼 빈 슬롯 추가
+            const limit = editData.headCount === 3 ? 2 : 4;
+            const filledMembers = [...mappedMembers];
+            while (filledMembers.length < limit) {
+                filledMembers.push({...defaultMember});
+            }
+
+            setPartyMembers(filledMembers);
+            setSummonerInputs(filledMembers.map(() => ""));
         } else if (!isEditMode && open) {
             // 생성 모드일 때 초기화
             resetForm();
@@ -87,18 +95,34 @@ export default function CreateScrimModal({
         setMap('소환사 협곡');
         setPeople('5:5');
         setMyPosition('nothing');
-        setPartyMembers([]);
-        setSummonerInputs([]);
         setErrors({});
+
+        // 기본 파티 멤버 배열 설정 (5:5 = 4명, 3:3 = 2명)
+        const limit = 4; // 기본값은 5:5이므로 4명
+        setPartyMembers(Array(limit).fill(null).map(() => ({...defaultMember})));
+        setSummonerInputs(Array(limit).fill(""));
     };
 
     useEffect(() => {
-        const limit = people === '3:3' ? 2 : 4;
-        setPartyMembers(Array(limit).fill({...defaultMember}));
-        setSummonerInputs(Array(limit).fill(""));
-    }, [people]);
+        if (open) { // 모달이 열릴 때만 실행
+            const limit = people === '3:3' ? 2 : 4;
 
-    console.log(partyMembers);
+            // 수정 모드가 아닐 때만 기본 배열로 초기화
+            if (!isEditMode) {
+                setPartyMembers(Array(limit).fill(null).map(() => ({...defaultMember})));
+                setSummonerInputs(Array(limit).fill(""));
+            }
+        }
+    }, [people, open, isEditMode]); // open과 isEditMode 의존성 추가
+
+    useEffect(() => {
+        if (!open) {
+            // 모달이 닫힐 때 약간의 지연 후 초기화 (애니메이션 고려)
+            setTimeout(() => {
+                resetForm();
+            }, 200);
+        }
+    }, [open]);
 
     // 팀원 정보 입력값 검증 및 등록 (형식: "소환사이름#태그")
     const handleVerifySummoner = async (index) => {
