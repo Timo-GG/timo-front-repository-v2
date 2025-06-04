@@ -28,6 +28,7 @@ import WinRateBar from '../components/WinRateBar';
 import ConfirmRequiredDialog from '../components/ConfirmRequiredDialog';
 import {fetchRankingList, fetchRankingByUniversity, fetchMyRankingInfo, fetchRankingPosition} from '../apis/rankAPI';
 import SummonerInfo from '../components/SummonerInfo';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function RankingPage() {
     const theme = useTheme();
@@ -46,6 +47,7 @@ export default function RankingPage() {
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
     const [searchTarget, setSearchTarget] = React.useState(null);
     const rowRefs = React.useRef({});
+    const queryClient = useQueryClient();
 
     // 모바일에서 대학교명 치환 함수
     const replaceMobileUnivName = (text) => {
@@ -91,6 +93,14 @@ export default function RankingPage() {
         if (!accessToken) return setLoginOpen(true);
         if (!userData?.riotAccount || !userData?.certifiedUnivInfo) return setRequiredOpen(true);
         setOpen(true);
+        queryClient.invalidateQueries(['myProfile']);
+        setOpen(true);
+    };
+
+    const handleEditSuccess = () => {
+        queryClient.invalidateQueries(['myProfile']);
+        queryClient.invalidateQueries(['rankingList']);
+        setOpen(false);
     };
 
     const handleRowClick = (row) => {
