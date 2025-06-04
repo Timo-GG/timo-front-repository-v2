@@ -262,21 +262,27 @@ export default function ScrimPage() {
     };
 
     const handleDeleteScrim = async (id) => {
-        queryClient.setQueryData(['scrimBoards', tab], old => {
-            if (!old || !old.content) return old;
-            return {...old, content: old.content.filter(item => item.id !== id)};
-        });
+        if (window.confirm('정말로 게시글을 삭제하시겠습니까?')) {
 
-        try {
-            await deleteMyScrimBoard();
-            toast.success('게시글이 삭제되었습니다.');
-        } catch (e) {
-            console.error('스크림 삭제 실패:', e);
-            toast.error('삭제에 실패했습니다.');
-        } finally {
-            queryClient.invalidateQueries(['scrimBoards']);
-            queryClient.invalidateQueries(['hasMyScrimBoard']);
+                queryClient.setQueryData(['scrimBoards', tab], old => {
+                if (!old || !old.content) return old;
+                return {...old, content: old.content.filter(item => item.id !== id)};
+            });
+
+            try {
+                await deleteMyScrimBoard();
+                toast.success('게시글이 삭제되었습니다.');
+            } catch (e) {
+                console.error('스크림 삭제 실패:', e);
+                toast.error('삭제에 실패했습니다.');
+            } finally {
+                queryClient.invalidateQueries(['scrimBoards']);
+                queryClient.invalidateQueries(['hasMyScrimBoard']);
+            }
+        } else {
+            handleClose();
         }
+
     };
 
     const handleEditScrim = async (boardUUID) => {
