@@ -42,7 +42,7 @@ export default function RankingPage() {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [requiredOpen, setRequiredOpen] = React.useState(false);
     const [loginOpen, setLoginOpen] = React.useState(false);
-    const itemsPerPage = 100;
+    const itemsPerPage = 50;
     const myUniversity = userData?.certifiedUnivInfo?.univName || '우리 학교';
     const [searchTarget, setSearchTarget] = React.useState(null);
     const rowRefs = React.useRef({});
