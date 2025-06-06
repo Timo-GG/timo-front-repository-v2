@@ -25,8 +25,9 @@ export default function TermsModal({ open, onClose, type }) {
                     <Typography variant="body2" mb={1}>③ <strong>회원</strong>이란 OAuth 방식(카카오, 네이버, 디스코드, 라이엇)으로 가입한 이용자를 말합니다.</Typography>
                     <Typography variant="body2" mb={1}>④ <strong>소환사 닉네임 및 태그</strong>란 회원가입 시 본인의 리그 오브 레전드(LoL) 계정을 인증하기 위해 제공하는 정보를 말합니다.</Typography>
                     <Typography variant="body2" mb={1}>⑤ <strong>닉네임</strong>이란 플랫폼 내에서 회원 식별을 위해 회원이 설정한 명칭입니다.</Typography>
-                    <Typography variant="body2" mb={1}>⑥ <strong>매칭 서비스</strong>란 설정한 조건(라인, 게임 모드, 상태, 마이크 유무, 선호 듀오 포지션 및 스타일)을 기반으로 듀오 매칭을 지원하는 서비스를 말합니다.</Typography>
-                    <Typography variant="body2" mb={1}>⑦ <strong>게시판 서비스</strong>란 회원 간 정보 공유 및 의견 교환을 지원하는 서비스를 말합니다.</Typography>
+                    <Typography variant="body2" mb={1}>⑥ <strong>듀오 서비스</strong>란 설정한 조건(라인, 게임 모드, 상태, 마이크 유무, 선호 듀오 포지션 및 스타일)을 기반으로 듀오 정보를 지원하는 서비스를 말합니다.</Typography>
+                    <Typography variant="body2" mb={1}>⑥ <strong>내전 서비스</strong>란 팀원을 등록하고 상세 설정을 한 후, 대학교를 기반으로 게시글을 제공하는 서비스를 말합니다. </Typography>
+                    <Typography variant="body2" mb={1}>⑦ <strong>랭킹 서비스</strong>란 회원 간 랭크 정보를 제공하는 서비스를 말합니다.</Typography>
                     <Typography variant="body2" mb={2}>⑧ <strong>소환사 조회 서비스</strong>란 리그 오브 레전드 게임 데이터를 조회하는 서비스를 말합니다.</Typography>
 
                     <Typography variant="subtitle1" fontWeight="bold" mb={1}>제3조 (약관 명시와 개정)</Typography>
@@ -69,7 +70,7 @@ export default function TermsModal({ open, onClose, type }) {
 
                     <Typography variant="subtitle1" fontWeight="bold" mb={1}>제9조 (회원탈퇴 및 이용제한)</Typography>
                     <Typography variant="body2" mb={1}>
-                        ① 회원은 언제든지 탈퇴할 수 있으며, 탈퇴일로부터 30일이 경과한 후 개인정보가 삭제됩니다. 단, 관련 법령에 따라 수사·조사 등이 진행 중일 경우 종료 시까지 보관됩니다.
+                        ① 회원은 언제든지 탈퇴할 수 있으며, 탈퇴일로부터 90일이 경과한 후 개인정보가 삭제됩니다. 단, 관련 법령에 따라 수사·조사 등이 진행 중일 경우 종료 시까지 보관됩니다.
                     </Typography>
                     <Typography variant="body2" mb={2}>② 약관 위반 시 서비스 이용이 제한되거나 회원 자격이 상실될 수 있습니다.</Typography>
 
@@ -92,11 +93,11 @@ export default function TermsModal({ open, onClose, type }) {
 
                     <Typography variant="subtitle1" fontWeight="bold" mb={1}>제13조 (이용계약 해지)</Typography>
                     <Typography variant="body2" mb={2}>
-                        회원이 계약을 해지하면 관련 법령에 따라 보관 의무가 있는 정보를 제외하고, 탈퇴일로부터 30일 이후 모든 데이터를 삭제합니다. 단, 다른 회원의 정상적인 서비스 이용을 위해 필요한 정보 또는 법령상 보관이 필요한 정보는 제외될 수 있습니다.
+                        회원이 계약을 해지하면 관련 법령에 따라 보관 의무가 있는 정보를 제외하고, 탈퇴일로부터 90일 이후 모든 데이터를 삭제합니다. 단, 다른 회원의 정상적인 서비스 이용을 위해 필요한 정보 또는 법령상 보관이 필요한 정보는 제외될 수 있습니다.
                     </Typography>
 
                     <Typography variant="h6" fontWeight="bold" mb={2}>부칙</Typography>
-                    <Typography variant="body2">이 약관은 2025년 6월 3일부터 시행됩니다.</Typography>
+                    <Typography variant="body2">이 약관은 2025년 6월 4일부터 시행됩니다.</Typography>
                 </Box>
             );
         } else {
@@ -138,7 +139,7 @@ export default function TermsModal({ open, onClose, type }) {
                     <Typography variant="body2" mb={1}>
                         Timo 서비스는 법령에 따른 개인정보 보유·이용기간 또는 정보주체로부터 개인정보를 수집 시 동의 받은 개인정보 보유·이용기간 내에서 개인정보를 처리·보유합니다. 각각의 개인정보 보유 및 이용 기간은 다음과 같습니다.
                     </Typography>
-                    <Typography variant="body2" mb={1}>- 홈페이지 회원가입 및 관리: 홈페이지 탈퇴일로부터 30일이 경과하는 날까지 보유합니다. 단, 관계 법령 위반에 따른 수사, 조사 등이 진행 중인 경우에는 해당 수사, 조사 종료 시까지 보관합니다.</Typography>
+                    <Typography variant="body2" mb={1}>- 홈페이지 회원가입 및 관리: 홈페이지 탈퇴일로부터 90일이 경과하는 날까지 보유합니다. 단, 관계 법령 위반에 따른 수사, 조사 등이 진행 중인 경우에는 해당 수사, 조사 종료 시까지 보관합니다.</Typography>
                     <Typography variant="body2" mb={1}>- 민원사무 처리: 민원사무 처리 완료 시까지 보유하며, 민원 발생 후 소송절차가 개시된 경우 해당 소송절차가 확정적으로 종결되는 날까지 보관합니다.</Typography>
                     <Typography variant="body2" mb={2}>- 재화 또는 서비스 제공: 재화·서비스 공급 완료 시까지 보유하며, 관련 법령에서 소비자 보호 등을 위하여 필요한 경우 해당 법령에서 정한 기간의 만료일까지 보관합니다.</Typography>
 
@@ -148,7 +149,7 @@ export default function TermsModal({ open, onClose, type }) {
                     <Typography variant="body2" mb={2}>- 이 외 서비스 이용과정에서 별도 동의를 통해 추가정보 수집이 있을 수 있습니다.</Typography>
 
                     <Typography variant="h6" fontWeight="bold" mb={2}>부칙</Typography>
-                    <Typography variant="body2">이 동의서는 2025년 6월 3일부터 시행됩니다.</Typography>
+                    <Typography variant="body2">이 동의서는 2025년 6월 4일부터 시행됩니다.</Typography>
                 </Box>
             );
         }

@@ -50,8 +50,6 @@ axiosInstance.interceptors.request.use(
             const { accessToken } = useAuthStore.getState();
             const token = accessToken || localStorage.getItem('accessToken');
 
-            console.log("요청 토큰:", token);
-
             if (token) {
                 if (isTokenExpired(token)) {
                     console.log("토큰이 곧 만료됨, 갱신 필요");

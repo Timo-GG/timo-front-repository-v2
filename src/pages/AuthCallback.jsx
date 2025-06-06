@@ -34,11 +34,9 @@ export default function AuthCallback() {
 
                 // 사용자 정보 가져오기
                 const userInfo = await getMyInfo();
-                console.log('내 정보:', userInfo);
                 setUserData(userInfo.data);
-
                 // term이 null이면 약관 동의가 필요한 사용자 -> 회원가입 페이지로 이동
-                if (userInfo.data.term === null) {
+                if (userInfo.data.term === null || userInfo.data.term === "REMOVABLE") {
                     console.log('약관 동의가 필요한 사용자입니다.');
                     navigate('/signup');
                 } else {

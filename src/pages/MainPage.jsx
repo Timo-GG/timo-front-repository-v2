@@ -8,7 +8,8 @@ import {
     Select,
     IconButton,
     Dialog,
-    DialogContent
+    DialogContent,
+    Typography
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import title from '../../public/assets/title.png';
@@ -23,26 +24,28 @@ export default function MainPage() {
     const [openModal, setOpenModal] = useState(false);
     const [matchData, setMatchData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(''); // 에러 상태 추가
 
     const handleSearch = async () => {
         if (!searchText.trim()) return;
 
         const [gameName, tagLine] = searchText.split('#');
         if (!gameName || !tagLine) {
-            alert('올바른 형식으로 입력하세요 (예: 플레이어이름#KR1)');
+            setError('올바른 형식으로 입력하세요 (예: 플레이어이름#KR1)');
             return;
         }
 
-        setLoading(true);  // ← 로딩 시작
+        setLoading(true);
+        setError(''); // 에러 초기화
         try {
             const data = await fetchRecentMatchFull(gameName, tagLine);
             setMatchData(data);
             setOpenModal(true);
         } catch (error) {
             console.error('전적 조회 실패:', error);
-            alert('소환사 정보를 찾을 수 없습니다.');
+            setError('소환사 정보를 찾을 수 없습니다.');
         } finally {
-            setLoading(false);  // ← 로딩 끝
+            setLoading(false);
         }
     };
 
@@ -66,7 +69,7 @@ export default function MainPage() {
                 height: 48,
                 width: 480,
                 maxWidth: '90vw',
-                mb: 10,
+                mb: 2, // 에러 메시지 공간을 위해 줄임
                 pl: 2,
                 pr: 2
             }}>
@@ -89,7 +92,10 @@ export default function MainPage() {
                 <InputBase
                     placeholder="플레이어 이름 + #KR1로 검색"
                     value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
+                    onChange={(e) => {
+                        setSearchText(e.target.value);
+                        if (error) setError(''); // 입력 시 에러 메시지 제거
+                    }}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSearch();
                     }}
@@ -100,11 +106,32 @@ export default function MainPage() {
                     <SearchIcon sx={{color: '#000'}}/>
                 </IconButton>
             </Box>
+
+            {/* 에러 메시지 표시 */}
+            {error && (
+                <Box sx={{
+                    color: '#ff6b6b',
+                    mb: 2,
+                    textAlign: 'center',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    padding: '8px 16px',
+                    borderRadius: 1,
+                    border: '1px solid rgba(255, 107, 107, 0.3)',
+                    width: 480,
+                    maxWidth: '90vw'
+                }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                        {error}
+                    </Typography>
+                </Box>
+            )}
+
             {loading && (
-                <Box>
+                <Box sx={{ mb: 8 }}>
                     <CircularProgress color="inherit" />
                 </Box>
             )}
+
             <img src={character} alt="Timo Character" style={{height: 337, maxHeight: '60vh', width: 'auto'}}/>
 
             {matchData && (
